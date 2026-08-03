@@ -1,0 +1,20 @@
+// Баррел-экспорт библиотеки core-виджетов.
+export 'action_feedback.dart';
+export 'app_button.dart';
+export 'app_card.dart';
+export 'bottom_action_bar.dart';
+export 'confirm_dialog.dart';
+export 'contact_row.dart';
+export 'detail_scaffold.dart';
+export 'error_retry_view.dart';
+export 'filter_chips.dart';
+export 'initials_avatar.dart';
+export 'labeled_text_field.dart';
+export 'money_text.dart';
+export 'photo_attach_tile.dart';
+export 'quantity_stepper.dart';
+export 'screen_header.dart';
+export 'search_field.dart';
+export 'segmented_toggle.dart';
+export 'stat_tile.dart';
+export 'status_badge.dart';

@@ -1,0 +1,196 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+
+import '../../../app/theme/app_spacing.dart';
+import '../../../app/theme/app_tokens.dart';
+import '../../../app/theme/app_typography.dart';
+import '../../../core/navigation/overlay_route.dart';
+import '../../../core/widgets/action_feedback.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/bottom_action_bar.dart';
+import '../../../core/widgets/confirm_dialog.dart';
+import '../../../core/widgets/detail_scaffold.dart';
+import '../../../core/widgets/phone_contact_row.dart';
+import '../../../core/widgets/money_text.dart';
+import '../../../core/widgets/stat_tile.dart';
+import '../../../data/models/customer.dart';
+import '../../../data/repositories/crm_repository.dart';
+import 'customer_form_page.dart';
+import 'widgets/placeholder_avatar.dart';
+
+/// Экран «Заказчик» — детали, финансы, контакты.
+class CustomerDetailPage extends StatelessWidget {
+  const CustomerDetailPage({super.key, required this.customer});
+
+  final Customer customer;
+
+  Future<void> _delete(BuildContext context) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Удалить заказчика?',
+      message: '${customer.name} будет удалён из базы.',
+    );
+    if (!confirmed || !context.mounted) return;
+    final repo = context.read<CrmRepository>();
+    final ok = await runGuarded(
+      context,
+      () => repo.deleteCustomer(customer.id),
+      fallback: 'Не удалось удалить заказчика.',
+    );
+    if (ok && context.mounted) Navigator.of(context).pop(true);
+  }
+
+  Future<void> _edit(BuildContext context) async {
+    final saved = await Navigator.of(context).push<bool>(
+      OverlayPageRoute(builder: (_) => CustomerFormPage(customer: customer)),
+    );
+    if (saved == true && context.mounted) Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final lastOrder = customer.lastOrderDate == null
+        ? '—'
+        : DateFormat('dd.MM').format(customer.lastOrderDate!);
+
+    return DetailScaffold(
+      title: 'Заказчик',
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.lg,
+        children: [
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppSpacing.md,
+              children: [
+                Row(
+                  spacing: AppSpacing.md,
+                  children: [
+                    const PlaceholderAvatar(size: 56),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 2,
+                        children: [
+                          Text(customer.name,
+                              style: AppTypography.cardTitle
+                                  .copyWith(color: t.text)),
+                          if (customer.comment != null)
+                            Text(customer.comment!,
+                                style: AppTypography.secondary
+                                    .copyWith(color: t.text2)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  spacing: 4,
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 16, color: t.text2),
+                    Expanded(
+                      child: Text(customer.address,
+                          style:
+                              AppTypography.secondary.copyWith(color: t.text2)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Row(
+            spacing: AppSpacing.md,
+            children: [
+              Expanded(
+                child: StatTile(
+                  value: '${customer.capsuleBalance}',
+                  label: 'капсул / заказ',
+                ),
+              ),
+              Expanded(
+                child: StatTile(value: lastOrder, label: 'последний заказ'),
+              ),
+            ],
+          ),
+          if (customer.prepayment > 0 || customer.debt > 0)
+            _FinanceBanner(customer: customer),
+          AppCard(child: PhoneContactRow(phone: customer.phone)),
+        ],
+      ),
+      bottomBar: BottomActionBar(
+        child: Row(
+          spacing: AppSpacing.md,
+          children: [
+            IconActionButton.delete(
+              size: 52,
+              onPressed: () => _delete(context),
+            ),
+            Expanded(
+              child: AppButton(
+                label: 'Редактировать',
+                onPressed: () => _edit(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Крупный финансовый баннер (предоплата/долг) на экране деталей.
+class _FinanceBanner extends StatelessWidget {
+  const _FinanceBanner({required this.customer});
+  final Customer customer;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final isPrepay = customer.prepayment > 0;
+    final tone = isPrepay ? t.success : t.danger;
+    final bg = isPrepay ? t.successBg : t.dangerBg;
+    final label = isPrepay ? 'Предоплата' : 'Долг';
+    final amount = isPrepay ? customer.prepayment : customer.debt;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Row(
+        spacing: AppSpacing.md,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: tone,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: const Icon(Icons.account_balance_wallet_outlined,
+                color: Colors.white, size: 22),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 2,
+            children: [
+              Text(label, style: AppTypography.badge.copyWith(color: tone)),
+              MoneyText(
+                amount: amount,
+                numberStyle: AppTypography.statNumber
+                    .copyWith(color: tone, fontSize: 20),
+                currencyColor: tone,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
