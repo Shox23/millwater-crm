@@ -1,7 +1,9 @@
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/app/theme/theme_cubit.dart';
 import 'package:crm_millwater/data/models/customer.dart';
+import 'package:crm_millwater/data/models/user_role.dart';
 import 'package:crm_millwater/data/network/dio_client.dart';
+import 'package:crm_millwater/data/network/session_storage.dart';
 import 'package:crm_millwater/data/repositories/auth_repository.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
@@ -10,6 +12,7 @@ import 'package:crm_millwater/features/customers/bloc/customers_bloc.dart';
 import 'package:crm_millwater/features/customers/presentation/customers_page.dart';
 import 'package:crm_millwater/features/settings/presentation/settings_page.dart';
 import 'package:dio/dio.dart';
+import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,7 +53,11 @@ void main() {
     await tester.pumpWidget(
       RepositoryProvider<CrmRepository>.value(
         value: repo,
-        child: MaterialApp(theme: AppTheme.light(), home: page),
+        child: MaterialApp(
+            // Строки интерфейса берутся из локали: тесты идут на русской.
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,theme: AppTheme.light(), home: page),
       ),
     );
     await settle(tester);
@@ -145,6 +152,10 @@ void main() {
             BlocProvider(create: (_) => ThemeCubit()),
           ],
           child: MaterialApp(
+            // Строки интерфейса берутся из локали: тесты идут на русской.
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
             theme: AppTheme.light(),
             home: const SettingsPage(),
           ),
@@ -152,8 +163,12 @@ void main() {
 
     testWidgets('выход из аккаунта сбрасывает сессию', (tester) async {
       useLargeSurface(tester);
-      final store = AuthTokenStore()
-        ..setTokens(access: 'a', refresh: 'r');
+      final store = AuthTokenStore(InMemorySessionStorage());
+      await store.setTokens(
+        access: 'a',
+        refresh: 'r',
+        role: UserRole.admin,
+      );
       final auth = AuthBloc(AuthRepository(Dio(), store));
       addTearDown(auth.close);
 
@@ -173,7 +188,8 @@ void main() {
 
     testWidgets('тема переключается явным выбором', (tester) async {
       useLargeSurface(tester);
-      final auth = AuthBloc(AuthRepository(Dio(), AuthTokenStore()));
+      final auth =
+          AuthBloc(AuthRepository(Dio(), AuthTokenStore(InMemorySessionStorage())));
       addTearDown(auth.close);
 
       await tester.pumpWidget(settingsHost(auth));

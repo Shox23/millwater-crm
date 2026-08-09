@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_tokens.dart';
 import '../../app/theme/app_typography.dart';
@@ -13,13 +15,18 @@ void showAppSnackBar(
   bool isError = false,
 }) {
   final t = context.tokens;
+  // Фон обычного снек-бара — цвет текста темы: в светлой теме он тёмный,
+  // в тёмной — почти белый. Поэтому подпись берётся с поверхности, а не
+  // белым: белым по светлому фону в тёмной теме читать было нечего.
+  // У ошибки фон красный в обеих темах — там белый подходит.
+  final foreground = isError ? Colors.white : t.surface;
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(
           message,
-          style: AppTypography.secondary.copyWith(color: Colors.white),
+          style: AppTypography.secondary.copyWith(color: foreground),
         ),
         backgroundColor: isError ? t.danger : t.text,
         behavior: SnackBarBehavior.floating,
@@ -46,7 +53,7 @@ Future<bool> runGuarded(
     return true;
   } on DioException catch (e) {
     if (context.mounted) {
-      showAppSnackBar(context, apiErrorMessage(e, fallback: fallback),
+      showAppSnackBar(context, apiErrorMessage(context.l10n, e, fallback: fallback),
           isError: true);
     }
   } catch (_) {

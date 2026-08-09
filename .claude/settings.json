@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"exit:$?\")",
+      "Bash(sed -n '110,135p' ~/.pub-cache/hosted/pub.dev/geolocator-14*/lib/geolocator.dart)",
+      "Bash(sed -n '1,40p' ~/.pub-cache/hosted/pub.dev/geolocator_platform_interface-*/lib/src/models/location_settings.dart)",
+      "Bash(xcodebuild -version)",
+      "Bash(flutter doctor *)",
+      "Bash(pod --version)",
+      "Bash(brew --version)",
+      "Bash(ruby -v)",
+      "Bash(security find-identity *)",
+      "Bash(xcrun devicectl *)",
+      "Bash(gem --version)",
+      "Bash(gem environment *)",
+      "Bash(gem install *)",
+      "Bash(~/.gem/ruby/2.6.0/bin/pod --version)",
+      "Bash(open ios/Runner.xcworkspace)",
+      "Bash(xcrun simctl *)",
+      "Bash(open -a Simulator)",
+      "Bash(tee /private/tmp/claude-501/-Users-frame-Desktop-apps-flutter-crm-millwater/bf06385b-e7e3-4b14-af00-2c662fab6ee8/scratchpad/web.log)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5555)",
+      "Bash(flutter config *)",
+      "Bash(curl -s -i -X OPTIONS http://81.162.55.104/api/auth/login -H \"Origin: http://localhost:5555\" -H \"Access-Control-Request-Method: POST\" -H \"Access-Control-Request-Headers: content-type\" --max-time 12)"
+    ]
+  }
+}

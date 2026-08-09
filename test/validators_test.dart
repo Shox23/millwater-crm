@@ -1,5 +1,6 @@
 import 'package:crm_millwater/core/utils/uz_phone.dart';
 import 'package:crm_millwater/core/validation/validators.dart';
+import 'package:crm_millwater/l10n/app_localizations_ru.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,6 +20,9 @@ TextEditingValue _type(String oldText, String newText, {int? cursor}) {
 }
 
 void main() {
+  // Тексты ошибок зависят от языка — проверяем на русской локали.
+  final rules = Validators(AppLocalizationsRu());
+
   group('UzPhone.subscriberDigits', () {
     test('код страны отбрасывается', () {
       expect(UzPhone.subscriberDigits('+998901234567'), '901234567');
@@ -116,34 +120,34 @@ void main() {
     });
   });
 
-  group('Validators.phone', () {
+  group('rules.phone', () {
     test('пустое поле', () {
-      expect(Validators.phone(''), 'Введите номер телефона');
-      expect(Validators.phone(null), 'Введите номер телефона');
+      expect(rules.phone(''), 'Введите номер телефона');
+      expect(rules.phone(null), 'Введите номер телефона');
       // Один префикс — тоже «пусто» для пользователя.
-      expect(Validators.phone('+998 '), 'Введите номер телефона');
+      expect(rules.phone('+998 '), 'Введите номер телефона');
     });
 
     test('неполный номер', () {
-      expect(Validators.phone('+998 90 123'), contains('неполный'));
+      expect(rules.phone('+998 90 123'), contains('неполный'));
     });
 
     test('полный номер проходит', () {
-      expect(Validators.phone('+998 90 123 45 67'), isNull);
-      expect(Validators.phone('901234567'), isNull);
+      expect(rules.phone('+998 90 123 45 67'), isNull);
+      expect(rules.phone('901234567'), isNull);
     });
   });
 
-  group('Validators.email', () {
+  group('rules.email', () {
     test('пустое значение допустимо — поле необязательное', () {
-      expect(Validators.email(''), isNull);
-      expect(Validators.email(null), isNull);
-      expect(Validators.email('   '), isNull);
+      expect(rules.email(''), isNull);
+      expect(rules.email(null), isNull);
+      expect(rules.email('   '), isNull);
     });
 
     test('обязательный вариант требует значение', () {
-      expect(Validators.emailRequired(''), 'Введите электронную почту');
-      expect(Validators.emailRequired('driver@aqua.uz'), isNull);
+      expect(rules.emailRequired(''), 'Введите электронную почту');
+      expect(rules.emailRequired('driver@aqua.uz'), isNull);
     });
 
     test('валидные адреса', () {
@@ -152,7 +156,7 @@ void main() {
         'a.b+tag@mail.example.co',
         'user_1@sub.domain.uz',
       ]) {
-        expect(Validators.email(v), isNull, reason: v);
+        expect(rules.email(v), isNull, reason: v);
       }
     });
 
@@ -165,36 +169,36 @@ void main() {
         'driver @aqua.uz',
         'driver@aqua..uz',
       ]) {
-        expect(Validators.email(v), isNotNull, reason: v);
+        expect(rules.email(v), isNotNull, reason: v);
       }
     });
   });
 
   group('Validators прочие', () {
     test('notEmpty', () {
-      expect(Validators.notEmpty()(''), 'Заполните поле');
-      expect(Validators.notEmpty()('   '), 'Заполните поле');
-      expect(Validators.notEmpty('Введите имя')(null), 'Введите имя');
-      expect(Validators.notEmpty()('Азиз'), isNull);
+      expect(rules.notEmpty()(''), 'Заполните поле');
+      expect(rules.notEmpty()('   '), 'Заполните поле');
+      expect(rules.notEmpty('Введите имя')(null), 'Введите имя');
+      expect(rules.notEmpty()('Азиз'), isNull);
     });
 
     test('password', () {
-      expect(Validators.password()(''), 'Введите пароль');
-      expect(Validators.password()('12345'), 'Минимум 6 символов');
-      expect(Validators.password()('123456'), isNull);
-      expect(Validators.password(min: 8)('1234567'), 'Минимум 8 символов');
+      expect(rules.password()(''), 'Введите пароль');
+      expect(rules.password()('12345'), 'Минимум 6 символов');
+      expect(rules.password()('123456'), isNull);
+      expect(rules.password(min: 8)('1234567'), 'Минимум 8 символов');
     });
 
     test('maxLen', () {
-      expect(Validators.maxLen(3)('абвг'), 'Не более 3 символов');
-      expect(Validators.maxLen(3)('абв'), isNull);
-      expect(Validators.maxLen(3)(null), isNull);
+      expect(rules.maxLen(3)('абвг'), 'Не более 3 символов');
+      expect(rules.maxLen(3)('абв'), isNull);
+      expect(rules.maxLen(3)(null), isNull);
     });
 
     test('all возвращает первую ошибку', () {
       final rule = Validators.all([
-        Validators.notEmpty('Заполните имя'),
-        Validators.maxLen(3),
+        rules.notEmpty('Заполните имя'),
+        rules.maxLen(3),
       ]);
       expect(rule(''), 'Заполните имя');
       expect(rule('абвг'), 'Не более 3 символов');

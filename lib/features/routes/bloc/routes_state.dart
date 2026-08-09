@@ -20,15 +20,11 @@ class RoutesState extends Equatable {
   final String? error;
 
   /// Список с учётом активного фильтра.
-  List<RouteListItem> get visible => switch (filter) {
-        RouteFilter.all => routes,
-        RouteFilter.inProgress =>
-          routes.where((r) => r.status == RouteStatus.inProgress).toList(),
-        RouteFilter.completed =>
-          routes.where((r) => r.status == RouteStatus.completed).toList(),
-        RouteFilter.created =>
-          routes.where((r) => r.status == RouteStatus.created).toList(),
-      };
+  List<RouteListItem> get visible {
+    final wanted = filter.status;
+    if (wanted == null) return routes;
+    return routes.where((r) => r.status == wanted).toList();
+  }
 
   /// Всего остановок во всех маршрутах.
   int get stopsTotal =>

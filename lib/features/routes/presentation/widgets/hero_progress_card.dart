@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -11,12 +13,15 @@ class HeroProgressCard extends StatelessWidget {
     super.key,
     required this.done,
     required this.total,
-    required this.collected,
+    this.collected,
   });
 
   final int done;
   final int total;
-  final int collected;
+
+  /// Сумма за период. `null` — блок «Собрано» не рисуется: у водителя
+  /// денежного показателя нет, сводный отчёт ему недоступен.
+  final int? collected;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +57,7 @@ class HeroProgressCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: AppSpacing.sm,
                   children: [
-                    const Text('Выполнено доставок', style: labelStyle),
+                    Text(context.l10n.routeProgressTitle, style: labelStyle),
                     Text.rich(
                       TextSpan(
                         children: [
@@ -75,19 +80,20 @@ class HeroProgressCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                spacing: AppSpacing.sm,
-                children: [
-                  const Text('Собрано сегодня', style: labelStyle),
-                  MoneyText(
-                    amount: collected,
-                    numberStyle: AppTypography.screenTitle
-                        .copyWith(color: Colors.white, fontSize: 22),
-                    currencyColor: Colors.white70,
-                  ),
-                ],
-              ),
+              if (collected case final int amount)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  spacing: AppSpacing.sm,
+                  children: [
+                    Text(context.l10n.routeCollectedToday, style: labelStyle),
+                    MoneyText(
+                      amount: amount,
+                      numberStyle: AppTypography.screenTitle
+                          .copyWith(color: Colors.white, fontSize: 22),
+                      currencyColor: Colors.white70,
+                    ),
+                  ],
+                ),
             ],
           ),
           ClipRRect(

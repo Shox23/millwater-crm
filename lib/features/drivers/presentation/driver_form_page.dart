@@ -2,9 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_button.dart';
@@ -30,6 +33,16 @@ class DriverFormPage extends StatefulWidget {
 }
 
 class _DriverFormPageState extends State<DriverFormPage> {
+  /// Правила проверки на языке интерфейса. Пересобираются при смене
+  /// локали: `didChangeDependencies` вызывается снова.
+  late Validators _v;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _v = Validators(context.l10n);
+  }
+
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _name;
@@ -45,17 +58,30 @@ class _DriverFormPageState extends State<DriverFormPage> {
   bool _saving = false;
   String? _error;
 
+  /// Один ключ на весь экран: повтор после обрыва связи не должен завести
+  /// второго водителя. При редактировании не нужен — PATCH и так идемпотентен.
+  final String _idempotencyKey = newIdempotencyKey('driver');
+
   // Правила живут в полях, чтобы поле и переход к первой ошибке
   // проверялись одним и тем же кодом.
-  static final _nameRule = Validators.all([
-    Validators.notEmpty('Введите имя водителя'),
-    Validators.maxLen(120),
+  FormFieldValidator<String> get _nameRule => Validators.all([
+    _v.notEmpty(context.l10n.driverFormNameEmpty),
+    _v.maxLen(120),
   ]);
-  static final _emailRule = Validators.all([
-    Validators.email,
-    Validators.maxLen(120),
+  /// При создании почта обязательна: `POST /admin/drivers` требует её и без
+  /// неё отвечает 422. При редактировании `PATCH` разрешает её не слать.
+  FormFieldValidator<String> get _emailCreateRule => Validators.all([
+    _v.emailRequired,
+    _v.maxLen(120),
   ]);
-  static final _passwordRule = Validators.password();
+  FormFieldValidator<String> get _emailEditRule => Validators.all([
+    _v.email,
+    _v.maxLen(120),
+  ]);
+
+  FormFieldValidator<String> get _emailRule =>
+      widget.isEdit ? _emailEditRule : _emailCreateRule;
+  FormFieldValidator<String> get _passwordRule => _v.password();
 
   @override
   void initState() {
@@ -102,16 +128,23 @@ class _DriverFormPageState extends State<DriverFormPage> {
     await _save();
   }
 
+  /// Поля и их текущие ошибки — один источник и для кнопки, и для перехода
+  /// к первой ошибке. Разъедься эти два списка, кнопка разрешала бы
+  /// отправку формы, которую `validate()` тут же отклонит.
+  List<(FocusNode, String?)> get _checks => [
+        (_nameFocus, _nameRule(_name.text)),
+        (_phoneFocus, _v.phone(_phone.text)),
+        (_emailFocus, _emailRule(_email.text)),
+        // Пароль задаётся только при создании — это учётная запись водителя.
+        if (!widget.isEdit) (_passwordFocus, _passwordRule(_password.text)),
+      ];
+
+  /// Все поля заполнены верно — кнопку можно разблокировать.
+  bool get _valid => _checks.every((c) => c.$2 == null);
+
   /// Ставит курсор в первое поле с ошибкой — иначе непонятно, куда смотреть.
   void _focusFirstInvalid() {
-    final checks = [
-      (_nameFocus, _nameRule(_name.text)),
-      (_phoneFocus, Validators.phone(_phone.text)),
-      (_emailFocus, _emailRule(_email.text)),
-      // Пароль задаётся только при создании — это учётная запись водителя.
-      if (!widget.isEdit) (_passwordFocus, _passwordRule(_password.text)),
-    ];
-    for (final (node, error) in checks) {
+    for (final (node, error) in _checks) {
       if (error != null) {
         node.requestFocus();
         return;
@@ -125,6 +158,8 @@ class _DriverFormPageState extends State<DriverFormPage> {
       _error = null;
     });
     final repo = context.read<CrmRepository>();
+    // Строки берём до запроса: после await контекст уже мог уйти.
+    final l10n = context.l10n;
     final phone = UzPhone.normalize(_phone.text);
     try {
       if (widget.isEdit) {
@@ -139,6 +174,7 @@ class _DriverFormPageState extends State<DriverFormPage> {
           phone: phone,
           email: _email.text.trim(),
           password: _password.text,
+          idempotencyKey: _idempotencyKey,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -146,13 +182,11 @@ class _DriverFormPageState extends State<DriverFormPage> {
       // Сервер может отклонить и валидные с виду данные: занятый телефон
       // или почта, упавшая сеть. Экран обязан ожить, а не остаться
       // с серой кнопкой.
-      _failed(apiErrorMessage(e, fallback: _saveErrorText));
+      _failed(apiErrorMessage(l10n, e, fallback: l10n.driverFormSaveFailed));
     } catch (_) {
-      _failed(_saveErrorText);
+      _failed(l10n.driverFormSaveFailed);
     }
   }
-
-  static const _saveErrorText = 'Не удалось сохранить водителя.';
 
   void _failed(String message) {
     if (!mounted) return;
@@ -170,10 +204,10 @@ class _DriverFormPageState extends State<DriverFormPage> {
     }
     final leave = await showConfirmDialog(
       context,
-      title: 'Выйти без сохранения?',
-      message: 'Введённые данные будут потеряны.',
-      confirmLabel: 'Выйти',
-      cancelLabel: 'Остаться',
+      title: context.l10n.leaveWithoutSavingTitle,
+      message: context.l10n.leaveWithoutSavingMessage,
+      confirmLabel: context.l10n.commonLeave,
+      cancelLabel: context.l10n.commonStay,
     );
     if (leave && mounted) Navigator.of(context).pop(false);
   }
@@ -189,17 +223,20 @@ class _DriverFormPageState extends State<DriverFormPage> {
         if (!didPop) _leave();
       },
       child: DetailScaffold(
-        title: widget.isEdit ? 'Редактирование водителя' : 'Новый водитель',
+        title: widget.isEdit ? context.l10n.driverFormEditTitle : context.l10n.driverFormNewTitle,
         body: Form(
           key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
+          // Ошибка появляется, когда поле закончили заполнять и ушли из него.
+          autovalidateMode: AutovalidateMode.onUnfocus,
+          // Любое изменение — пересчёт состояния кнопки.
+          onChanged: () => setState(() {}),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: AppSpacing.lg,
             children: [
               LabeledTextField(
-                label: 'Имя водителя',
-                hint: 'Например, Азиз Каримов',
+                label: context.l10n.driverFormName,
+                hint: context.l10n.driverFormNameHint,
                 controller: _name,
                 focusNode: _nameFocus,
                 validator: _nameRule,
@@ -210,11 +247,11 @@ class _DriverFormPageState extends State<DriverFormPage> {
                 onSubmitted: (_) => _phoneFocus.requestFocus(),
               ),
               LabeledTextField(
-                label: 'Номер телефона',
+                label: context.l10n.loginPhone,
                 hint: '+998 90 123 45 67',
                 controller: _phone,
                 focusNode: _phoneFocus,
-                validator: Validators.phone,
+                validator: _v.phone,
                 keyboardType: TextInputType.phone,
                 inputFormatters: const [UzPhoneInputFormatter()],
                 autofillHints: const [AutofillHints.telephoneNumber],
@@ -222,9 +259,9 @@ class _DriverFormPageState extends State<DriverFormPage> {
                 onSubmitted: (_) => _emailFocus.requestFocus(),
               ),
               LabeledTextField(
-                label: 'Электронная почта',
+                label: context.l10n.driverFormEmail,
                 hint: 'driver@aqua.uz',
-                helper: 'Необязательно',
+                helper: widget.isEdit ? context.l10n.commonOptional : null,
                 controller: _email,
                 focusNode: _emailFocus,
                 validator: _emailRule,
@@ -238,9 +275,9 @@ class _DriverFormPageState extends State<DriverFormPage> {
               ),
               if (!widget.isEdit)
                 LabeledTextField(
-                  label: 'Пароль для входа',
+                  label: context.l10n.driverFormPassword,
                   hint: '••••••••',
-                  helper: 'Минимум 6 символов',
+                  helper: context.l10n.minSixChars,
                   controller: _password,
                   focusNode: _passwordFocus,
                   validator: _passwordRule,
@@ -270,7 +307,7 @@ class _DriverFormPageState extends State<DriverFormPage> {
                 children: [
                   Expanded(
                     child: AppButton(
-                      label: 'Отменить',
+                      label: context.l10n.commonCancel,
                       variant: AppButtonVariant.secondary,
                       onPressed: _saving ? null : _leave,
                     ),
@@ -278,10 +315,11 @@ class _DriverFormPageState extends State<DriverFormPage> {
                   Expanded(
                     child: AppButton(
                       label: _saving
-                          ? 'Сохранение…'
-                          : (widget.isEdit ? 'Сохранить' : 'Добавить'),
-                      enabled: !_saving,
-                      onPressed: _saving ? null : _submit,
+                          ? context.l10n.commonSaving
+                          : (widget.isEdit ? context.l10n.commonSave : context.l10n.commonAdd),
+                      // Пока в форме есть ошибки, отправлять нечего.
+                      enabled: _valid && !_saving,
+                      onPressed: (_valid && !_saving) ? _submit : null,
                     ),
                   ),
                 ],

@@ -66,6 +66,22 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Водитель прикладывает фото оплаты при завершении доставки. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Камера нужна, чтобы сфотографировать чек или подтверждение оплаты при завершении доставки.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Доступ к галерее нужен, чтобы прикрепить фото оплаты к завершённой доставке.</string>
+	<!-- Водитель фиксирует координаты точки при завершении доставки, чтобы
+	     следующий маршрут строился по ней, а не по текстовому адресу.
+	     Фоновая геолокация не нужна: замер делается на открытом экране. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Геолокация нужна, чтобы запомнить точное место доставки и в следующий раз построить маршрут прямо к нему.</string>
+	<!-- Без этого canLaunchUrl('yandexmaps://') всегда вернёт false,
+	     и маршрут не уйдёт в установленное приложение Яндекс.Карт. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>yandexmaps</string>
+	</array>
 	<!-- Разрешение cleartext HTTP для dev-API (http://81.162.55.104). Убрать при переходе на HTTPS. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>

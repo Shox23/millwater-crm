@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../l10n/l10n.dart';
+
+
 /// Режим темы приложения: по умолчанию следует системе.
 class ThemeCubit extends Cubit<ThemeMode> {
   ThemeCubit() : super(ThemeMode.system);
@@ -24,10 +27,11 @@ class ThemeCubit extends Cubit<ThemeMode> {
         ThemeMode.dark => Icons.dark_mode_outlined,
       };
 
-  /// Подпись режима для интерфейса.
-  static String labelFor(ThemeMode mode) => switch (mode) {
-        ThemeMode.system => 'Как в системе',
-        ThemeMode.light => 'Светлая',
-        ThemeMode.dark => 'Тёмная',
+  /// Подпись режима на языке интерфейса.
+  static String labelFor(AppLocalizations l10n, ThemeMode mode) =>
+      switch (mode) {
+        ThemeMode.system => l10n.themeSystem,
+        ThemeMode.light => l10n.themeLight,
+        ThemeMode.dark => l10n.themeDark,
       };
 }

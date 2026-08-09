@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../core/navigation/overlay_route.dart';
 import '../../../core/widgets/action_feedback.dart';
@@ -10,6 +12,7 @@ import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/screen_header.dart';
+import '../../../data/models/enums.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../bloc/routes_bloc.dart';
@@ -57,14 +60,14 @@ class _RoutesView extends StatelessWidget {
                     0,
                   ),
                   child: ScreenHeader(
-                    label: 'Сегодня · $dateLabel',
-                    title: 'Маршруты',
+                    label: context.l10n.routesHeaderToday(dateLabel),
+                    title: context.l10n.routesTitle,
                     action: Row(
                       spacing: AppSpacing.sm,
                       children: [
                         const _SettingsButton(),
                         AppButton(
-                          label: 'Создать',
+                          label: context.l10n.commonCreate,
                           icon: Icons.add,
                           height: 44,
                           onPressed: () => _openForm(context, bloc),
@@ -83,11 +86,35 @@ class _RoutesView extends StatelessWidget {
                     collected: state.collected,
                   ),
                 ),
-                FilterChips(
-                  labels: [for (final f in RouteFilter.values) f.label],
-                  selectedIndex: state.filter.index,
-                  onSelected: (i) =>
-                      bloc.add(RoutesFilterChanged(RouteFilter.values[i])),
+                // Кнопка обновления стоит в строке фильтров, а не в шапке:
+                // там уже настройки и «Создать», и третья кнопка выдавливает
+                // заголовок на узком экране.
+                Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.page),
+                  child: Row(
+                    spacing: AppSpacing.sm,
+                    children: [
+                      Expanded(
+                        child: FilterChips(
+                          labels: [
+                    for (final f in RouteFilter.values)
+                      f.label(context.l10n),
+                  ],
+                          selectedIndex: state.filter.index,
+                          onSelected: (i) => bloc
+                              .add(RoutesFilterChanged(RouteFilter.values[i])),
+                        ),
+                      ),
+                      IconActionButton(
+                        icon: Icons.refresh,
+                        tooltip: context.l10n.routesRefresh,
+                        // Пока запрос в пути — повтор ни к чему.
+                        onPressed: state.status == RoutesStatus.loading
+                            ? null
+                            : () => bloc.add(const RoutesRequested()),
+                      ),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: _RoutesList(state: state, bloc: bloc),
@@ -106,7 +133,7 @@ class _RoutesView extends StatelessWidget {
     ).push<bool>(OverlayPageRoute(builder: (_) => const RouteFormPage()));
     if (created == true) {
       bloc.add(const RoutesRequested());
-      if (context.mounted) showAppSnackBar(context, 'Маршрут создан');
+      if (context.mounted) showAppSnackBar(context, context.l10n.routesCreated);
     }
   }
 }
@@ -119,7 +146,7 @@ class _SettingsButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconActionButton(
       icon: Icons.settings_outlined,
-      tooltip: 'Настройки',
+      tooltip: context.l10n.settingsTitle,
       onPressed: () => Navigator.of(
         context,
       ).push(OverlayPageRoute<void>(builder: (_) => const SettingsPage())),
@@ -142,7 +169,7 @@ class _RoutesList extends StatelessWidget {
     if (state.status == RoutesStatus.error) {
       return ErrorRetryView(
         onRetry: () => bloc.add(const RoutesRequested()),
-        message: 'Не удалось загрузить маршруты',
+        message: context.l10n.routesLoadFailed,
       );
     }
 
@@ -151,11 +178,11 @@ class _RoutesList extends StatelessWidget {
       return EmptyStateView(
         icon: Icons.route_outlined,
         title: state.filter == RouteFilter.all
-            ? 'Маршрутов пока нет'
-            : 'В этом фильтре пусто',
+            ? context.l10n.routesEmptyTitle
+            : context.l10n.filterEmptyTitle,
         hint: state.filter == RouteFilter.all
-            ? 'Создайте маршрут: выберите водителя, дату и заказчиков'
-            : 'Попробуйте другой фильтр',
+            ? context.l10n.routesEmptyHint
+            : context.l10n.filterEmptyHint,
       );
     }
     return RefreshIndicator(

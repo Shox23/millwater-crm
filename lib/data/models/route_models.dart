@@ -3,7 +3,10 @@ import 'package:equatable/equatable.dart';
 import '../../core/utils/money_parser.dart';
 import 'enums.dart';
 
-/// Строка списка маршрутов (AdminRouteListItem).
+/// Строка списка маршрутов (AdminRouteListItem или водительский RouteListItem).
+///
+/// Водительские эндпоинты полей водителя не отдают — маршрут и так «свой»,
+/// поэтому [driverId] и [driverFullName] необязательны.
 class RouteListItem extends Equatable {
   const RouteListItem({
     required this.id,
@@ -11,8 +14,8 @@ class RouteListItem extends Equatable {
     required this.status,
     required this.completedCount,
     required this.totalCustomers,
-    required this.driverId,
-    required this.driverFullName,
+    this.driverId,
+    this.driverFullName,
   });
 
   final String id;
@@ -22,8 +25,8 @@ class RouteListItem extends Equatable {
   /// Сколько остановок уже завершено.
   final int completedCount;
   final int totalCustomers;
-  final String driverId;
-  final String driverFullName;
+  final String? driverId;
+  final String? driverFullName;
 
   factory RouteListItem.fromJson(Map<String, dynamic> json) => RouteListItem(
         id: json['id'] as String,
@@ -31,8 +34,8 @@ class RouteListItem extends Equatable {
         status: RouteStatus.fromJson(json['status'] as String),
         completedCount: json['completed_count'] as int? ?? 0,
         totalCustomers: json['total_customers'] as int? ?? 0,
-        driverId: json['driver_id'] as String,
-        driverFullName: json['driver_full_name'] as String? ?? '',
+        driverId: json['driver_id'] as String?,
+        driverFullName: json['driver_full_name'] as String?,
       );
 
   @override
@@ -49,6 +52,8 @@ class RouteStop extends Equatable {
     required this.customerAddress,
     required this.customerPhone,
     required this.status,
+    this.customerLatitude,
+    this.customerLongitude,
     this.deliveredCapsules,
     this.paymentAmount,
     this.paymentPhoto,
@@ -63,6 +68,13 @@ class RouteStop extends Equatable {
   final String customerPhone;
   final DeliveryStatus status;
 
+  /// Координаты точки доставки, если их успел зафиксировать водитель.
+  ///
+  /// Пока на сервере полей нет — null, и маршрут строится по текстовому
+  /// адресу через веб-версию Яндекс.Карт. См. [hasCoordinates].
+  final double? customerLatitude;
+  final double? customerLongitude;
+
   /// Доставленные капсулы (серверное `delivered_bottles`).
   final int? deliveredCapsules;
   final int? paymentAmount;
@@ -72,6 +84,10 @@ class RouteStop extends Equatable {
   bool get isCompleted =>
       status == DeliveryStatus.delivered || status == DeliveryStatus.paid;
 
+  /// Точку можно отдать нативному приложению карт, а не веб-геокодеру.
+  bool get hasCoordinates =>
+      customerLatitude != null && customerLongitude != null;
+
   factory RouteStop.fromJson(Map<String, dynamic> json) => RouteStop(
         id: json['id'] as String,
         customerId: json['customer_id'] as String,
@@ -79,6 +95,9 @@ class RouteStop extends Equatable {
         customerAddress: json['customer_address'] as String? ?? '',
         customerPhone: json['customer_phone'] as String? ?? '',
         status: DeliveryStatus.fromJson(json['status'] as String),
+        // `num?`, а не `double?`: целое значение приходит из JSON как int.
+        customerLatitude: (json['customer_latitude'] as num?)?.toDouble(),
+        customerLongitude: (json['customer_longitude'] as num?)?.toDouble(),
         deliveredCapsules: json['delivered_bottles'] as int?,
         paymentAmount: json['payment_amount'] == null
             ? null
@@ -95,13 +114,15 @@ class RouteStop extends Equatable {
         customerId,
         customerName,
         status,
+        customerLatitude,
+        customerLongitude,
         deliveredCapsules,
         paymentAmount,
         completedAt,
       ];
 }
 
-/// Маршрут со списком остановок (AdminRouteResponse).
+/// Маршрут со списком остановок (AdminRouteResponse или водительский RouteResponse).
 class RouteDetail extends Equatable {
   const RouteDetail({
     required this.id,
@@ -109,8 +130,8 @@ class RouteDetail extends Equatable {
     required this.status,
     required this.completedCount,
     required this.totalCustomers,
-    required this.driverId,
-    required this.driverFullName,
+    this.driverId,
+    this.driverFullName,
     required this.stops,
   });
 
@@ -119,8 +140,10 @@ class RouteDetail extends Equatable {
   final RouteStatus status;
   final int completedCount;
   final int totalCustomers;
-  final String driverId;
-  final String driverFullName;
+
+  /// См. [RouteListItem.driverId] — у водительских ответов полей нет.
+  final String? driverId;
+  final String? driverFullName;
   final List<RouteStop> stops;
 
   /// Сумма собранных за маршрут оплат.
@@ -133,8 +156,8 @@ class RouteDetail extends Equatable {
         status: RouteStatus.fromJson(json['status'] as String),
         completedCount: json['completed_count'] as int? ?? 0,
         totalCustomers: json['total_customers'] as int? ?? 0,
-        driverId: json['driver_id'] as String,
-        driverFullName: json['driver_full_name'] as String? ?? '',
+        driverId: json['driver_id'] as String?,
+        driverFullName: json['driver_full_name'] as String?,
         stops: ((json['route_customers'] as List?) ?? [])
             .map((e) => RouteStop.fromJson((e as Map).cast<String, dynamic>()))
             .toList(),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
-import '../../../../core/utils/plurals.dart';
+import '../../../../core/utils/uz_phone.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/initials_avatar.dart';
@@ -44,11 +46,20 @@ class DriverCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                // ТЗ требует телефон в списке. Почта осталась в карточке:
+                // в строку она не влезает, а звонят водителю по телефону.
+                Text(
+                  UzPhone.format(driver.phone),
+                  style: AppTypography.secondary.copyWith(color: t.text2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: Plurals.trips(driver.tripCount)),
-                      const TextSpan(text: '  ·  сегодня '),
+                      TextSpan(
+                          text: context.l10n.tripsCount(driver.tripCount)),
+                      TextSpan(text: context.l10n.driverTripsAndToday),
                       TextSpan(
                         text: '${driver.todayTripCount}',
                         style: TextStyle(
@@ -70,7 +81,7 @@ class DriverCard extends StatelessWidget {
             children: [
               IconActionButton(
                 icon: Icons.edit_outlined,
-                tooltip: 'Редактировать',
+                tooltip: context.l10n.commonEdit,
                 onPressed: onEdit,
               ),
               IconActionButton.delete(onPressed: onDelete),

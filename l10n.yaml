@@ -1,0 +1,6 @@
+# Генерация локализаций: `flutter gen-l10n` (запускается и сам при сборке).
+arb-dir: lib/l10n
+template-arb-file: app_ru.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

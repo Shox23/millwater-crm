@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 /// Форматирование денежных сумм в стиле макета: `280 000 сум`.
 abstract class MoneyFormatter {
   /// Группировка разрядов пробелом: 280000 -> "280 000".
@@ -12,16 +14,17 @@ abstract class MoneyFormatter {
     return '${rounded < 0 ? '-' : ''}$buf';
   }
 
-  /// С валютой: 280000 -> "280 000 сум".
-  static String sum(num value) => '${amount(value)} сум';
+  /// С валютой: 280000 -> "280 000 сум" / "280 000 so‘m".
+  static String sum(AppLocalizations l10n, num value) =>
+      l10n.moneyAmount(amount(value));
 
   /// Компактная запись больших сумм: 1520000 -> "1,52 млн сум".
-  static String compactSum(num value) {
+  static String compactSum(AppLocalizations l10n, num value) {
     if (value >= 1000000) {
       final mln = value / 1000000;
       final text = mln.toStringAsFixed(2).replaceAll('.', ',');
-      return '$text млн сум';
+      return l10n.moneyMillions(text);
     }
-    return sum(value);
+    return sum(l10n, value);
   }
 }

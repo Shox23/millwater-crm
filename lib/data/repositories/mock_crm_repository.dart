@@ -1,33 +1,100 @@
+import '../mock/mock_store.dart';
 import '../mock/seed_data.dart';
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
+import '../models/price_settings.dart';
 import '../models/reports_summary.dart';
 import '../models/route_models.dart';
 import 'crm_repository.dart';
 
-/// In-memory реализация репозитория (демо-режим без сервера).
-/// Данные живут в рамках сессии; отчёт считается из текущего состояния.
+/// In-memory реализация админской части (демо-режим без сервера).
+///
+/// Состояние живёт в [MockStore] — тот же экземпляр можно отдать
+/// `MockDriverRepository`, чтобы завершённые водителем доставки были видны
+/// в админских списках.
 class MockCrmRepository implements CrmRepository {
-  final List<Driver> _drivers = SeedData.drivers();
-  final List<Customer> _customers = SeedData.customers();
-  final List<RouteDetail> _routes = SeedData.routes();
-  int _seq = 0;
+  MockCrmRepository({MockStore? store}) : store = store ?? MockStore();
 
-  String _nextId(String prefix) => '${prefix}_${++_seq}';
+  final MockStore store;
+
+  List<Driver> get _drivers => store.drivers;
+  List<Customer> get _customers => store.customers;
+  List<RouteDetail> get _routes => store.routes;
+
+  /// Ответы уже принятых create-запросов: ключ идемпотентности → созданное.
+  ///
+  /// Повторять поведение сервера здесь важно, иначе тесты форм не отличат
+  /// защищённый повтор от дубля.
+  final Map<String, Object> _accepted = {};
+
+  /// Ранее созданный объект для этого ключа, если запрос уже принимали.
+  T? _replay<T extends Object>(String? key) =>
+      key == null ? null : _accepted[key] as T?;
+
+  /// Запоминает результат — повтор с тем же ключом вернёт его же.
+  T _remember<T extends Object>(String? key, T created) {
+    if (key != null) _accepted[key] = created;
+    return created;
+  }
 
   /// Небольшая задержка, чтобы UI показывал состояние загрузки.
-  Future<void> _tick() => Future<void>.delayed(const Duration(milliseconds: 150));
+  Future<void> _tick() =>
+      Future<void>.delayed(const Duration(milliseconds: 150));
 
   bool _matches(String query, List<String> fields) {
     final q = query.toLowerCase().trim();
     return fields.any((f) => f.toLowerCase().contains(q));
   }
 
+  // ---- Цены ----
+  /// Заведённые прайсы, новые первыми. Как на сервере, новая цена не правит
+  /// старую запись, а добавляется: действующей считается первая в списке.
+  final List<PriceSettings> _prices = [
+    PriceSettings(
+      id: 'price-seed-2',
+      capsulePrice: SeedData.capsulePrice,
+      depositPrice: SeedData.depositPrice,
+      createdAt: SeedData.today,
+    ),
+    PriceSettings(
+      id: 'price-seed-1',
+      capsulePrice: 18000,
+      depositPrice: 45000,
+      createdAt: DateTime(2026, 1, 1),
+    ),
+  ];
+
   @override
-  Future<int> getCapsulePrice() async {
+  Future<PriceSettings> getPrices() async {
     await _tick();
-    return SeedData.capsulePrice;
+    return _prices.first;
+  }
+
+  @override
+  Future<List<PriceSettings>> getPriceHistory() async {
+    await _tick();
+    return List.unmodifiable(_prices);
+  }
+
+  @override
+  Future<PriceSettings> setPrices({
+    required int capsulePrice,
+    required int depositPrice,
+    String? idempotencyKey,
+  }) async {
+    await _tick();
+    final replayed = _replay<PriceSettings>(idempotencyKey);
+    if (replayed != null) return replayed;
+
+    final created = PriceSettings(
+      id: store.nextId('price'),
+      capsulePrice: capsulePrice,
+      depositPrice: depositPrice,
+      createdAt: DateTime.now(),
+    );
+    _prices.insert(0, created);
+    return _remember(idempotencyKey, created);
   }
 
   // ---- Водители ----
@@ -54,17 +121,21 @@ class MockCrmRepository implements CrmRepository {
     required String phone,
     required String email,
     required String password,
+    String? idempotencyKey,
   }) async {
     await _tick();
+    final replayed = _replay<Driver>(idempotencyKey);
+    if (replayed != null) return replayed;
+
     final driver = Driver(
-      id: _nextId('d'),
+      id: store.nextId('d'),
       fullName: fullName,
       phone: phone,
       email: email,
       createdAt: DateTime.now(),
     );
     _drivers.add(driver);
-    return driver;
+    return _remember(idempotencyKey, driver);
   }
 
   @override
@@ -109,10 +180,14 @@ class MockCrmRepository implements CrmRepository {
     required String phone,
     required String address,
     String? comment,
+    String? idempotencyKey,
   }) async {
     await _tick();
+    final replayed = _replay<Customer>(idempotencyKey);
+    if (replayed != null) return replayed;
+
     final customer = Customer(
-      id: _nextId('c'),
+      id: store.nextId('c'),
       name: name,
       phone: phone,
       address: address,
@@ -120,7 +195,7 @@ class MockCrmRepository implements CrmRepository {
       createdAt: DateTime.now(),
     );
     _customers.add(customer);
-    return customer;
+    return _remember(idempotencyKey, customer);
   }
 
   @override
@@ -177,15 +252,19 @@ class MockCrmRepository implements CrmRepository {
     required String driverId,
     required DateTime date,
     required List<String> customerIds,
+    String? idempotencyKey,
   }) async {
     await _tick();
+    final replayed = _replay<RouteDetail>(idempotencyKey);
+    if (replayed != null) return replayed;
+
     final driver = _drivers.where((d) => d.id == driverId).firstOrNull;
     final stops = <RouteStop>[];
     for (final cid in customerIds) {
       final c = _customers.where((x) => x.id == cid).firstOrNull;
       if (c == null) continue;
       stops.add(RouteStop(
-        id: _nextId('s'),
+        id: store.nextId('s'),
         customerId: c.id,
         customerName: c.name,
         customerAddress: c.address,
@@ -194,7 +273,7 @@ class MockCrmRepository implements CrmRepository {
       ));
     }
     final route = RouteDetail(
-      id: _nextId('r'),
+      id: store.nextId('r'),
       date: date,
       status: RouteStatus.created,
       driverId: driverId,
@@ -204,7 +283,7 @@ class MockCrmRepository implements CrmRepository {
       stops: stops,
     );
     _routes.add(route);
-    return route;
+    return _remember(idempotencyKey, route);
   }
 
   @override
@@ -216,94 +295,10 @@ class MockCrmRepository implements CrmRepository {
   @override
   Future<void> cancelRoute(String id) async {
     await _tick();
-    _replaceRoute(id, (r) => _copyRoute(r, status: RouteStatus.cancelled));
-  }
-
-  @override
-  Future<void> completeDelivery({
-    required String stopId,
-    required int capsules,
-    required int amount,
-  }) async {
-    await _tick();
-    _updateStop(
-      stopId,
-      (s) => RouteStop(
-        id: s.id,
-        customerId: s.customerId,
-        customerName: s.customerName,
-        customerAddress: s.customerAddress,
-        customerPhone: s.customerPhone,
-        status: DeliveryStatus.paid,
-        deliveredCapsules: capsules,
-        paymentAmount: amount,
-        completedAt: DateTime.now(),
-      ),
+    store.replaceRoute(
+      id,
+      (r) => store.copyRoute(r, status: RouteStatus.cancelled),
     );
-  }
-
-  @override
-  Future<void> updateDeliveryStatus({
-    required String stopId,
-    required DeliveryStatus status,
-  }) async {
-    await _tick();
-    _updateStop(
-      stopId,
-      (s) => RouteStop(
-        id: s.id,
-        customerId: s.customerId,
-        customerName: s.customerName,
-        customerAddress: s.customerAddress,
-        customerPhone: s.customerPhone,
-        status: status,
-        deliveredCapsules: s.deliveredCapsules,
-        paymentAmount: s.paymentAmount,
-        paymentPhoto: s.paymentPhoto,
-        completedAt: s.completedAt,
-      ),
-    );
-  }
-
-  RouteDetail _copyRoute(
-    RouteDetail r, {
-    RouteStatus? status,
-    List<RouteStop>? stops,
-  }) {
-    final newStops = stops ?? r.stops;
-    return RouteDetail(
-      id: r.id,
-      date: r.date,
-      status: status ?? r.status,
-      completedCount: newStops.where((s) => s.isCompleted).length,
-      totalCustomers: newStops.length,
-      driverId: r.driverId,
-      driverFullName: r.driverFullName,
-      stops: newStops,
-    );
-  }
-
-  void _replaceRoute(String id, RouteDetail Function(RouteDetail) update) {
-    final i = _routes.indexWhere((r) => r.id == id);
-    if (i != -1) _routes[i] = update(_routes[i]);
-  }
-
-  /// Находит остановку по id и заменяет её, пересчитывая статус маршрута.
-  void _updateStop(String stopId, RouteStop Function(RouteStop) update) {
-    for (var i = 0; i < _routes.length; i++) {
-      final route = _routes[i];
-      final si = route.stops.indexWhere((s) => s.id == stopId);
-      if (si == -1) continue;
-      final stops = route.stops.toList();
-      stops[si] = update(stops[si]);
-      final allDone = stops.every((s) => s.isCompleted);
-      _routes[i] = _copyRoute(
-        route,
-        stops: stops,
-        status: allDone ? RouteStatus.completed : RouteStatus.inProgress,
-      );
-      return;
-    }
   }
 
   // ---- Отчёты ----

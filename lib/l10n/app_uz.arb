@@ -1,0 +1,534 @@
+{
+  "@@locale": "uz",
+  "appTitle": "CRM Millwater",
+  "commonCancel": "Bekor qilish",
+  "commonCancelShort": "Bekor qilish",
+  "commonDelete": "O‘chirish",
+  "commonSave": "Saqlash",
+  "commonSaving": "Saqlanmoqda…",
+  "commonAdd": "Qo‘shish",
+  "commonCreate": "Yaratish",
+  "commonCreating": "Yaratilmoqda…",
+  "commonEdit": "Tahrirlash",
+  "commonRetry": "Qayta urinish",
+  "commonLeave": "Chiqish",
+  "commonStay": "Qolish",
+  "commonOptional": "Majburiy emas",
+  "commonClear": "Tozalash",
+  "commonNothingFound": "Hech narsa topilmadi",
+  "commonDone": "Bajarildi",
+  "commonPhone": "Telefon",
+  "commonSum": "so‘m",
+  "moneyAmount": "{amount} so‘m",
+  "@moneyAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyMillions": "{amount} mln so‘m",
+  "@moneyMillions": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveWithoutSavingTitle": "Saqlamasdan chiqilsinmi?",
+  "leaveWithoutSavingMessage": "Kiritilgan ma’lumotlar yo‘qoladi.",
+  "errorGeneric": "So‘rov bajarilmadi.",
+  "errorNoConnection": "Server bilan aloqa yo‘q.",
+  "errorLoadFailed": "Ma’lumotlarni yuklab bo‘lmadi",
+  "errorCheckConnection": "Ulanishni tekshirib, yana urinib ko‘ring",
+  "emptySearchTitle": "«{query}» bo‘yicha hech narsa yo‘q",
+  "@emptySearchTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "emptySearchHint": "Yozilishini tekshiring yoki qidiruvni tozalang",
+  "emptySearchAction": "Qidiruvni tozalash",
+  "fieldRequired": "Maydonni to‘ldiring",
+  "fieldPhoneEmpty": "Telefon raqamini kiriting",
+  "fieldPhoneIncomplete": "Raqam to‘liq emas — +998 dan keyin {count} ta raqam kerak",
+  "@fieldPhoneIncomplete": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldEmailInvalid": "Pochta formati noto‘g‘ri",
+  "fieldEmailEmpty": "Elektron pochtani kiriting",
+  "fieldPasswordEmpty": "Parolni kiriting",
+  "fieldMinLength": "Kamida {count} ta belgi",
+  "@fieldMinLength": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldMaxLength": "{count} ta belgidan ko‘p emas",
+  "@fieldMaxLength": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldShowPassword": "Parolni ko‘rsatish",
+  "fieldHidePassword": "Parolni yashirish",
+  "phoneCallUnavailable": "Qo‘ng‘iroq imkonsiz — raqam nusxalandi",
+  "phoneCopied": "Raqam nusxalandi",
+  "phoneCopy": "Raqamdan nusxa olish",
+  "photoTitle": "To‘lov surati",
+  "photoSubtitle": "Chek yoki yetkazib berish suratini biriktiring",
+  "photoError": "Suratni olib bo‘lmadi. Ruxsatni tekshiring.",
+  "photoRemove": "Suratni olib tashlash",
+  "photoCamera": "Kamera",
+  "photoGallery": "Galereya",
+  "photoSize": " · {size} KB",
+  "@photoSize": {
+    "placeholders": {
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "themeSystem": "Tizimdagidek",
+  "themeSystemShort": "Tizim",
+  "themeLight": "Yorug‘",
+  "themeDark": "Qorong‘i",
+  "themeTitle": "Mavzu · {mode}",
+  "@themeTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "languageTitle": "Til · {name}",
+  "@languageTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "languageRussian": "Ruscha",
+  "languageUzbek": "O‘zbekcha",
+  "languageSection": "TIL",
+  "roleAdmin": "Administrator",
+  "roleDriver": "Haydovchi",
+  "deliveryPending": "Yangi",
+  "deliveryOnWay": "Yo‘lda",
+  "deliveryDelivered": "Yetkazildi",
+  "deliveryFailed": "Yetkazilmadi",
+  "deliveryPaid": "To‘landi",
+  "routeCreated": "Yaratilgan",
+  "routeInProgress": "Bajarilmoqda",
+  "routeCompleted": "Yakunlangan",
+  "routeCancelled": "Bekor qilingan",
+  "filterAll": "Barchasi",
+  "filterInProgress": "Yo‘lda",
+  "filterCompleted": "Yakunlangan",
+  "filterNew": "Yangi",
+  "paymentCash": "Naqd",
+  "paymentCard": "Karta",
+  "paymentTransfer": "Pul o‘tkazma",
+  "paymentDebt": "Qarzga",
+  "periodToday": "Bugun",
+  "periodWeek": "Hafta",
+  "periodMonth": "Oy",
+  "loginTitle": "Tizimga kirish",
+  "loginPhone": "Telefon raqami",
+  "loginPassword": "Parol",
+  "loginSubmit": "Kirish",
+  "loginSubmitting": "Kirilmoqda…",
+  "loginErrorCredentials": "Telefon yoki parol noto‘g‘ri.",
+  "loginErrorGeneric": "Kirishda xatolik. Yana urinib ko‘ring.",
+  "loginErrorFailed": "Kirib bo‘lmadi. Yana urinib ko‘ring.",
+  "sessionExpired": "Sessiya tugadi. Qaytadan kiring.",
+  "navRoute": "Marshrut",
+  "navRoutes": "Marshrutlar",
+  "navDrivers": "Haydovchilar",
+  "navCustomers": "Mijozlar",
+  "navReports": "Hisobotlar",
+  "navProfile": "Profil",
+  "routesHeaderToday": "Bugun · {date}",
+  "@routesHeaderToday": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "routesTitle": "Marshrutlar",
+  "routesRefresh": "Marshrutlarni yangilash",
+  "routesCreated": "Marshrut yaratildi",
+  "routesLoadFailed": "Marshrutlarni yuklab bo‘lmadi",
+  "routesEmptyTitle": "Hozircha marshrutlar yo‘q",
+  "routesEmptyHint": "Marshrut yarating: haydovchi, sana va mijozlarni tanlang",
+  "filterEmptyTitle": "Bu filtrda hech narsa yo‘q",
+  "filterEmptyHint": "Boshqa filtrni tanlang",
+  "settingsTitle": "Sozlamalar",
+  "routeCardTitle": "Marshrut kartasi",
+  "routeLoadFailed": "Marshrutni yuklab bo‘lmadi",
+  "routeNotFound": "Marshrut topilmadi",
+  "routeCancelTitle": "Marshrut bekor qilinsinmi?",
+  "routeCancelMessage": "Marshrut bekor qilingan deb belgilanadi.",
+  "routeCancelAction": "Marshrutni bekor qilish",
+  "routeCancelFailed": "Marshrutni bekor qilib bo‘lmadi.",
+  "routeCancelled2": "Marshrut bekor qilindi",
+  "routeDriver": "Haydovchi",
+  "routeStatDone": "BAJARILDI",
+  "routeStatCollected": "YIG‘ILDI",
+  "routeStops": "MARSHRUT NUQTALARI",
+  "routeStopsCount": "{count} nuqta",
+  "@routeStopsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDoneShort": "bajarildi",
+  "routeProgressTitle": "Yetkazib berildi",
+  "routeCollectedToday": "Bugun yig‘ildi",
+  "stopCapsules": "{count} kapsula",
+  "@stopCapsules": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeFormTitle": "Yangi marshrut",
+  "routeFormLoadFailed": "Haydovchilar va mijozlarni yuklab bo‘lmadi",
+  "routeFormCreateFailed": "Marshrut yaratib bo‘lmadi.",
+  "routeFormDate": "SANA",
+  "routeFormDriver": "HAYDOVCHI",
+  "routeFormNoDrivers": "Avval haydovchi qo‘shing",
+  "routeFormCustomers": "MIJOZLAR",
+  "routeFormNoCustomers": "Avval mijoz qo‘shing",
+  "routeFormSelected": "tanlandi: {count}",
+  "@routeFormSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customerSearch": "Mijozni qidirish",
+  "stopTitle": "Marshrut nuqtasi",
+  "stopCapsulesDelivered": "kapsula yetkazildi",
+  "stopPaid": "to‘landi",
+  "stopCompleted": "Yakunlandi",
+  "stopPhotoLabel": "TO‘LOV SURATI",
+  "stopPhotoFailed": "Suratni yuklab bo‘lmadi",
+  "mapSectionLabel": "XARITADAGI MARSHRUT",
+  "mapFromCurrentPlace": "Marshrut hozirgi joylashuvingizdan quriladi.",
+  "mapBuildRoute": "Marshrut qurish",
+  "mapNeedOnePoint": "Marshrut uchun kamida bitta nuqta kerak.",
+  "mapPointWithoutAddress": "{number}-nuqtada manzil ko‘rsatilmagan.",
+  "@mapPointWithoutAddress": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "mapOpenFailed": "Yandex.Xaritani ochib bo‘lmadi",
+  "driversTitle": "Haydovchilar",
+  "driversHeader": "Jamoa · {count}",
+  "@driversHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "driversSearch": "Haydovchini qidirish",
+  "driversRefresh": "Ro‘yxatni yangilash",
+  "driversLoadFailed": "Haydovchilarni yuklab bo‘lmadi",
+  "driversEmptyTitle": "Hozircha haydovchilar yo‘q",
+  "driversEmptyHint": "Birinchisini qo‘shing — unga marshrut biriktirish mumkin bo‘ladi",
+  "driversEmptyAction": "Haydovchi qo‘shish",
+  "driverAdded": "Haydovchi qo‘shildi",
+  "driverDeleted": "Haydovchi o‘chirildi",
+  "changesSaved": "O‘zgarishlar saqlandi",
+  "driverDeleteTitle": "Haydovchi o‘chirilsinmi?",
+  "driverDeleteMessage": "{name} ro‘yxatdan o‘chiriladi.",
+  "@driverDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "driverDeleteFailed": "Haydovchini o‘chirib bo‘lmadi.",
+  "driverTitle": "Haydovchi",
+  "driverOnRoute": "Bugun marshrutda",
+  "driverNoTrips": "Bugun reyslar yo‘q",
+  "driverTripsTotal": "jami reyslar",
+  "driverTripsToday": "bugungi reyslar",
+  "driverEmail": "Pochta",
+  "driverCreatedAt": "Yaratilgan sana",
+  "driverTripsAndToday": "  ·  bugun ",
+  "driverFormEditTitle": "Haydovchini tahrirlash",
+  "driverFormNewTitle": "Yangi haydovchi",
+  "driverFormName": "Haydovchi ismi",
+  "driverFormNameHint": "Masalan, Aziz Karimov",
+  "driverFormNameEmpty": "Haydovchi ismini kiriting",
+  "driverFormEmail": "Elektron pochta",
+  "driverFormPassword": "Kirish uchun parol",
+  "driverFormSaveFailed": "Haydovchini saqlab bo‘lmadi.",
+  "minSixChars": "Kamida 6 ta belgi",
+  "customersTitle": "Mijozlar",
+  "customersHeader": "Baza · {count}",
+  "@customersHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customersLoadFailed": "Mijozlarni yuklab bo‘lmadi",
+  "customersEmptyTitle": "Hozircha mijozlar yo‘q",
+  "customersEmptyHint": "Birinchisini qo‘shing — u ro‘yxatda va marshrutlarda ko‘rinadi",
+  "customersEmptyAction": "Mijoz qo‘shish",
+  "customerAdded": "Mijoz qo‘shildi",
+  "customerDeleted": "Mijoz o‘chirildi",
+  "customerDeleteTitle": "Mijoz o‘chirilsinmi?",
+  "customerDeleteMessage": "{name} bazadan o‘chiriladi.",
+  "@customerDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "customerDeleteFailed": "Mijozni o‘chirib bo‘lmadi.",
+  "customerTitle": "Mijoz",
+  "customerCapsulesPerOrder": "kapsula / buyurtma",
+  "customerLastOrder": "oxirgi buyurtma",
+  "customerLastOrderShort": "oxirgi buyurtma {date}",
+  "@customerLastOrderShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "financePrepayment": "Oldindan to‘lov",
+  "financeDebt": "Qarz",
+  "customerFormEditTitle": "Mijozni tahrirlash",
+  "customerFormNewTitle": "Yangi mijoz",
+  "customerFormName": "Nomi / ismi",
+  "customerFormNameHint": "Masalan, «Nasiba» kafesi",
+  "customerFormNameEmpty": "Nomi yoki ismini kiriting",
+  "customerFormAddress": "Yetkazib berish manzili",
+  "customerFormAddressHint": "Tuman, ko‘cha, uy",
+  "customerFormAddressEmpty": "Yetkazib berish manzilini kiriting",
+  "customerFormComment": "Izoh",
+  "customerFormCommentHint": "Masalan, tuman yoki mo‘ljal",
+  "customerFormSaveFailed": "Mijozni saqlab bo‘lmadi.",
+  "myRoutesTitle": "Mening marshrutlarim",
+  "myRoutesStatRoutes": "marshrutlarim",
+  "myRoutesStatDeliveredToday": "bugun yetkazildi",
+  "myRoutesStatOrders": "buyurtma",
+  "myRoutesEmptyHint": "Dispetcher marshrut biriktirsa, u shu yerda paydo bo‘ladi",
+  "myRouteTitle": "Marshrut",
+  "myRouteStatusFailed": "Holatni o‘zgartirib bo‘lmadi.",
+  "myRouteStatusChanged": "Holat: {status}",
+  "@myRouteStatusChanged": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "myRouteChangeStatus": "Holatni o‘zgartirish",
+  "completionTitle": "Yetkazishni yakunlash",
+  "completionCoordinates": "NUQTA KOORDINATALARI",
+  "completionCapsules": "KAPSULALAR SONI",
+  "completionCapsulesCaption": "{liters} l kapsula",
+  "@completionCapsulesCaption": {
+    "placeholders": {
+      "liters": {
+        "type": "int"
+      }
+    }
+  },
+  "completionBalance": "MIJOZDAGI KAPSULALAR",
+  "completionBalanceCaption": "yetkazgandan keyin qoladi",
+  "completionMethod": "TO‘LOV USULI",
+  "completionAmount": "TO‘LOV SUMMASI",
+  "completionTotal": "Jami to‘lov",
+  "completionSubmit": "Yakunlash",
+  "completionForbidden": "Yetkazishni faqat shu marshrut haydovchisi yakunlay oladi.",
+  "completionFailed": "Yetkazishni yakunlab bo‘lmadi.",
+  "completionByPrice": "Narxlar bo‘yicha: {formula}",
+  "@completionByPrice": {
+    "placeholders": {
+      "formula": {
+        "type": "String"
+      }
+    }
+  },
+  "completionRestoreAmount": "Hisobni qaytarish",
+  "locationSearching": "Koordinatalar aniqlanmoqda…",
+  "locationFixed": "Nuqta belgilandi",
+  "locationNotFixed": "Nuqta belgilanmadi",
+  "locationCanContinue": "Yetkazishni shundayam yakunlash mumkin.",
+  "locationRetry": "Qaytadan aniqlash",
+  "locationDisabled": "Geolokatsiya telefon sozlamalarida o‘chirilgan.",
+  "locationDeniedForever": "Geolokatsiyaga ruxsat yo‘q. Telefon sozlamalaridan ruxsat bering.",
+  "locationDenied": "Geolokatsiyaga ruxsat yo‘q.",
+  "locationUnknown": "Koordinatalarni aniqlab bo‘lmadi.",
+  "profileTitle": "Profil",
+  "profileAccountLabel": "Hisob",
+  "profileAccountSection": "HISOB YOZUVI",
+  "settingsAppearance": "KO‘RINISH",
+  "settingsAccount": "HISOB",
+  "settingsSessionActive": "Sessiya faol",
+  "settingsLogout": "Hisobdan chiqish",
+  "settingsLogoutTitle": "Hisobdan chiqilsinmi?",
+  "settingsLogoutMessage": "Telefon raqami va parol bilan qaytadan kirishga to‘g‘ri keladi.",
+  "passwordChangeTitle": "Parolni o‘zgartirish",
+  "passwordChangeTile": "Parolni o‘zgartirish",
+  "passwordChangeTileHint": "Joriy parol kerak bo‘ladi",
+  "passwordChanged": "Parol o‘zgartirildi",
+  "passwordCurrent": "Joriy parol",
+  "passwordCurrentEmpty": "Joriy parolni kiriting",
+  "passwordNew": "Yangi parol",
+  "passwordRepeat": "Yangi parolni takrorlang",
+  "passwordSameAsCurrent": "Yangi parol joriy parol bilan bir xil",
+  "passwordMismatch": "Parollar mos kelmadi",
+  "passwordChangeFailed": "Parolni o‘zgartirib bo‘lmadi.",
+  "passwordWrongCurrent": "Joriy parol noto‘g‘ri.",
+  "passwordKeepMessage": "Parol o‘zgarishsiz qoladi.",
+  "passwordSubmit": "O‘zgartirish",
+  "pricesTitle": "Narxlar",
+  "pricesTileHint": "Kapsula narxi va idish garovi",
+  "pricesSection": "NARXLAR",
+  "pricesUpdated": "Narxlar yangilandi",
+  "pricesLoadFailed": "Narxlarni yuklab bo‘lmadi",
+  "pricesSaveFailed": "Narxlarni saqlab bo‘lmadi.",
+  "pricesCurrent": "AMALDAGI NARXLAR",
+  "pricesNew": "YANGI QIYMATLAR",
+  "pricesHistory": "O‘ZGARISHLAR TARIXI",
+  "pricesCapsule": "Kapsula narxi",
+  "pricesCapsuleHelper": "Bitta {liters} l kapsula uchun so‘m",
+  "@pricesCapsuleHelper": {
+    "placeholders": {
+      "liters": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesCapsuleRow": "Kapsula {liters} l",
+  "@pricesCapsuleRow": {
+    "placeholders": {
+      "liters": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesDeposit": "Idish garovi",
+  "pricesDepositHelper": "So‘m; 0 — garov yo‘q",
+  "pricesDepositRow": "garov {amount}",
+  "@pricesDepositRow": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesEmpty": "Narxni kiriting",
+  "pricesZero": "Kapsula narxi noldan katta bo‘lishi kerak",
+  "pricesConfirmTitle": "Yangi narx belgilansinmi?",
+  "pricesConfirmMessage": "Kapsula — {capsule}, garov — {deposit}.",
+  "@pricesConfirmMessage": {
+    "placeholders": {
+      "capsule": {
+        "type": "String"
+      },
+      "deposit": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesConfirmAction": "Belgilash",
+  "pricesEffectiveFrom": "{date} dan amal qiladi",
+  "@pricesEffectiveFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesHistoryFailed": "Tarixni yuklab bo‘lmadi.",
+  "pricesHistoryEmpty": "Narx hali o‘zgartirilmagan — bu birinchi narx.",
+  "reportsLabel": "Tahlil",
+  "reportsTitle": "Hisobotlar",
+  "reportsLoadFailed": "Hisobotlarni yuklab bo‘lmadi",
+  "reportsRevenue": "Tushum",
+  "reportsDeliveries": "Yetkazishlar",
+  "reportsDebts": "Qarzlar",
+  "reportsCapsules": "Mijozlardagi kapsulalar",
+  "reportsCapsulesOf": "{total} tadan",
+  "@reportsCapsulesOf": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "reportsCapsulesCount": "{count} dona",
+  "@reportsCapsulesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportsDebtors": "Mijozlar qarzi",
+  "reportsWeekly": "Haftalik tushum",
+  "reportsWeeklyCollected": "{amount} yig‘ildi",
+  "@reportsWeeklyCollected": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "capsulesCount": "{count, plural, other{{count} kapsula}}",
+  "@capsulesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripsCount": "{count, plural, other{{count} reys}}",
+  "@tripsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clientsCount": "{count, plural, other{{count} mijoz}}",
+  "@clientsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_tokens.dart';
 import '../../app/theme/app_typography.dart';
@@ -13,17 +15,19 @@ class ErrorRetryView extends StatelessWidget {
   const ErrorRetryView({
     super.key,
     required this.onRetry,
-    this.message = 'Не удалось загрузить данные',
-    this.hint = 'Проверьте подключение и попробуйте ещё раз',
+    this.message,
+    this.hint,
   });
 
   final VoidCallback onRetry;
-  final String message;
+  final String? message;
   final String? hint;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
+    final text = message ?? context.l10n.errorLoadFailed;
+    final subtitle = hint ?? context.l10n.errorCheckConnection;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.page),
@@ -42,20 +46,19 @@ class ErrorRetryView extends StatelessWidget {
               child: Icon(Icons.cloud_off_rounded, color: t.danger, size: 26),
             ),
             Text(
-              message,
+              text,
               style: AppTypography.bodyStrong.copyWith(color: t.text),
               textAlign: TextAlign.center,
             ),
-            if (hint != null)
-              Text(
-                hint!,
+            Text(
+                subtitle,
                 style: AppTypography.secondary.copyWith(color: t.text2),
                 textAlign: TextAlign.center,
               ),
             // Ширину не фиксируем: при увеличенном системном шрифте
             // подпись с иконкой перестаёт помещаться в жёсткий размер.
             AppButton(
-              label: 'Повторить',
+              label: context.l10n.commonRetry,
               icon: Icons.refresh,
               height: 44,
               onPressed: onRetry,

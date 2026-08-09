@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
-import '../../../../core/utils/plurals.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../data/models/customer.dart';
@@ -29,7 +30,7 @@ class CustomerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final finance = FinanceTag.forCustomer(customer);
+    final finance = FinanceTag.forCustomer(context.l10n, customer);
 
     return AppCard(
       onTap: onTap,
@@ -75,7 +76,7 @@ class CustomerCard extends StatelessWidget {
                 children: [
                   IconActionButton(
                     icon: Icons.edit_outlined,
-                    tooltip: 'Редактировать',
+                    tooltip: context.l10n.commonEdit,
                     onPressed: onEdit,
                   ),
                   IconActionButton.delete(onPressed: onDelete),
@@ -126,10 +127,10 @@ class _CapsuleTag extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 2,
               children: [
-                Text(Plurals.capsules(customer.capsuleBalance),
+                Text(context.l10n.capsulesCount(customer.capsuleBalance),
                     style: AppTypography.bodyStrong
                         .copyWith(fontSize: 14, color: t.text)),
-                Text('посл. заказ $lastOrder',
+                Text(context.l10n.customerLastOrderShort(lastOrder),
                     style: AppTypography.secondary
                         .copyWith(fontSize: 12, color: t.text2)),
               ],

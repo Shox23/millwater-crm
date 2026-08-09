@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -26,11 +28,11 @@ class DebtorsCard extends StatelessWidget {
             spacing: AppSpacing.sm,
             children: [
               Expanded(
-                child: Text('Долги заказчиков',
+                child: Text(context.l10n.reportsDebtors,
                     style: AppTypography.bodyStrong.copyWith(color: t.text)),
               ),
               Text(
-                MoneyFormatter.sum(total),
+                MoneyFormatter.sum(context.l10n, total),
                 style: AppTypography.bodyStrong.copyWith(color: t.danger),
               ),
             ],

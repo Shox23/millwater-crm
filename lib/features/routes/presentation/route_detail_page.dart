@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
@@ -19,8 +21,9 @@ import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/crm_repository.dart';
-import 'delivery_completion_page.dart';
+import 'stop_detail_page.dart';
 import 'widgets/route_card.dart';
+import 'widgets/stop_card.dart';
 
 /// Экран «Карточка маршрута»: водитель, прогресс и список точек.
 class RouteDetailPage extends StatefulWidget {
@@ -70,31 +73,29 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   Future<void> _cancelRoute() async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Отменить маршрут?',
-      message: 'Маршрут будет помечен как отменённый.',
-      confirmLabel: 'Отменить маршрут',
+      title: context.l10n.routeCancelTitle,
+      message: context.l10n.routeCancelMessage,
+      confirmLabel: context.l10n.routeCancelAction,
     );
     if (!confirmed || !mounted) return;
     final repo = context.read<CrmRepository>();
     final ok = await runGuarded(
       context,
       () => repo.cancelRoute(widget.routeId),
-      fallback: 'Не удалось отменить маршрут.',
+      fallback: context.l10n.routeCancelFailed,
     );
     if (!ok || !mounted) return;
     _changed = true;
-    showAppSnackBar(context, 'Маршрут отменён');
+    showAppSnackBar(context, context.l10n.routeCancelled2);
     await _load();
   }
 
-  Future<void> _openStop(RouteStop stop) async {
-    final done = await Navigator.of(context).push<bool>(
-      OverlayPageRoute(builder: (_) => DeliveryCompletionPage(stop: stop)),
+  /// Админу точка доступна только на просмотр: завершение доставки —
+  /// driver-эндпоинт, под админским токеном он отвечает 403.
+  void _openStop(RouteStop stop) {
+    Navigator.of(context).push(
+      OverlayPageRoute<void>(builder: (_) => StopDetailPage(stop: stop)),
     );
-    if (done == true) {
-      _changed = true;
-      await _load();
-    }
   }
 
   @override
@@ -108,7 +109,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         if (!didPop) Navigator.of(context).pop(_changed);
       },
       child: DetailScaffold(
-        title: 'Карточка маршрута',
+        title: context.l10n.routeCardTitle,
         body: _loading
             ? const Padding(
                 padding: EdgeInsets.only(top: 80),
@@ -119,12 +120,12 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                     padding: const EdgeInsets.only(top: 60),
                     child: ErrorRetryView(
                       onRetry: _load,
-                      message: 'Не удалось загрузить маршрут',
+                      message: context.l10n.routeLoadFailed,
                     ),
                   )
                 : route == null
                     ? Center(
-                        child: Text('Маршрут не найден',
+                        child: Text(context.l10n.routeNotFound,
                             style: AppTypography.secondary
                                 .copyWith(color: t.text2)),
                       )
@@ -135,7 +136,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
             ? null
             : BottomActionBar(
                 child: AppButton(
-                  label: 'Отменить маршрут',
+                  label: context.l10n.routeCancelAction,
                   variant: AppButtonVariant.secondary,
                   onPressed: _cancelRoute,
                 ),
@@ -154,6 +155,7 @@ class _RouteBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
+    final driverName = route.driverFullName ?? '—';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +170,7 @@ class _RouteBody extends StatelessWidget {
                 spacing: AppSpacing.sm,
                 children: [
                   StatusBadge(
-                    text: route.status.label,
+                    text: route.status.label(context.l10n),
                     tone: routeTone(route.status),
                   ),
                   const Spacer(),
@@ -179,16 +181,18 @@ class _RouteBody extends StatelessWidget {
               Row(
                 spacing: AppSpacing.md,
                 children: [
-                  InitialsAvatar(name: route.driverFullName, size: 46),
+                  // Админский ответ водителя всегда содержит; `?? '—'` —
+                  // страховка от неполных данных, а не рабочий сценарий.
+                  InitialsAvatar(name: driverName, size: 46),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       spacing: 2,
                       children: [
-                        Text('Водитель',
+                        Text(context.l10n.driverTitle,
                             style: AppTypography.secondary
                                 .copyWith(color: t.text2)),
-                        Text(route.driverFullName,
+                        Text(driverName,
                             style: AppTypography.bodyStrong
                                 .copyWith(color: t.text)),
                       ],
@@ -201,14 +205,14 @@ class _RouteBody extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _MiniStat(
-                      label: 'ВЫПОЛНЕНО',
+                      label: context.l10n.routeStatDone,
                       value: '${route.completedCount} / ${route.totalCustomers}',
                     ),
                   ),
                   Expanded(
                     child: _MiniStat(
-                      label: 'СОБРАНО',
-                      value: MoneyFormatter.sum(route.collected),
+                      label: context.l10n.routeStatCollected,
+                      value: MoneyFormatter.sum(context.l10n, route.collected),
                     ),
                   ),
                 ],
@@ -216,89 +220,20 @@ class _RouteBody extends StatelessWidget {
             ],
           ),
         ),
+        // Построения маршрута здесь нет намеренно: маршрут строится от
+        // текущего места того, кто нажал кнопку, а админ по нему не едет —
+        // ему бы прокладывало путь из офиса. Блок живёт в карточке водителя.
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: AppSpacing.sm,
           children: [
-            Text('ТОЧКИ МАРШРУТА',
+            Text(context.l10n.routeStops,
                 style: AppTypography.fieldLabel.copyWith(color: t.text2)),
             for (final stop in route.stops)
-              _StopCard(stop: stop, onTap: () => onStopTap(stop)),
+              StopCard(stop: stop, onTap: () => onStopTap(stop)),
           ],
         ),
       ],
-    );
-  }
-}
-
-/// Карточка одной точки маршрута.
-class _StopCard extends StatelessWidget {
-  const _StopCard({required this.stop, required this.onTap});
-
-  final RouteStop stop;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-
-    return AppCard(
-      onTap: stop.isCompleted ? null : onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AppSpacing.sm,
-        children: [
-          Row(
-            spacing: AppSpacing.sm,
-            children: [
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: deliveryColor(context, stop.status),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Expanded(
-                child: Text(stop.customerName,
-                    style: AppTypography.cardTitle.copyWith(color: t.text),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-              ),
-              StatusBadge(
-                text: stop.status.label,
-                tone: deliveryTone(stop.status),
-              ),
-            ],
-          ),
-          Row(
-            spacing: 4,
-            children: [
-              Icon(Icons.location_on_outlined, size: 16, color: t.text2),
-              Expanded(
-                child: Text(stop.customerAddress,
-                    style: AppTypography.secondary.copyWith(color: t.text2),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-              ),
-            ],
-          ),
-          if (stop.isCompleted) ...[
-            const Divider(),
-            Row(
-              children: [
-                Text('${stop.deliveredCapsules ?? 0} капсул',
-                    style: AppTypography.secondary.copyWith(color: t.text2)),
-                const Spacer(),
-                Text(
-                  MoneyFormatter.sum(stop.paymentAmount ?? 0),
-                  style: AppTypography.money.copyWith(color: t.success),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

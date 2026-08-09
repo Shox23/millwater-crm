@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../../app/theme/app_tokens.dart';
 
 /// Поле поиска: рамка 1.5px, радиус 13, фокус — акцентная рамка.
@@ -59,7 +61,7 @@ class _SearchFieldState extends State<SearchField> {
             ? null
             : IconButton(
                 icon: Icon(Icons.close_rounded, color: t.text3, size: 20),
-                tooltip: 'Очистить',
+                tooltip: context.l10n.commonClear,
                 onPressed: _clear,
               ),
       ),

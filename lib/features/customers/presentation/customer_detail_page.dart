@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
@@ -29,15 +31,15 @@ class CustomerDetailPage extends StatelessWidget {
   Future<void> _delete(BuildContext context) async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Удалить заказчика?',
-      message: '${customer.name} будет удалён из базы.',
+      title: context.l10n.customerDeleteTitle,
+      message: context.l10n.customerDeleteMessage(customer.name),
     );
     if (!confirmed || !context.mounted) return;
     final repo = context.read<CrmRepository>();
     final ok = await runGuarded(
       context,
       () => repo.deleteCustomer(customer.id),
-      fallback: 'Не удалось удалить заказчика.',
+      fallback: context.l10n.customerDeleteFailed,
     );
     if (ok && context.mounted) Navigator.of(context).pop(true);
   }
@@ -57,7 +59,7 @@ class CustomerDetailPage extends StatelessWidget {
         : DateFormat('dd.MM').format(customer.lastOrderDate!);
 
     return DetailScaffold(
-      title: 'Заказчик',
+      title: context.l10n.customerTitle,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.lg,
@@ -108,11 +110,11 @@ class CustomerDetailPage extends StatelessWidget {
               Expanded(
                 child: StatTile(
                   value: '${customer.capsuleBalance}',
-                  label: 'капсул / заказ',
+                  label: context.l10n.customerCapsulesPerOrder,
                 ),
               ),
               Expanded(
-                child: StatTile(value: lastOrder, label: 'последний заказ'),
+                child: StatTile(value: lastOrder, label: context.l10n.customerLastOrder),
               ),
             ],
           ),
@@ -131,7 +133,7 @@ class CustomerDetailPage extends StatelessWidget {
             ),
             Expanded(
               child: AppButton(
-                label: 'Редактировать',
+                label: context.l10n.commonEdit,
                 onPressed: () => _edit(context),
               ),
             ),
@@ -153,7 +155,7 @@ class _FinanceBanner extends StatelessWidget {
     final isPrepay = customer.prepayment > 0;
     final tone = isPrepay ? t.success : t.danger;
     final bg = isPrepay ? t.successBg : t.dangerBg;
-    final label = isPrepay ? 'Предоплата' : 'Долг';
+    final label = isPrepay ? context.l10n.financePrepayment : context.l10n.financeDebt;
     final amount = isPrepay ? customer.prepayment : customer.debt;
 
     return Container(

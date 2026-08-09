@@ -1,10 +1,12 @@
 import 'package:crm_millwater/app/theme/app_theme.dart';
+import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/data/models/driver.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/features/customers/presentation/customer_form_page.dart';
 import 'package:crm_millwater/features/drivers/presentation/driver_form_page.dart';
+import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +39,10 @@ void main() {
       RepositoryProvider<CrmRepository>.value(
         value: repo,
         child: MaterialApp(
+            // Строки интерфейса берутся из локали: тесты идут на русской.
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
           theme: AppTheme.light(),
           home: Builder(
             builder: (context) => Scaffold(
@@ -65,6 +71,21 @@ void main() {
   String textOf(WidgetTester tester, String label) =>
       tester.widget<TextField>(inputFor(label)).controller!.text;
 
+  /// Активна ли кнопка отправки: форма блокирует её, пока есть ошибки.
+  bool submitEnabled(WidgetTester tester, String label) =>
+      tester.widget<AppButton>(find.widgetWithText(AppButton, label)).enabled;
+
+  /// Уводит фокус с текущего поля — по этому событию появляется первая
+  /// подсветка ошибки. В приложении так же: пользователь ушёл из поля.
+  ///
+  /// Два кадра: первый доносит смену фокуса до `FocusManager`, второй
+  /// перерисовывает поле с ошибкой.
+  Future<void> leaveField(WidgetTester tester) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.pump();
+  }
+
   // Мок отвечает через Future.delayed, а внутри testWidgets время фейковое:
   // запрос отправляем и прокручиваем часы, пока он не завершится.
   // Через runAsync нельзя — он пускает реальный асинхрон, и google_fonts
@@ -80,29 +101,64 @@ void main() {
   }
 
   group('Форма заказчика', () {
-    testWidgets('пустая форма не сохраняется и показывает ошибки',
+    testWidgets('пустая форма: кнопка заблокирована, ошибок ещё нет',
         (tester) async {
       await pumpForm(tester, const CustomerFormPage());
+
+      // Пользователь ничего не трогал — краснеть нечему.
+      expect(find.text('Введите название или имя'), findsNothing);
+      expect(find.text('Введите номер телефона'), findsNothing);
+      expect(submitEnabled(tester, 'Добавить'), isFalse);
 
       await tester.tap(find.text('Добавить'));
       await settle(tester);
 
-      expect(find.text('Введите название или имя'), findsOneWidget);
-      expect(find.text('Введите номер телефона'), findsOneWidget);
-      expect(find.text('Введите адрес доставки'), findsOneWidget);
       expect((await customers(tester)).length, 6);
     });
 
-    testWidgets('неполный телефон отклоняется', (tester) async {
+    testWidgets('ошибка загорается после ухода из поля, а не при вводе',
+        (tester) async {
+      await pumpForm(tester, const CustomerFormPage());
+
+      await tester.enterText(inputFor('Номер телефона'), '+998 90 12');
+      await settle(tester);
+      // Пока пользователь в поле — подсказку не показываем.
+      expect(find.textContaining('Номер неполный'), findsNothing);
+
+      await leaveField(tester);
+      expect(find.textContaining('Номер неполный'), findsOneWidget);
+      // Соседнее поле не трогали — оно молчит, хотя тоже пустое.
+      expect(find.text('Введите адрес доставки'), findsNothing);
+    });
+
+    testWidgets('исправление гасит ошибку, не дожидаясь ухода из поля',
+        (tester) async {
+      await pumpForm(tester, const CustomerFormPage());
+
+      await tester.enterText(inputFor('Номер телефона'), '+998 90 12');
+      await leaveField(tester);
+      expect(find.textContaining('Номер неполный'), findsOneWidget);
+
+      await tester.enterText(inputFor('Номер телефона'), '901234567');
+      await settle(tester);
+
+      expect(find.textContaining('Номер неполный'), findsNothing);
+    });
+
+    testWidgets('неполный телефон не даёт нажать «Добавить»', (tester) async {
       await pumpForm(tester, const CustomerFormPage());
 
       await tester.enterText(inputFor('Название / имя'), 'Чайхана «Тест»');
       await tester.enterText(inputFor('Номер телефона'), '+998 90 12');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 5');
-      await tester.tap(find.text('Добавить'));
       await settle(tester);
 
       expect(find.textContaining('Номер неполный'), findsOneWidget);
+      expect(submitEnabled(tester, 'Добавить'), isFalse);
+
+      await tester.tap(find.text('Добавить'));
+      await settle(tester);
+
       expect((await customers(tester)).length, 6);
     });
 
@@ -132,6 +188,9 @@ void main() {
       await tester.enterText(inputFor('Название / имя'), 'Чайхана «Тест»');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 5');
+      await settle(tester);
+
+      expect(submitEnabled(tester, 'Добавить'), isTrue);
       await tester.tap(find.text('Добавить'));
       await settle(tester);
 
@@ -147,40 +206,80 @@ void main() {
       await pumpForm(tester, const DriverFormPage());
 
       await tester.enterText(inputFor('Электронная почта'), 'driver@');
-      await tester.pump();
+      await settle(tester);
+      expect(find.text('Неверный формат почты'), findsNothing);
+
+      await leaveField(tester);
       expect(find.text('Неверный формат почты'), findsOneWidget);
 
       await tester.enterText(inputFor('Электронная почта'), '');
-      await tester.pump();
+      await settle(tester);
       expect(find.text('Неверный формат почты'), findsNothing);
     });
 
-    testWidgets('короткий пароль отклоняется', (tester) async {
+    testWidgets('короткий пароль не даёт нажать «Добавить»', (tester) async {
       await pumpForm(tester, const DriverFormPage());
 
       await tester.enterText(inputFor('Имя водителя'), 'Азиз Каримов');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
+      await tester.enterText(inputFor('Электронная почта'), 'aziz@aqua.uz');
       await tester.enterText(inputFor('Пароль для входа'), '12345');
-      await tester.tap(find.text('Добавить'));
+      await leaveField(tester);
       await settle(tester);
 
       expect(find.text('Минимум 6 символов'), findsOneWidget);
+      expect(submitEnabled(tester, 'Добавить'), isFalse);
+
+      await tester.tap(find.text('Добавить'));
+      await settle(tester);
+
       expect((await drivers(tester)).length, 5);
     });
 
-    testWidgets('водитель сохраняется без почты', (tester) async {
+    testWidgets('без почты водитель не создаётся', (tester) async {
+      // `POST /admin/drivers` требует email и без него отвечает 422 —
+      // ловим это в форме, а не запросом.
       await pumpForm(tester, const DriverFormPage());
 
       await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
       await tester.enterText(inputFor('Номер телефона'), '911234567');
       await tester.enterText(inputFor('Пароль для входа'), 'secret1');
+      await settle(tester);
+
+      // Почта пустая — кнопка недоступна, даже если её ни разу не открывали.
+      expect(submitEnabled(tester, 'Добавить'), isFalse);
+
+      await tester.tap(find.text('Добавить'));
+      await settle(tester);
+
+      expect(
+        (await drivers(tester)).where((d) => d.fullName == 'Тимур Юсупов'),
+        isEmpty,
+      );
+
+      // Заглянув в поле и уйдя из него, водитель увидит и подсказку.
+      await tester.tap(inputFor('Электронная почта'));
+      await leaveField(tester);
+      expect(find.text('Введите электронную почту'), findsOneWidget);
+    });
+
+    testWidgets('водитель сохраняется с почтой', (tester) async {
+      await pumpForm(tester, const DriverFormPage());
+
+      await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
+      await tester.enterText(inputFor('Номер телефона'), '911234567');
+      await tester.enterText(inputFor('Электронная почта'), 'timur@aqua.uz');
+      await tester.enterText(inputFor('Пароль для входа'), 'secret1');
+      await settle(tester);
+
+      expect(submitEnabled(tester, 'Добавить'), isTrue);
       await tester.tap(find.text('Добавить'));
       await settle(tester);
 
       final added = (await drivers(tester))
           .firstWhere((d) => d.fullName == 'Тимур Юсупов');
       expect(added.phone, '+998911234567');
-      expect(added.email, isEmpty);
+      expect(added.email, 'timur@aqua.uz');
     });
 
     testWidgets('кнопка «показать пароль» раскрывает ввод', (tester) async {

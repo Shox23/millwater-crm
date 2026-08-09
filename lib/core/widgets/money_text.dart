@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../../app/theme/app_tokens.dart';
 import '../../app/theme/app_typography.dart';
 import '../utils/money_formatter.dart';
@@ -33,7 +35,7 @@ class MoneyText extends StatelessWidget {
       TextSpan(
         children: [
           TextSpan(text: MoneyFormatter.amount(amount), style: numStyle),
-          TextSpan(text: ' сум', style: curStyle),
+          TextSpan(text: ' ${context.l10n.commonSum}', style: curStyle),
         ],
       ),
     );

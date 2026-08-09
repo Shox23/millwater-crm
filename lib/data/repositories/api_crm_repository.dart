@@ -4,6 +4,7 @@ import '../../core/utils/money_parser.dart';
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
+import '../models/price_settings.dart';
 import '../models/reports_summary.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
@@ -28,6 +29,13 @@ class ApiCrmRepository implements CrmRepository {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
+  /// Заголовок `Idempotency-Key`, если ключ задан.
+  ///
+  /// Отдельный хелпер, а не литерал в каждом методе: пропущенный заголовок
+  /// молча превращает повтор в дубль записи, и заметить это негде.
+  static Options? _idempotent(String? key) =>
+      key == null ? null : Options(headers: {'Idempotency-Key': key});
+
   /// Разбирает страницу списка в модели.
   List<T> _items<T>(Response res, T Function(Map<String, dynamic>) fromJson) {
     final data = unwrapData(res.data);
@@ -37,10 +45,36 @@ class ApiCrmRepository implements CrmRepository {
         .toList();
   }
 
+  // ---- Цены ----
   @override
-  Future<int> getCapsulePrice() async {
+  Future<PriceSettings> getPrices() async {
     final res = await _dio.get('/admin/prices/current');
-    return MoneyParser.toSum(asMap(res.data)['water_price']);
+    return PriceSettings.fromJson(asMap(res.data));
+  }
+
+  @override
+  Future<List<PriceSettings>> getPriceHistory() async {
+    final res = await _dio.get('/admin/prices/history');
+    final items = _items(res, PriceSettings.fromJson);
+    // Порядок сервер не обещает — раскладываем сами, новые сверху.
+    return items..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
+  Future<PriceSettings> setPrices({
+    required int capsulePrice,
+    required int depositPrice,
+    String? idempotencyKey,
+  }) async {
+    final res = await _dio.post(
+      '/admin/prices',
+      data: {
+        'water_price': MoneyParser.toApi(capsulePrice),
+        'deposit_price': MoneyParser.toApi(depositPrice),
+      },
+      options: _idempotent(idempotencyKey),
+    );
+    return PriceSettings.fromJson(asMap(res.data));
   }
 
   // ---- Водители ----
@@ -66,15 +100,27 @@ class ApiCrmRepository implements CrmRepository {
     required String phone,
     required String email,
     required String password,
+    String? idempotencyKey,
   }) async {
-    final res = await _dio.post('/admin/drivers', data: {
-      'full_name': fullName,
+    // `CreateDriver` требует email и **не принимает пароль** — учётная запись
+    // создаётся без него и получает PASSWORD_NOT_SET при входе.
+    final res = await _dio.post(
+      '/admin/drivers',
+      data: {
+        'full_name': fullName,
+        'phone': phone,
+        'email': email.trim(),
+      },
+      options: _idempotent(idempotencyKey),
+    );
+    final driver = Driver.fromJson(asMap(res.data));
+
+    // Пароль задаётся отдельным шагом активации, иначе водитель войти не может.
+    await _dio.post('/auth/set-password', data: {
       'phone': phone,
-      // Почта необязательна: пустую строку сервер не принимает — не шлём ключ.
-      if (email.trim().isNotEmpty) 'email': email.trim(),
       'password': password,
     });
-    return Driver.fromJson(asMap(res.data));
+    return driver;
   }
 
   @override
@@ -113,13 +159,18 @@ class ApiCrmRepository implements CrmRepository {
     required String phone,
     required String address,
     String? comment,
+    String? idempotencyKey,
   }) async {
-    final res = await _dio.post('/admin/customers', data: {
-      'full_name': name,
-      'phone': phone,
-      'address': address,
-      'comment': ?comment,
-    });
+    final res = await _dio.post(
+      '/admin/customers',
+      data: {
+        'full_name': name,
+        'phone': phone,
+        'address': address,
+        'comment': ?comment,
+      },
+      options: _idempotent(idempotencyKey),
+    );
     return Customer.fromJson(asMap(res.data));
   }
 
@@ -165,12 +216,17 @@ class ApiCrmRepository implements CrmRepository {
     required String driverId,
     required DateTime date,
     required List<String> customerIds,
+    String? idempotencyKey,
   }) async {
-    final res = await _dio.post('/admin/routes', data: {
-      'driver_id': driverId,
-      'date': _formatDate(date),
-      'customer_ids': customerIds,
-    });
+    final res = await _dio.post(
+      '/admin/routes',
+      data: {
+        'driver_id': driverId,
+        'date': _formatDate(date),
+        'customer_ids': customerIds,
+      },
+      options: _idempotent(idempotencyKey),
+    );
     return RouteDetail.fromJson(asMap(res.data));
   }
 
@@ -179,34 +235,6 @@ class ApiCrmRepository implements CrmRepository {
 
   @override
   Future<void> cancelRoute(String id) => _dio.post('/admin/routes/$id/cancel');
-
-  @override
-  Future<void> completeDelivery({
-    required String stopId,
-    required int capsules,
-    required int amount,
-  }) async {
-    await _dio.post(
-      '/driver/routes/customers/$stopId/complete',
-      data: {
-        'data': {
-          'delivered_bottles': capsules,
-          'payment_amount': MoneyParser.toApi(amount),
-        },
-      },
-    );
-  }
-
-  @override
-  Future<void> updateDeliveryStatus({
-    required String stopId,
-    required DeliveryStatus status,
-  }) async {
-    await _dio.patch(
-      '/driver/routes/customers/$stopId/status',
-      data: {'status': status.toJson()},
-    );
-  }
 
   // ---- Отчёты ----
   @override

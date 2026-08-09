@@ -1,5 +1,6 @@
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
+import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -67,10 +68,13 @@ void main() {
       expect(route.stops.length, 2);
       expect(route.status, RouteStatus.created);
 
-      await repo.completeDelivery(
+      // Завершение — водительская операция: она живёт в DriverRepository
+      // и работает по тому же MockStore.
+      await MockDriverRepository(store: repo.store).completeDelivery(
         stopId: route.stops.first.id,
         capsules: 4,
         amount: 80000,
+        bottleBalance: 4,
       );
 
       final updated = await repo.getRoute(route.id);

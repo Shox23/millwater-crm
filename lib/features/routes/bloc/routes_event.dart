@@ -1,16 +1,5 @@
 part of 'routes_bloc.dart';
 
-/// Фильтр списка маршрутов (чипы на экране).
-enum RouteFilter {
-  all('Все'),
-  inProgress('В пути'),
-  completed('Завершены'),
-  created('Новые');
-
-  const RouteFilter(this.label);
-  final String label;
-}
-
 sealed class RoutesEvent extends Equatable {
   const RoutesEvent();
 

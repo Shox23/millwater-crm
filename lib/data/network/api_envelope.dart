@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Сервер отвечает конвертом:
 ///   успех:  `{ "success": true,  "data": <payload> }`
 ///   ошибка: `{ "success": false, "error": { code, message, details } }`
@@ -22,7 +24,11 @@ Map<String, dynamic> asMap(dynamic body) {
 }
 
 /// Достаёт человекочитаемое сообщение об ошибке из конверта API.
-String apiErrorMessage(DioException e, {String fallback = 'Ошибка запроса.'}) {
+String apiErrorMessage(
+  AppLocalizations l10n,
+  DioException e, {
+  String? fallback,
+}) {
   final data = e.response?.data;
   if (data is Map && data['error'] is Map) {
     final err = (data['error'] as Map);
@@ -34,8 +40,8 @@ String apiErrorMessage(DioException e, {String fallback = 'Ошибка запр
     case DioExceptionType.receiveTimeout:
     case DioExceptionType.sendTimeout:
     case DioExceptionType.connectionError:
-      return 'Нет связи с сервером.';
+      return l10n.errorNoConnection;
     default:
-      return fallback;
+      return fallback ?? l10n.errorGeneric;
   }
 }

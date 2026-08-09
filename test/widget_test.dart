@@ -1,3 +1,4 @@
+import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,9 +7,10 @@ import 'package:crm_millwater/app/app.dart';
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/app/theme/app_tokens.dart';
 import 'package:crm_millwater/app/theme/theme_cubit.dart';
+import 'package:crm_millwater/data/network/session_storage.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
-import 'package:crm_millwater/features/home/presentation/home_shell.dart';
+import 'package:crm_millwater/features/home/presentation/admin_shell.dart';
 
 void main() {
   void usePhoneSurface(WidgetTester tester) {
@@ -24,8 +26,12 @@ void main() {
       child: BlocProvider(
         create: (_) => ThemeCubit(),
         child: MaterialApp(
+            // Строки интерфейса берутся из локали: тесты идут на русской.
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
           theme: AppTheme.light(),
-          home: const HomeShell(),
+          home: const AdminShell(),
         ),
       ),
     );
@@ -34,7 +40,10 @@ void main() {
   testWidgets('Старт приложения показывает экран логина',
       (WidgetTester tester) async {
     usePhoneSurface(tester);
-    await tester.pumpWidget(const CrmApp());
+    // Боевое хранилище сессии ходит в платформенный канал — в тесте подменяем.
+    await tester.pumpWidget(CrmApp(sessionStorage: InMemorySessionStorage()));
+    // Пустое хранилище: восстановление сессии заканчивается разлогином.
+    await tester.pump();
     await tester.pump();
 
     expect(find.text('CRM Millwater'), findsOneWidget);

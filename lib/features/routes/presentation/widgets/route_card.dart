@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -62,6 +64,8 @@ class RouteCard extends StatelessWidget {
     final progress = route.totalCustomers == 0
         ? 0.0
         : route.completedCount / route.totalCustomers;
+    final trimmed = route.driverFullName?.trim();
+    final driverName = (trimmed == null || trimmed.isEmpty) ? null : trimmed;
 
     return AppCard(
       onTap: onTap,
@@ -85,7 +89,7 @@ class RouteCard extends StatelessWidget {
                 ),
               ),
               StatusBadge(
-                text: route.status.label,
+                text: route.status.label(context.l10n),
                 tone: routeTone(route.status),
               ),
             ],
@@ -94,20 +98,24 @@ class RouteCard extends StatelessWidget {
           Row(
             spacing: AppSpacing.md,
             children: [
-              InitialsAvatar(name: route.driverFullName, size: 36),
+              // Водительские эндпоинты полей водителя не отдают: в своём
+              // списке маршрутов вместо «кто везёт» показываем «сколько точек».
+              if (driverName != null) InitialsAvatar(name: driverName, size: 36),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 2,
                   children: [
                     Text(
-                      route.driverFullName,
+                      driverName ?? context.l10n.routeStopsCount(route.totalCustomers),
                       style: AppTypography.bodyStrong.copyWith(color: t.text),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text('${route.totalCustomers} точек',
-                        style: AppTypography.secondary.copyWith(color: t.text2)),
+                    if (driverName != null)
+                      Text(context.l10n.routeStopsCount(route.totalCustomers),
+                          style:
+                              AppTypography.secondary.copyWith(color: t.text2)),
                   ],
                 ),
               ),
@@ -119,7 +127,7 @@ class RouteCard extends StatelessWidget {
                     '${route.completedCount} / ${route.totalCustomers}',
                     style: AppTypography.money.copyWith(color: t.text),
                   ),
-                  Text('выполнено',
+                  Text(context.l10n.routeDoneShort,
                       style: AppTypography.secondary.copyWith(color: t.text2)),
                 ],
               ),

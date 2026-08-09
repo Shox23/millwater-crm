@@ -1,27 +1,64 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../models/user_role.dart';
 import 'api_config.dart';
 import 'api_envelope.dart';
+import 'session_storage.dart';
 
-/// Хранилище JWT-токенов сессии (пока в памяти).
+/// Хранилище сессии: токены и роль в памяти + запись в защищённое хранилище.
+///
+/// В памяти держим потому, что интерсептор подставляет токен синхронно;
+/// [SessionStorage] нужен, чтобы сессия пережила перезапуск приложения.
 class AuthTokenStore {
+  AuthTokenStore([SessionStorage? storage])
+      : _storage = storage ?? const SecureSessionStorage();
+
+  static const _kAccess = 'access_token';
+  static const _kRefresh = 'refresh_token';
+  static const _kRole = 'role';
+
+  final SessionStorage _storage;
+
   String? accessToken;
   String? refreshToken;
+  UserRole? role;
 
   /// Вызывается, когда refresh не удался — сессия истекла.
   VoidCallback? onSessionExpired;
 
   bool get isAuthenticated => accessToken != null;
 
-  void setTokens({required String access, required String refresh}) {
-    accessToken = access;
-    refreshToken = refresh;
+  /// Поднимает сессию из хранилища. Возвращает true, если токен нашёлся.
+  Future<bool> restore() async {
+    accessToken = await _storage.read(_kAccess);
+    refreshToken = await _storage.read(_kRefresh);
+    role = UserRole.tryFromJson(await _storage.read(_kRole));
+    return isAuthenticated;
   }
 
-  void clear() {
+  /// Сохраняет пару токенов (и роль, если она известна) в памяти и на диске.
+  Future<void> setTokens({
+    required String access,
+    required String refresh,
+    UserRole? role,
+  }) async {
+    accessToken = access;
+    refreshToken = refresh;
+    // Refresh роль не возвращает — не затираем известную.
+    if (role != null) this.role = role;
+
+    await _storage.write(_kAccess, access);
+    await _storage.write(_kRefresh, refresh);
+    final current = this.role;
+    if (current != null) await _storage.write(_kRole, current.wire);
+  }
+
+  Future<void> clear() async {
     accessToken = null;
     refreshToken = null;
+    role = null;
+    await _storage.deleteAll();
   }
 }
 
@@ -58,7 +95,9 @@ class _AuthInterceptor extends QueuedInterceptor {
         'refresh_token': _store.refreshToken,
       });
       final data = asMap(res.data);
-      _store.setTokens(
+      // Пишем и в хранилище: иначе после ротации на диске останется
+      // протухшая пара и следующий запуск начнётся с разлогина.
+      await _store.setTokens(
         access: data['access_token'] as String,
         refresh: data['refresh_token'] as String,
       );
@@ -69,7 +108,7 @@ class _AuthInterceptor extends QueuedInterceptor {
       final retry = await _bareDio.fetch(opts);
       return handler.resolve(retry);
     } catch (_) {
-      _store.clear();
+      await _store.clear();
       _store.onSessionExpired?.call();
       return handler.next(err);
     }

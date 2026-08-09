@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -45,10 +47,11 @@ class WeeklyBarChart extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 2,
                   children: [
-                    Text('Выручка за неделю',
+                    Text(context.l10n.reportsWeekly,
                         style:
                             AppTypography.bodyStrong.copyWith(color: t.text)),
-                    Text('${MoneyFormatter.compactSum(total)} собрано',
+                    Text(context.l10n.reportsWeeklyCollected(
+                        MoneyFormatter.compactSum(context.l10n, total)),
                         style:
                             AppTypography.secondary.copyWith(color: t.text2)),
                   ],

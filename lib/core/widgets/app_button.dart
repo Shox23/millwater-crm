@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_tokens.dart';
 import '../../app/theme/app_typography.dart';
@@ -115,7 +117,7 @@ class IconActionButton extends StatelessWidget {
   factory IconActionButton.delete({
     VoidCallback? onPressed,
     double size = 44,
-    String tooltip = 'Удалить',
+    String? tooltip,
   }) {
     return IconActionButton(
       icon: Icons.delete_outline_rounded,
@@ -152,10 +154,13 @@ class IconActionButton extends StatelessWidget {
       ),
     );
 
-    if (tooltip == null) return button;
+    // У пресета удаления своей подписи нет — берём общую из локали.
+    final message = tooltip ??
+        (tone == IconActionTone.danger ? context.l10n.commonDelete : null);
+    if (message == null) return button;
     return Tooltip(
-      message: tooltip!,
-      child: Semantics(button: true, label: tooltip, child: button),
+      message: message,
+      child: Semantics(button: true, label: message, child: button),
     );
   }
 }

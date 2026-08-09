@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/utils/money_formatter.dart';
-import '../../../core/utils/plurals.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../data/models/reports_summary.dart';
@@ -51,8 +52,8 @@ class _ReportsView extends StatelessWidget {
                     AppSpacing.lg,
                   ),
                   child: ScreenHeader(
-                    label: 'Аналитика',
-                    title: 'Отчёты',
+                    label: context.l10n.reportsLabel,
+                    title: context.l10n.reportsTitle,
                     action: _PeriodSelector(
                       period: state.period,
                       onChanged: (p) => context.read<ReportsBloc>().add(
@@ -69,7 +70,7 @@ class _ReportsView extends StatelessWidget {
                       onRetry: () => context.read<ReportsBloc>().add(
                         const ReportsRequested(),
                       ),
-                      message: 'Не удалось загрузить отчёты',
+                      message: context.l10n.reportsLoadFailed,
                     ),
                     _ when summary == null => const Center(
                       child: CircularProgressIndicator(),
@@ -124,8 +125,8 @@ class _ReportsBody extends StatelessWidget {
                       ? null
                       : '+${summary.revenueChangePct}%',
                   auxColor: t.success,
-                  value: MoneyFormatter.sum(summary.revenueToday),
-                  label: 'Выручка',
+                  value: MoneyFormatter.sum(context.l10n, summary.revenueToday),
+                  label: context.l10n.reportsRevenue,
                 ),
               ),
               Expanded(
@@ -135,7 +136,7 @@ class _ReportsBody extends StatelessWidget {
                   aux: '$deliveryPct%',
                   value:
                       '${summary.deliveriesDone} / ${summary.deliveriesTotal}',
-                  label: 'Доставки',
+                  label: context.l10n.reportsDeliveries,
                 ),
               ),
             ],
@@ -148,10 +149,10 @@ class _ReportsBody extends StatelessWidget {
                 child: StatCard(
                   icon: Icons.account_balance_wallet_outlined,
                   iconColor: t.danger,
-                  aux: Plurals.clients(summary.debtorsCount),
+                  aux: context.l10n.clientsCount(summary.debtorsCount),
                   auxColor: t.danger,
-                  value: MoneyFormatter.sum(summary.debtTotal),
-                  label: 'Долги',
+                  value: MoneyFormatter.sum(context.l10n, summary.debtTotal),
+                  label: context.l10n.reportsDebts,
                 ),
               ),
               Expanded(
@@ -160,9 +161,9 @@ class _ReportsBody extends StatelessWidget {
                   iconColor: t.aqua,
                   aux: summary.capsulesTotal == summary.capsulesActive
                       ? null
-                      : 'из ${summary.capsulesTotal}',
-                  value: '${summary.capsulesActive} шт',
-                  label: 'Капсулы у клиентов',
+                      : context.l10n.reportsCapsulesOf(summary.capsulesTotal),
+                  value: context.l10n.reportsCapsulesCount(summary.capsulesActive),
+                  label: context.l10n.reportsCapsules,
                 ),
               ),
             ],
@@ -206,7 +207,7 @@ class _PeriodSelector extends StatelessWidget {
         for (final p in ReportPeriod.values)
           PopupMenuItem(
             value: p,
-            child: Text(p.label, style: TextStyle(color: t.text)),
+            child: Text(p.label(context.l10n), style: TextStyle(color: t.text)),
           ),
       ],
       child: Container(
@@ -224,7 +225,7 @@ class _PeriodSelector extends StatelessWidget {
           spacing: 4,
           children: [
             Text(
-              period.label,
+              period.label(context.l10n),
               style: AppTypography.bodyStrong.copyWith(color: t.text),
             ),
             Icon(Icons.keyboard_arrow_down, size: 20, color: t.text2),

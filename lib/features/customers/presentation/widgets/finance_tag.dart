@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -20,16 +22,16 @@ class FinanceTag extends StatelessWidget {
   final bool isDebt;
 
   /// Строит бейдж по данным заказчика, либо null, если баланс нулевой.
-  static FinanceTag? forCustomer(Customer c) {
+  static FinanceTag? forCustomer(AppLocalizations l10n, Customer c) {
     if (c.prepayment > 0) {
       return FinanceTag(
-        label: 'Предоплата',
+        label: l10n.financePrepayment,
         amount: c.prepayment,
         isDebt: false,
       );
     }
     if (c.debt > 0) {
-      return FinanceTag(label: 'Долг', amount: c.debt, isDebt: true);
+      return FinanceTag(label: l10n.financeDebt, amount: c.debt, isDebt: true);
     }
     return null;
   }

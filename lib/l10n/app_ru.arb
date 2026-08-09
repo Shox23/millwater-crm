@@ -1,0 +1,534 @@
+{
+  "@@locale": "ru",
+  "appTitle": "CRM Millwater",
+  "commonCancel": "Отменить",
+  "commonCancelShort": "Отмена",
+  "commonDelete": "Удалить",
+  "commonSave": "Сохранить",
+  "commonSaving": "Сохранение…",
+  "commonAdd": "Добавить",
+  "commonCreate": "Создать",
+  "commonCreating": "Создание…",
+  "commonEdit": "Редактировать",
+  "commonRetry": "Повторить",
+  "commonLeave": "Выйти",
+  "commonStay": "Остаться",
+  "commonOptional": "Необязательно",
+  "commonClear": "Очистить",
+  "commonNothingFound": "Ничего не найдено",
+  "commonDone": "Выполнено",
+  "commonPhone": "Телефон",
+  "commonSum": "сум",
+  "moneyAmount": "{amount} сум",
+  "@moneyAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyMillions": "{amount} млн сум",
+  "@moneyMillions": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveWithoutSavingTitle": "Выйти без сохранения?",
+  "leaveWithoutSavingMessage": "Введённые данные будут потеряны.",
+  "errorGeneric": "Ошибка запроса.",
+  "errorNoConnection": "Нет связи с сервером.",
+  "errorLoadFailed": "Не удалось загрузить данные",
+  "errorCheckConnection": "Проверьте подключение и попробуйте ещё раз",
+  "emptySearchTitle": "По запросу «{query}» ничего нет",
+  "@emptySearchTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "emptySearchHint": "Проверьте написание или сбросьте поиск",
+  "emptySearchAction": "Сбросить поиск",
+  "fieldRequired": "Заполните поле",
+  "fieldPhoneEmpty": "Введите номер телефона",
+  "fieldPhoneIncomplete": "Номер неполный — нужно {count} цифр после +998",
+  "@fieldPhoneIncomplete": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldEmailInvalid": "Неверный формат почты",
+  "fieldEmailEmpty": "Введите электронную почту",
+  "fieldPasswordEmpty": "Введите пароль",
+  "fieldMinLength": "Минимум {count} символов",
+  "@fieldMinLength": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldMaxLength": "Не более {count} символов",
+  "@fieldMaxLength": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldShowPassword": "Показать пароль",
+  "fieldHidePassword": "Скрыть пароль",
+  "phoneCallUnavailable": "Звонок недоступен — номер скопирован",
+  "phoneCopied": "Номер скопирован",
+  "phoneCopy": "Скопировать номер",
+  "photoTitle": "Фото оплаты",
+  "photoSubtitle": "Прикрепите чек или фото доставки",
+  "photoError": "Не удалось получить фото. Проверьте доступ.",
+  "photoRemove": "Убрать фото",
+  "photoCamera": "Камера",
+  "photoGallery": "Галерея",
+  "photoSize": " · {size} КБ",
+  "@photoSize": {
+    "placeholders": {
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "themeSystem": "Как в системе",
+  "themeSystemShort": "Система",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+  "themeTitle": "Тема · {mode}",
+  "@themeTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "languageTitle": "Язык · {name}",
+  "@languageTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "languageRussian": "Русский",
+  "languageUzbek": "O‘zbekcha",
+  "languageSection": "ЯЗЫК",
+  "roleAdmin": "Администратор",
+  "roleDriver": "Водитель",
+  "deliveryPending": "Новый",
+  "deliveryOnWay": "В пути",
+  "deliveryDelivered": "Доставлен",
+  "deliveryFailed": "Не доставлено",
+  "deliveryPaid": "Оплачено",
+  "routeCreated": "Создан",
+  "routeInProgress": "Выполняется",
+  "routeCompleted": "Завершён",
+  "routeCancelled": "Отменён",
+  "filterAll": "Все",
+  "filterInProgress": "В пути",
+  "filterCompleted": "Завершены",
+  "filterNew": "Новые",
+  "paymentCash": "Наличные",
+  "paymentCard": "Карта",
+  "paymentTransfer": "Перечисление",
+  "paymentDebt": "В долг",
+  "periodToday": "Сегодня",
+  "periodWeek": "Неделя",
+  "periodMonth": "Месяц",
+  "loginTitle": "Вход в систему",
+  "loginPhone": "Номер телефона",
+  "loginPassword": "Пароль",
+  "loginSubmit": "Войти",
+  "loginSubmitting": "Вход…",
+  "loginErrorCredentials": "Неверный телефон или пароль.",
+  "loginErrorGeneric": "Ошибка входа. Попробуйте ещё раз.",
+  "loginErrorFailed": "Не удалось войти. Попробуйте ещё раз.",
+  "sessionExpired": "Сессия истекла. Войдите снова.",
+  "navRoute": "Маршрут",
+  "navRoutes": "Маршруты",
+  "navDrivers": "Водители",
+  "navCustomers": "Заказчики",
+  "navReports": "Отчёты",
+  "navProfile": "Профиль",
+  "routesHeaderToday": "Сегодня · {date}",
+  "@routesHeaderToday": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "routesTitle": "Маршруты",
+  "routesRefresh": "Обновить маршруты",
+  "routesCreated": "Маршрут создан",
+  "routesLoadFailed": "Не удалось загрузить маршруты",
+  "routesEmptyTitle": "Маршрутов пока нет",
+  "routesEmptyHint": "Создайте маршрут: выберите водителя, дату и заказчиков",
+  "filterEmptyTitle": "В этом фильтре пусто",
+  "filterEmptyHint": "Попробуйте другой фильтр",
+  "settingsTitle": "Настройки",
+  "routeCardTitle": "Карточка маршрута",
+  "routeLoadFailed": "Не удалось загрузить маршрут",
+  "routeNotFound": "Маршрут не найден",
+  "routeCancelTitle": "Отменить маршрут?",
+  "routeCancelMessage": "Маршрут будет помечен как отменённый.",
+  "routeCancelAction": "Отменить маршрут",
+  "routeCancelFailed": "Не удалось отменить маршрут.",
+  "routeCancelled2": "Маршрут отменён",
+  "routeDriver": "Водитель",
+  "routeStatDone": "ВЫПОЛНЕНО",
+  "routeStatCollected": "СОБРАНО",
+  "routeStops": "ТОЧКИ МАРШРУТА",
+  "routeStopsCount": "{count} точек",
+  "@routeStopsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDoneShort": "выполнено",
+  "routeProgressTitle": "Выполнено доставок",
+  "routeCollectedToday": "Собрано сегодня",
+  "stopCapsules": "{count} капсул",
+  "@stopCapsules": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeFormTitle": "Новый маршрут",
+  "routeFormLoadFailed": "Не удалось загрузить водителей и заказчиков",
+  "routeFormCreateFailed": "Не удалось создать маршрут.",
+  "routeFormDate": "ДАТА",
+  "routeFormDriver": "ВОДИТЕЛЬ",
+  "routeFormNoDrivers": "Сначала добавьте водителей",
+  "routeFormCustomers": "ЗАКАЗЧИКИ",
+  "routeFormNoCustomers": "Сначала добавьте заказчиков",
+  "routeFormSelected": "выбрано: {count}",
+  "@routeFormSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customerSearch": "Поиск заказчика",
+  "stopTitle": "Точка маршрута",
+  "stopCapsulesDelivered": "капсул доставлено",
+  "stopPaid": "оплачено",
+  "stopCompleted": "Завершено",
+  "stopPhotoLabel": "ФОТО ОПЛАТЫ",
+  "stopPhotoFailed": "Не удалось загрузить фото",
+  "mapSectionLabel": "МАРШРУТ НА КАРТЕ",
+  "mapFromCurrentPlace": "Маршрут построится от вашего текущего места.",
+  "mapBuildRoute": "Построить маршрут",
+  "mapNeedOnePoint": "Для маршрута нужна хотя бы одна точка.",
+  "mapPointWithoutAddress": "У точки {number} не заполнен адрес.",
+  "@mapPointWithoutAddress": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "mapOpenFailed": "Не удалось открыть Яндекс.Карты",
+  "driversTitle": "Водители",
+  "driversHeader": "Команда · {count}",
+  "@driversHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "driversSearch": "Поиск водителя",
+  "driversRefresh": "Обновить список",
+  "driversLoadFailed": "Не удалось загрузить водителей",
+  "driversEmptyTitle": "Водителей пока нет",
+  "driversEmptyHint": "Добавьте первого — на него можно будет назначить маршрут",
+  "driversEmptyAction": "Добавить водителя",
+  "driverAdded": "Водитель добавлен",
+  "driverDeleted": "Водитель удалён",
+  "changesSaved": "Изменения сохранены",
+  "driverDeleteTitle": "Удалить водителя?",
+  "driverDeleteMessage": "{name} будет удалён из списка.",
+  "@driverDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "driverDeleteFailed": "Не удалось удалить водителя.",
+  "driverTitle": "Водитель",
+  "driverOnRoute": "Сегодня на маршруте",
+  "driverNoTrips": "Сегодня без поездок",
+  "driverTripsTotal": "всего поездок",
+  "driverTripsToday": "поездок сегодня",
+  "driverEmail": "Почта",
+  "driverCreatedAt": "Дата создания",
+  "driverTripsAndToday": "  ·  сегодня ",
+  "driverFormEditTitle": "Редактирование водителя",
+  "driverFormNewTitle": "Новый водитель",
+  "driverFormName": "Имя водителя",
+  "driverFormNameHint": "Например, Азиз Каримов",
+  "driverFormNameEmpty": "Введите имя водителя",
+  "driverFormEmail": "Электронная почта",
+  "driverFormPassword": "Пароль для входа",
+  "driverFormSaveFailed": "Не удалось сохранить водителя.",
+  "minSixChars": "Минимум 6 символов",
+  "customersTitle": "Заказчики",
+  "customersHeader": "База · {count}",
+  "@customersHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customersLoadFailed": "Не удалось загрузить заказчиков",
+  "customersEmptyTitle": "Заказчиков пока нет",
+  "customersEmptyHint": "Добавьте первого — он появится в списке и в маршрутах",
+  "customersEmptyAction": "Добавить заказчика",
+  "customerAdded": "Заказчик добавлен",
+  "customerDeleted": "Заказчик удалён",
+  "customerDeleteTitle": "Удалить заказчика?",
+  "customerDeleteMessage": "{name} будет удалён из базы.",
+  "@customerDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "customerDeleteFailed": "Не удалось удалить заказчика.",
+  "customerTitle": "Заказчик",
+  "customerCapsulesPerOrder": "капсул / заказ",
+  "customerLastOrder": "последний заказ",
+  "customerLastOrderShort": "посл. заказ {date}",
+  "@customerLastOrderShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "financePrepayment": "Предоплата",
+  "financeDebt": "Долг",
+  "customerFormEditTitle": "Редактирование заказчика",
+  "customerFormNewTitle": "Новый заказчик",
+  "customerFormName": "Название / имя",
+  "customerFormNameHint": "Например, Кафе «Nasiba»",
+  "customerFormNameEmpty": "Введите название или имя",
+  "customerFormAddress": "Адрес доставки",
+  "customerFormAddressHint": "Район, улица, дом",
+  "customerFormAddressEmpty": "Введите адрес доставки",
+  "customerFormComment": "Комментарий",
+  "customerFormCommentHint": "Например, район или ориентир",
+  "customerFormSaveFailed": "Не удалось сохранить заказчика.",
+  "myRoutesTitle": "Мои маршруты",
+  "myRoutesStatRoutes": "мои маршруты",
+  "myRoutesStatDeliveredToday": "доставлено сегодня",
+  "myRoutesStatOrders": "заказов",
+  "myRoutesEmptyHint": "Когда диспетчер назначит маршрут, он появится здесь",
+  "myRouteTitle": "Маршрут",
+  "myRouteStatusFailed": "Не удалось изменить статус.",
+  "myRouteStatusChanged": "Статус: {status}",
+  "@myRouteStatusChanged": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "myRouteChangeStatus": "Изменить статус",
+  "completionTitle": "Завершение доставки",
+  "completionCoordinates": "КООРДИНАТЫ ТОЧКИ",
+  "completionCapsules": "КОЛИЧЕСТВО КАПСУЛ",
+  "completionCapsulesCaption": "капсул {liters}л",
+  "@completionCapsulesCaption": {
+    "placeholders": {
+      "liters": {
+        "type": "int"
+      }
+    }
+  },
+  "completionBalance": "КАПСУЛ У КЛИЕНТА",
+  "completionBalanceCaption": "останется после доставки",
+  "completionMethod": "СПОСОБ ОПЛАТЫ",
+  "completionAmount": "СУММА ОПЛАТЫ",
+  "completionTotal": "Итого к оплате",
+  "completionSubmit": "Завершить",
+  "completionForbidden": "Завершать доставку может только водитель этого маршрута.",
+  "completionFailed": "Не удалось завершить доставку.",
+  "completionByPrice": "По прайсу: {formula}",
+  "@completionByPrice": {
+    "placeholders": {
+      "formula": {
+        "type": "String"
+      }
+    }
+  },
+  "completionRestoreAmount": "Вернуть расчёт",
+  "locationSearching": "Определяем координаты…",
+  "locationFixed": "Точка зафиксирована",
+  "locationNotFixed": "Точка не зафиксирована",
+  "locationCanContinue": "Доставку можно завершить и так.",
+  "locationRetry": "Определить заново",
+  "locationDisabled": "Геолокация выключена в настройках телефона.",
+  "locationDeniedForever": "Доступ к геолокации запрещён. Разрешите его в настройках телефона.",
+  "locationDenied": "Нет доступа к геолокации.",
+  "locationUnknown": "Не удалось определить координаты.",
+  "profileTitle": "Профиль",
+  "profileAccountLabel": "Аккаунт",
+  "profileAccountSection": "УЧЁТНАЯ ЗАПИСЬ",
+  "settingsAppearance": "ОФОРМЛЕНИЕ",
+  "settingsAccount": "АККАУНТ",
+  "settingsSessionActive": "Сессия активна",
+  "settingsLogout": "Выйти из аккаунта",
+  "settingsLogoutTitle": "Выйти из аккаунта?",
+  "settingsLogoutMessage": "Придётся войти заново по номеру телефона и паролю.",
+  "passwordChangeTitle": "Смена пароля",
+  "passwordChangeTile": "Сменить пароль",
+  "passwordChangeTileHint": "Понадобится текущий пароль",
+  "passwordChanged": "Пароль изменён",
+  "passwordCurrent": "Текущий пароль",
+  "passwordCurrentEmpty": "Введите текущий пароль",
+  "passwordNew": "Новый пароль",
+  "passwordRepeat": "Повторите новый пароль",
+  "passwordSameAsCurrent": "Новый пароль совпадает с текущим",
+  "passwordMismatch": "Пароли не совпадают",
+  "passwordChangeFailed": "Не удалось сменить пароль.",
+  "passwordWrongCurrent": "Неверный текущий пароль.",
+  "passwordKeepMessage": "Пароль останется прежним.",
+  "passwordSubmit": "Сменить",
+  "pricesTitle": "Цены",
+  "pricesTileHint": "Стоимость капсулы и залог за тару",
+  "pricesSection": "ПРАЙС",
+  "pricesUpdated": "Цены обновлены",
+  "pricesLoadFailed": "Не удалось загрузить цены",
+  "pricesSaveFailed": "Не удалось сохранить цены.",
+  "pricesCurrent": "ДЕЙСТВУЮЩИЙ ПРАЙС",
+  "pricesNew": "НОВЫЕ ЗНАЧЕНИЯ",
+  "pricesHistory": "ИСТОРИЯ ИЗМЕНЕНИЙ",
+  "pricesCapsule": "Цена капсулы",
+  "pricesCapsuleHelper": "Сум за одну капсулу {liters} л",
+  "@pricesCapsuleHelper": {
+    "placeholders": {
+      "liters": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesCapsuleRow": "Капсула {liters} л",
+  "@pricesCapsuleRow": {
+    "placeholders": {
+      "liters": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesDeposit": "Залог за тару",
+  "pricesDepositHelper": "Сум; 0 — залога нет",
+  "pricesDepositRow": "залог {amount}",
+  "@pricesDepositRow": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesEmpty": "Укажите цену",
+  "pricesZero": "Цена капсулы должна быть больше нуля",
+  "pricesConfirmTitle": "Назначить новую цену?",
+  "pricesConfirmMessage": "Капсула — {capsule}, залог — {deposit}.",
+  "@pricesConfirmMessage": {
+    "placeholders": {
+      "capsule": {
+        "type": "String"
+      },
+      "deposit": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesConfirmAction": "Назначить",
+  "pricesEffectiveFrom": "Действует с {date}",
+  "@pricesEffectiveFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesHistoryFailed": "Историю загрузить не удалось.",
+  "pricesHistoryEmpty": "Прайс ещё не меняли — это первая цена.",
+  "reportsLabel": "Аналитика",
+  "reportsTitle": "Отчёты",
+  "reportsLoadFailed": "Не удалось загрузить отчёты",
+  "reportsRevenue": "Выручка",
+  "reportsDeliveries": "Доставки",
+  "reportsDebts": "Долги",
+  "reportsCapsules": "Капсулы у клиентов",
+  "reportsCapsulesOf": "из {total}",
+  "@reportsCapsulesOf": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "reportsCapsulesCount": "{count} шт",
+  "@reportsCapsulesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportsDebtors": "Долги заказчиков",
+  "reportsWeekly": "Выручка за неделю",
+  "reportsWeeklyCollected": "{amount} собрано",
+  "@reportsWeeklyCollected": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "capsulesCount": "{count, plural, one{{count} капсула} few{{count} капсулы} other{{count} капсул}}",
+  "@capsulesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripsCount": "{count, plural, one{{count} поездка} few{{count} поездки} other{{count} поездок}}",
+  "@tripsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clientsCount": "{count, plural, one{{count} клиент} few{{count} клиента} other{{count} клиентов}}",
+  "@clientsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

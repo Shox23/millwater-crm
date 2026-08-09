@@ -51,6 +51,15 @@ abstract class UzPhone {
     return digits.isEmpty ? '' : '+$_code$digits';
   }
 
+  /// Тот же номер без «+»: `998901234567`.
+  ///
+  /// Сервер телефоны не нормализует и хранит ровно то, что ему дали, поэтому
+  /// часть учёток заведена без «+». Используется как запасной вариант входа.
+  static String normalizeBare(String input) {
+    final digits = subscriberDigits(input);
+    return digits.isEmpty ? '' : '$_code$digits';
+  }
+
   /// Номер введён полностью.
   static bool isValid(String input) =>
       subscriberDigits(input).length == subscriberLength;

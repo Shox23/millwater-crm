@@ -6,10 +6,11 @@ enum ReportPeriod {
   week,
   month;
 
-  String get label => switch (this) {
-        ReportPeriod.today => 'Сегодня',
-        ReportPeriod.week => 'Неделя',
-        ReportPeriod.month => 'Месяц',
+  /// Подпись периода на языке интерфейса.
+  String label(AppLocalizations l10n) => switch (this) {
+        ReportPeriod.today => l10n.periodToday,
+        ReportPeriod.week => l10n.periodWeek,
+        ReportPeriod.month => l10n.periodMonth,
       };
 }
 

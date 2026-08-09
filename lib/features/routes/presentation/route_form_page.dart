@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/utils/idempotency.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
@@ -37,6 +40,10 @@ class _RouteFormPageState extends State<RouteFormPage> {
   String? _driverId;
   DateTime _date = DateTime.now();
   final Set<String> _customerIds = {};
+
+  /// Один ключ на весь экран: повтор после обрыва связи не должен создать
+  /// второй такой же маршрут.
+  final String _idempotencyKey = newIdempotencyKey('route');
 
   /// Локальный фильтр по уже загруженному списку: выбирать из сотни
   /// чекбоксов вслепую невозможно.
@@ -106,19 +113,20 @@ class _RouteFormPageState extends State<RouteFormPage> {
             driverId: _driverId!,
             date: _date,
             customerIds: _customerIds.toList(),
+            idempotencyKey: _idempotencyKey,
           );
       if (mounted) Navigator.of(context).pop(true);
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = apiErrorMessage(e, fallback: 'Не удалось создать маршрут.');
+        _error = apiErrorMessage(context.l10n, e, fallback: context.l10n.routeFormCreateFailed);
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Не удалось создать маршрут.';
+        _error = context.l10n.routeFormCreateFailed;
       });
     }
   }
@@ -128,7 +136,7 @@ class _RouteFormPageState extends State<RouteFormPage> {
     final t = context.tokens;
 
     return DetailScaffold(
-      title: 'Новый маршрут',
+      title: context.l10n.routeFormTitle,
       body: _loading
           ? const Padding(
               padding: EdgeInsets.only(top: 80),
@@ -139,7 +147,7 @@ class _RouteFormPageState extends State<RouteFormPage> {
               padding: const EdgeInsets.only(top: 60),
               child: ErrorRetryView(
                 onRetry: _load,
-                message: 'Не удалось загрузить водителей и заказчиков',
+                message: context.l10n.routeFormLoadFailed,
               ),
             )
           : Column(
@@ -147,7 +155,7 @@ class _RouteFormPageState extends State<RouteFormPage> {
               spacing: AppSpacing.lg,
               children: [
                 _Section(
-                  label: 'ДАТА',
+                  label: context.l10n.routeFormDate,
                   child: AppCard(
                     onTap: _pickDate,
                     child: Row(
@@ -166,9 +174,9 @@ class _RouteFormPageState extends State<RouteFormPage> {
                   ),
                 ),
                 _Section(
-                  label: 'ВОДИТЕЛЬ',
+                  label: context.l10n.routeFormDriver,
                   child: _drivers.isEmpty
-                      ? Text('Сначала добавьте водителей',
+                      ? Text(context.l10n.routeFormNoDrivers,
                           style:
                               AppTypography.secondary.copyWith(color: t.text2))
                       : Column(
@@ -187,17 +195,17 @@ class _RouteFormPageState extends State<RouteFormPage> {
                         ),
                 ),
                 _Section(
-                  label: 'ЗАКАЗЧИКИ',
-                  trailing: 'выбрано: ${_customerIds.length}',
+                  label: context.l10n.routeFormCustomers,
+                  trailing: context.l10n.routeFormSelected(_customerIds.length),
                   child: _customers.isEmpty
-                      ? Text('Сначала добавьте заказчиков',
+                      ? Text(context.l10n.routeFormNoCustomers,
                           style:
                               AppTypography.secondary.copyWith(color: t.text2))
                       : Column(
                           spacing: AppSpacing.sm,
                           children: [
                             SearchField(
-                              hint: 'Поиск заказчика',
+                              hint: context.l10n.customerSearch,
                               onChanged: (q) =>
                                   setState(() => _customerQuery = q),
                             ),
@@ -205,7 +213,7 @@ class _RouteFormPageState extends State<RouteFormPage> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                     vertical: AppSpacing.md),
-                                child: Text('Ничего не найдено',
+                                child: Text(context.l10n.commonNothingFound,
                                     style: AppTypography.secondary
                                         .copyWith(color: t.text2)),
                               ),
@@ -237,14 +245,14 @@ class _RouteFormPageState extends State<RouteFormPage> {
                 children: [
                   Expanded(
                     child: AppButton(
-                      label: 'Отменить',
+                      label: context.l10n.commonCancel,
                       variant: AppButtonVariant.secondary,
                       onPressed: () => Navigator.of(context).pop(false),
                     ),
                   ),
                   Expanded(
                     child: AppButton(
-                      label: _saving ? 'Создание…' : 'Создать',
+                      label: _saving ? context.l10n.commonCreating : context.l10n.commonCreate,
                       enabled: _valid && !_saving,
                       onPressed: (_valid && !_saving) ? _save : null,
                     ),

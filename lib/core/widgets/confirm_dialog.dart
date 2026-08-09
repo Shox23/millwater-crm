@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_tokens.dart';
 import '../../app/theme/app_typography.dart';
@@ -9,8 +11,8 @@ Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
   required String message,
-  String confirmLabel = 'Удалить',
-  String cancelLabel = 'Отмена',
+  String? confirmLabel,
+  String? cancelLabel,
   bool destructive = true,
 }) async {
   final result = await showDialog<bool>(
@@ -29,13 +31,13 @@ Future<bool> showConfirmDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(cancelLabel,
+            child: Text(cancelLabel ?? context.l10n.commonCancelShort,
                 style: AppTypography.bodyStrong.copyWith(color: t.text2)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
-              confirmLabel,
+              confirmLabel ?? context.l10n.commonDelete,
               style: AppTypography.bodyStrong
                   .copyWith(color: destructive ? t.danger : t.primary),
             ),

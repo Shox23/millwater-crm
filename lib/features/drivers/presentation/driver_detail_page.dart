@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+
+import '../../../l10n/l10n.dart';
 
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
@@ -29,15 +32,15 @@ class DriverDetailPage extends StatelessWidget {
   Future<void> _delete(BuildContext context) async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Удалить водителя?',
-      message: '${driver.fullName} будет удалён из списка.',
+      title: context.l10n.driverDeleteTitle,
+      message: context.l10n.driverDeleteMessage(driver.fullName),
     );
     if (!confirmed || !context.mounted) return;
     final repo = context.read<CrmRepository>();
     final ok = await runGuarded(
       context,
       () => repo.deleteDriver(driver.id),
-      fallback: 'Не удалось удалить водителя.',
+      fallback: context.l10n.driverDeleteFailed,
     );
     if (ok && context.mounted) Navigator.of(context).pop(true);
   }
@@ -55,7 +58,7 @@ class DriverDetailPage extends StatelessWidget {
     final onRoute = driver.todayTripCount > 0;
 
     return DetailScaffold(
-      title: 'Водитель',
+      title: context.l10n.driverTitle,
       body: Column(
         spacing: AppSpacing.lg,
         children: [
@@ -68,7 +71,7 @@ class DriverDetailPage extends StatelessWidget {
                       .copyWith(fontSize: 22, color: t.text)),
               // Признака «на линии» в API нет — показываем активность за сегодня.
               StatusBadge(
-                text: onRoute ? 'Сегодня на маршруте' : 'Сегодня без поездок',
+                text: onRoute ? context.l10n.driverOnRoute : context.l10n.driverNoTrips,
                 tone: onRoute ? StatusTone.success : StatusTone.neutral,
                 showDot: true,
               ),
@@ -80,14 +83,14 @@ class DriverDetailPage extends StatelessWidget {
               Expanded(
                 child: StatTile(
                   value: '${driver.tripCount}',
-                  label: 'всего поездок',
+                  label: context.l10n.driverTripsTotal,
                   alignment: CrossAxisAlignment.center,
                 ),
               ),
               Expanded(
                 child: StatTile(
                   value: '${driver.todayTripCount}',
-                  label: 'поездок сегодня',
+                  label: context.l10n.driverTripsToday,
                   valueColor: t.primary,
                   alignment: CrossAxisAlignment.center,
                 ),
@@ -102,8 +105,14 @@ class DriverDetailPage extends StatelessWidget {
                 const Divider(),
                 ContactRow(
                   icon: Icons.mail_outline,
-                  label: 'Почта',
+                  label: context.l10n.driverEmail,
                   value: driver.email.isEmpty ? '—' : driver.email,
+                ),
+                const Divider(),
+                ContactRow(
+                  icon: Icons.event_outlined,
+                  label: context.l10n.driverCreatedAt,
+                  value: DateFormat('dd.MM.yyyy').format(driver.createdAt),
                 ),
               ],
             ),
@@ -120,7 +129,7 @@ class DriverDetailPage extends StatelessWidget {
             ),
             Expanded(
               child: AppButton(
-                label: 'Редактировать',
+                label: context.l10n.commonEdit,
                 onPressed: () => _edit(context),
               ),
             ),

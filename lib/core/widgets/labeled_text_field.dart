@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../../app/theme/app_tokens.dart';
 import '../../app/theme/app_typography.dart';
 
@@ -8,6 +10,13 @@ import '../../app/theme/app_typography.dart';
 ///
 /// Это `TextFormField`: внутри [Form] участвует в валидации и показывает
 /// ошибку под полем. При [obscureText] справа появляется кнопка «показать».
+///
+/// Момент первой подсветки задаёт форма — она ставит
+/// `AutovalidateMode.onUnfocus`, и ошибка появляется, когда пользователь
+/// закончил ввод и ушёл из этого поля, а не на первом же символе. Своё
+/// `onUserInteractionIfError` нужно для второй половины сценария: пока
+/// ошибка висит, каждое нажатие клавиши перепроверяет поле, и подсказка
+/// гаснет сразу после исправления, а не при следующем уходе из поля.
 class LabeledTextField extends StatefulWidget {
   const LabeledTextField({
     super.key,
@@ -73,6 +82,7 @@ class _LabeledTextFieldState extends State<LabeledTextField> {
           keyboardType: widget.keyboardType,
           obscureText: _obscured,
           validator: widget.validator,
+          autovalidateMode: AutovalidateMode.onUserInteractionIfError,
           focusNode: widget.focusNode,
           textInputAction: widget.textInputAction,
           onFieldSubmitted: widget.onSubmitted,
@@ -101,7 +111,7 @@ class _LabeledTextFieldState extends State<LabeledTextField> {
         size: 20,
         color: t.text3,
       ),
-      tooltip: _obscured ? 'Показать пароль' : 'Скрыть пароль',
+      tooltip: _obscured ? context.l10n.fieldShowPassword : context.l10n.fieldHidePassword,
       onPressed: () => setState(() => _obscured = !_obscured),
     );
   }

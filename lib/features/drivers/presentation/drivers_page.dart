@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../core/navigation/overlay_route.dart';
 import '../../../core/widgets/action_feedback.dart';
@@ -52,10 +54,10 @@ class _DriversView extends StatelessWidget {
                     AppSpacing.lg,
                   ),
                   child: ScreenHeader(
-                    label: 'Команда · ${state.drivers.length}',
-                    title: 'Водители',
+                    label: context.l10n.driversHeader(state.drivers.length),
+                    title: context.l10n.driversTitle,
                     action: AppButton(
-                      label: 'Добавить',
+                      label: context.l10n.commonAdd,
                       icon: Icons.add,
                       height: 44,
                       onPressed: () => _openForm(context, bloc),
@@ -66,9 +68,24 @@ class _DriversView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.page,
                   ),
-                  child: SearchField(
-                    hint: 'Поиск водителя',
-                    onChanged: (q) => bloc.add(DriversSearchChanged(q)),
+                  child: Row(
+                    spacing: AppSpacing.sm,
+                    children: [
+                      Expanded(
+                        child: SearchField(
+                          hint: context.l10n.driversSearch,
+                          onChanged: (q) => bloc.add(DriversSearchChanged(q)),
+                        ),
+                      ),
+                      IconActionButton(
+                        icon: Icons.refresh,
+                        tooltip: context.l10n.driversRefresh,
+                        // Пока запрос в пути — повтор ни к чему.
+                        onPressed: state.status == DriversStatus.loading
+                            ? null
+                            : () => bloc.add(const DriversRequested()),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -93,7 +110,7 @@ class _DriversView extends StatelessWidget {
     ).push<bool>(OverlayPageRoute(builder: (_) => const DriverFormPage()));
     if (saved == true) {
       bloc.add(const DriversRequested());
-      if (context.mounted) showAppSnackBar(context, 'Водитель добавлен');
+      if (context.mounted) showAppSnackBar(context, context.l10n.driverAdded);
     }
   }
 }
@@ -121,21 +138,22 @@ class _DriversList extends StatelessWidget {
     if (state.status == DriversStatus.error) {
       return ErrorRetryView(
         onRetry: () => bloc.add(const DriversRequested()),
-        message: 'Не удалось загрузить водителей',
+        message: context.l10n.driversLoadFailed,
       );
     }
     final items = state.visible;
     if (items.isEmpty) {
       return state.isEmptySearch
           ? EmptyStateView.noSearchResults(
+              l10n: context.l10n,
               query: state.query.trim(),
               onClear: () => bloc.add(const DriversSearchChanged('')),
             )
           : EmptyStateView(
               icon: Icons.local_shipping_outlined,
-              title: 'Водителей пока нет',
-              hint: 'Добавьте первого — на него можно будет назначить маршрут',
-              actionLabel: 'Добавить водителя',
+              title: context.l10n.driversEmptyTitle,
+              hint: context.l10n.driversEmptyHint,
+              actionLabel: context.l10n.driversEmptyAction,
               onAction: onAdd,
             );
     }
@@ -172,27 +190,27 @@ class _DriversList extends StatelessWidget {
               if (saved == true) {
                 bloc.add(const DriversRequested());
                 if (context.mounted) {
-                  showAppSnackBar(context, 'Изменения сохранены');
+                  showAppSnackBar(context, context.l10n.changesSaved);
                 }
               }
             },
             onDelete: () async {
               final confirmed = await showConfirmDialog(
                 context,
-                title: 'Удалить водителя?',
-                message: '${driver.fullName} будет удалён из списка.',
+                title: context.l10n.driverDeleteTitle,
+                message: context.l10n.driverDeleteMessage(driver.fullName),
               );
               if (!confirmed || !context.mounted) return;
               final repo = context.read<CrmRepository>();
               final ok = await runGuarded(
                 context,
                 () => repo.deleteDriver(driver.id),
-                fallback: 'Не удалось удалить водителя.',
+                fallback: context.l10n.driverDeleteFailed,
               );
               if (!ok) return;
               bloc.add(const DriversRequested());
               if (context.mounted) {
-                showAppSnackBar(context, 'Водитель удалён');
+                showAppSnackBar(context, context.l10n.driverDeleted);
               }
             },
           );

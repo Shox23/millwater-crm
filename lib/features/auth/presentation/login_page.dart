@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
@@ -19,6 +21,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  /// Правила проверки на языке интерфейса. Пересобираются при смене
+  /// локали: `didChangeDependencies` вызывается снова.
+  late Validators _v;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _v = Validators(context.l10n);
+  }
+
   final _formKey = GlobalKey<FormState>();
 
   final _phone = TextEditingController(text: UzPhone.prefix);
@@ -27,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   final _phoneFocus = FocusNode();
   final _passwordFocus = FocusNode();
 
-  static final _passwordRule = Validators.notEmpty('Введите пароль');
+  FormFieldValidator<String> get _passwordRule => _v.notEmpty(context.l10n.fieldPasswordEmpty);
 
   @override
   void dispose() {
@@ -38,13 +50,24 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  /// Поля и их текущие ошибки — один источник и для кнопки, и для перехода
+  /// к первой ошибке.
+  List<(FocusNode, String?)> get _checks => [
+        (_phoneFocus, _v.phone(_phone.text)),
+        (_passwordFocus, _passwordRule(_password.text)),
+      ];
+
+  /// Телефон и пароль заполнены — кнопку можно разблокировать.
+  bool get _valid => _checks.every((c) => c.$2 == null);
+
   void _submit() {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) {
-      if (Validators.phone(_phone.text) != null) {
-        _phoneFocus.requestFocus();
-      } else {
-        _passwordFocus.requestFocus();
+      for (final (node, error) in _checks) {
+        if (error != null) {
+          node.requestFocus();
+          return;
+        }
       }
       return;
     }
@@ -55,6 +78,14 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
   }
+
+  /// Текст ошибки входа: блок отдаёт причину кодом, язык знает экран.
+  String _errorText(BuildContext context, AuthError error) => switch (error) {
+        AuthError.credentials => context.l10n.loginErrorCredentials,
+        AuthError.generic => context.l10n.loginErrorGeneric,
+        AuthError.failed => context.l10n.loginErrorFailed,
+        AuthError.sessionExpired => context.l10n.sessionExpired,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -90,11 +121,13 @@ class _LoginPageState extends State<LoginPage> {
                     Column(
                       spacing: 4,
                       children: [
-                        Text('CRM Millwater',
+                        Text(context.l10n.appTitle,
                             style: AppTypography.screenTitle
                                 .copyWith(color: t.text),
                             textAlign: TextAlign.center),
-                        Text('Вход для администратора',
+                        // Роль определяется по ответу сервера — на этом
+                        // экране входят и администратор, и водитель.
+                        Text(context.l10n.loginTitle,
                             style: AppTypography.secondary
                                 .copyWith(color: t.text2),
                             textAlign: TextAlign.center),
@@ -104,17 +137,21 @@ class _LoginPageState extends State<LoginPage> {
                       padding: const EdgeInsets.all(AppSpacing.xl),
                       child: Form(
                         key: _formKey,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        // Ошибка появляется, когда поле закончили заполнять
+                        // и ушли из него.
+                        autovalidateMode: AutovalidateMode.onUnfocus,
+                        // Любое изменение — пересчёт состояния кнопки.
+                        onChanged: () => setState(() {}),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           spacing: AppSpacing.lg,
                           children: [
                             LabeledTextField(
-                              label: 'Номер телефона',
+                              label: context.l10n.loginPhone,
                               hint: '+998 90 123 45 67',
                               controller: _phone,
                               focusNode: _phoneFocus,
-                              validator: Validators.phone,
+                              validator: _v.phone,
                               keyboardType: TextInputType.phone,
                               inputFormatters: const [UzPhoneInputFormatter()],
                               autofillHints: const [
@@ -124,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                               onSubmitted: (_) => _passwordFocus.requestFocus(),
                             ),
                             LabeledTextField(
-                              label: 'Пароль',
+                              label: context.l10n.loginPassword,
                               hint: '••••••••',
                               controller: _password,
                               focusNode: _passwordFocus,
@@ -137,14 +174,16 @@ class _LoginPageState extends State<LoginPage> {
                             if (state.status == AuthStatus.failure &&
                                 state.error != null)
                               Text(
-                                state.error!,
+                                _errorText(context, state.error!),
                                 style: AppTypography.secondary
                                     .copyWith(color: t.danger),
                               ),
                             AppButton(
-                              label: loading ? 'Вход…' : 'Войти',
-                              enabled: !loading,
-                              onPressed: loading ? null : _submit,
+                              label: loading ? context.l10n.loginSubmitting : context.l10n.loginSubmit,
+                              // Пока телефон или пароль не заполнены,
+                              // отправлять нечего.
+                              enabled: _valid && !loading,
+                              onPressed: (_valid && !loading) ? _submit : null,
                             ),
                           ],
                         ),

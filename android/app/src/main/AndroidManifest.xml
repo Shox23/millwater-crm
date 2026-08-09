@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Водитель фиксирует координаты точки при завершении доставки.
+         Только на переднем плане: фоновой геолокации приложение не ведёт. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="crm_millwater"
         android:name="${applicationName}"
@@ -47,6 +51,17 @@
         <intent>
             <action android:name="android.intent.action.DIAL"/>
             <data android:scheme="tel"/>
+        </intent>
+        <!-- Построение маршрута в Яндекс.Картах. Без этих объявлений
+             на Android 11+ canLaunchUrl не видит ни приложение карт,
+             ни браузер и всегда возвращает false. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="yandexmaps"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https" android:host="yandex.ru"/>
         </intent>
     </queries>
 </manifest>

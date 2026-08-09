@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/l10n.dart';
+
 import '../utils/uz_phone.dart';
 import 'action_feedback.dart';
 import 'app_button.dart';
@@ -15,11 +17,11 @@ class PhoneContactRow extends StatelessWidget {
   const PhoneContactRow({
     super.key,
     required this.phone,
-    this.label = 'Телефон',
+    this.label,
   });
 
   final String phone;
-  final String label;
+  final String? label;
 
   bool get _hasNumber => UzPhone.subscriberDigits(phone).isNotEmpty;
 
@@ -39,25 +41,28 @@ class PhoneContactRow extends StatelessWidget {
     if (!context.mounted) return;
     showAppSnackBar(
       context,
-      failedCall ? 'Звонок недоступен — номер скопирован' : 'Номер скопирован',
+      failedCall ? context.l10n.phoneCallUnavailable : context.l10n.phoneCopied,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_hasNumber) {
-      return ContactRow(icon: Icons.call, label: label, value: '—');
+      return ContactRow(
+          icon: Icons.call,
+          label: label ?? context.l10n.commonPhone,
+          value: '—');
     }
     return InkWell(
       onTap: () => _call(context),
       borderRadius: BorderRadius.circular(8),
       child: ContactRow(
         icon: Icons.call,
-        label: label,
+        label: label ?? context.l10n.commonPhone,
         value: UzPhone.format(phone),
         trailing: IconActionButton(
           icon: Icons.copy_rounded,
-          tooltip: 'Скопировать номер',
+          tooltip: context.l10n.phoneCopy,
           onPressed: () => _copy(context),
         ),
       ),

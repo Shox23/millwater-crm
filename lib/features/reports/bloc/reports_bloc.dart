@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../data/models/reports_summary.dart';
 import '../../../data/repositories/crm_repository.dart';
 

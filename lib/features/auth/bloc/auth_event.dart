@@ -7,6 +7,11 @@ sealed class AuthEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+/// Старт приложения: поднимаем сессию с диска, если она есть.
+class AuthBootstrapRequested extends AuthEvent {
+  const AuthBootstrapRequested();
+}
+
 class AuthLoginRequested extends AuthEvent {
   const AuthLoginRequested({required this.phone, required this.password});
   final String phone;

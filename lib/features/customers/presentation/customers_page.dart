@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../l10n/l10n.dart';
+
 import '../../../app/theme/app_spacing.dart';
 import '../../../core/navigation/overlay_route.dart';
 import '../../../core/widgets/action_feedback.dart';
@@ -52,10 +54,10 @@ class _CustomersView extends StatelessWidget {
                     AppSpacing.lg,
                   ),
                   child: ScreenHeader(
-                    label: 'База · ${state.customers.length}',
-                    title: 'Заказчики',
+                    label: context.l10n.customersHeader(state.customers.length),
+                    title: context.l10n.customersTitle,
                     action: AppButton(
-                      label: 'Добавить',
+                      label: context.l10n.commonAdd,
                       icon: Icons.add,
                       height: 44,
                       onPressed: () => _openForm(context, bloc),
@@ -67,7 +69,7 @@ class _CustomersView extends StatelessWidget {
                     horizontal: AppSpacing.page,
                   ),
                   child: SearchField(
-                    hint: 'Поиск заказчика',
+                    hint: context.l10n.customerSearch,
                     onChanged: (q) => bloc.add(CustomersSearchChanged(q)),
                   ),
                 ),
@@ -93,7 +95,7 @@ class _CustomersView extends StatelessWidget {
     ).push<bool>(OverlayPageRoute(builder: (_) => const CustomerFormPage()));
     if (saved == true) {
       bloc.add(const CustomersRequested());
-      if (context.mounted) showAppSnackBar(context, 'Заказчик добавлен');
+      if (context.mounted) showAppSnackBar(context, context.l10n.customerAdded);
     }
   }
 }
@@ -121,21 +123,22 @@ class _CustomersList extends StatelessWidget {
     if (state.status == CustomersStatus.error) {
       return ErrorRetryView(
         onRetry: () => bloc.add(const CustomersRequested()),
-        message: 'Не удалось загрузить заказчиков',
+        message: context.l10n.customersLoadFailed,
       );
     }
     final items = state.visible;
     if (items.isEmpty) {
       return state.isEmptySearch
           ? EmptyStateView.noSearchResults(
+              l10n: context.l10n,
               query: state.query.trim(),
               onClear: () => bloc.add(const CustomersSearchChanged('')),
             )
           : EmptyStateView(
               icon: Icons.storefront_outlined,
-              title: 'Заказчиков пока нет',
-              hint: 'Добавьте первого — он появится в списке и в маршрутах',
-              actionLabel: 'Добавить заказчика',
+              title: context.l10n.customersEmptyTitle,
+              hint: context.l10n.customersEmptyHint,
+              actionLabel: context.l10n.customersEmptyAction,
               onAction: onAdd,
             );
     }
@@ -172,27 +175,27 @@ class _CustomersList extends StatelessWidget {
               if (saved == true) {
                 bloc.add(const CustomersRequested());
                 if (context.mounted) {
-                  showAppSnackBar(context, 'Изменения сохранены');
+                  showAppSnackBar(context, context.l10n.changesSaved);
                 }
               }
             },
             onDelete: () async {
               final confirmed = await showConfirmDialog(
                 context,
-                title: 'Удалить заказчика?',
-                message: '${customer.name} будет удалён из базы.',
+                title: context.l10n.customerDeleteTitle,
+                message: context.l10n.customerDeleteMessage(customer.name),
               );
               if (!confirmed || !context.mounted) return;
               final repo = context.read<CrmRepository>();
               final ok = await runGuarded(
                 context,
                 () => repo.deleteCustomer(customer.id),
-                fallback: 'Не удалось удалить заказчика.',
+                fallback: context.l10n.customerDeleteFailed,
               );
               if (!ok) return;
               bloc.add(const CustomersRequested());
               if (context.mounted) {
-                showAppSnackBar(context, 'Заказчик удалён');
+                showAppSnackBar(context, context.l10n.customerDeleted);
               }
             },
           );

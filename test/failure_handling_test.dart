@@ -9,6 +9,7 @@ import 'package:crm_millwater/features/customers/presentation/customers_page.dar
 import 'package:crm_millwater/features/drivers/presentation/driver_form_page.dart';
 import 'package:crm_millwater/features/reports/presentation/reports_page.dart';
 import 'package:dio/dio.dart';
+import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,10 +49,16 @@ class _FailingRepository extends MockCrmRepository {
     required String phone,
     required String address,
     String? comment,
+    String? idempotencyKey,
   }) async {
     if (onWrite != null) _throwWrite();
     return super.addCustomer(
-        name: name, phone: phone, address: address, comment: comment);
+      name: name,
+      phone: phone,
+      address: address,
+      comment: comment,
+      idempotencyKey: idempotencyKey,
+    );
   }
 
   @override
@@ -60,10 +67,16 @@ class _FailingRepository extends MockCrmRepository {
     required String phone,
     required String email,
     required String password,
+    String? idempotencyKey,
   }) async {
     if (onWrite != null) _throwWrite();
     return super.addDriver(
-        fullName: fullName, phone: phone, email: email, password: password);
+      fullName: fullName,
+      phone: phone,
+      email: email,
+      password: password,
+      idempotencyKey: idempotencyKey,
+    );
   }
 
   @override
@@ -105,7 +118,11 @@ void main() {
     await tester.pumpWidget(
       RepositoryProvider<CrmRepository>.value(
         value: repo,
-        child: MaterialApp(theme: AppTheme.light(), home: page),
+        child: MaterialApp(
+            // Строки интерфейса берутся из локали: тесты идут на русской.
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,theme: AppTheme.light(), home: page),
       ),
     );
     await settle(tester);
@@ -129,6 +146,9 @@ void main() {
       await tester.enterText(inputFor('Название / имя'), 'Чайхана «Тест»');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 5');
+      // Кадр после ввода: кнопка разблокируется, только когда форма валидна.
+      await settle(tester);
+
       await tester.tap(find.text('Добавить'));
       await settle(tester);
 
@@ -154,7 +174,11 @@ void main() {
 
       await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
       await tester.enterText(inputFor('Номер телефона'), '911234567');
+      await tester.enterText(inputFor('Электронная почта'), 'timur@aqua.uz');
       await tester.enterText(inputFor('Пароль для входа'), 'secret1');
+      // Кадр после ввода: кнопка разблокируется, только когда форма валидна.
+      await settle(tester);
+
       await tester.tap(find.text('Добавить'));
       await settle(tester);
 
