@@ -20,20 +20,25 @@ class MockStore {
 
   String nextId(String prefix) => '${prefix}_${++_seq}';
 
+  /// Счётчики (`completedCount`, `totalCustomers`) не принимаются параметрами
+  /// намеренно: их всегда выводим из списка точек, как это делает сервер.
   RouteDetail copyRoute(
     RouteDetail r, {
     RouteStatus? status,
     List<RouteStop>? stops,
+    DateTime? date,
+    String? driverId,
+    String? driverFullName,
   }) {
     final newStops = stops ?? r.stops;
     return RouteDetail(
       id: r.id,
-      date: r.date,
+      date: date ?? r.date,
       status: status ?? r.status,
       completedCount: newStops.where((s) => s.isCompleted).length,
       totalCustomers: newStops.length,
-      driverId: r.driverId,
-      driverFullName: r.driverFullName,
+      driverId: driverId ?? r.driverId,
+      driverFullName: driverFullName ?? r.driverFullName,
       stops: newStops,
     );
   }

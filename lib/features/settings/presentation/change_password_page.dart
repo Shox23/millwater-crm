@@ -7,6 +7,7 @@ import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/forms/submit_state.dart';
 import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
@@ -28,7 +29,7 @@ class ChangePasswordPage extends StatefulWidget {
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
-class _ChangePasswordPageState extends State<ChangePasswordPage> {
+class _ChangePasswordPageState extends State<ChangePasswordPage> with SubmitState {
   /// Правила проверки на языке интерфейса. Пересобираются при смене
   /// локали: `didChangeDependencies` вызывается снова.
   late Validators _v;
@@ -49,8 +50,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _freshFocus = FocusNode();
   final _repeatFocus = FocusNode();
 
-  bool _saving = false;
-  String? _error;
 
   FormFieldValidator<String> get _currentRule => _v.notEmpty(context.l10n.passwordCurrentEmpty);
   FormFieldValidator<String> get _passwordRule => _v.password();
@@ -95,21 +94,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       return;
     }
 
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      await context.read<AuthRepository>().changePassword(
-            oldPassword: _current.text,
-            newPassword: _fresh.text,
-          );
-      if (mounted) Navigator.of(context).pop(true);
-    } on DioException catch (e) {
-      _failed(_messageFor(e));
-    } catch (_) {
-      _failed(_fallback);
-    }
+    final repo = context.read<AuthRepository>();
+    final changed = await submit(
+      () => repo.changePassword(
+        oldPassword: _current.text,
+        newPassword: _fresh.text,
+      ),
+      message: (e) => e is DioException ? _messageFor(e) : _fallback,
+    );
+
+    if (changed && mounted) Navigator.of(context).pop(true);
   }
 
   /// Поля и их текущие ошибки — один источник и для кнопки, и для перехода
@@ -146,14 +140,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       return context.l10n.passwordWrongCurrent;
     }
     return apiErrorMessage(context.l10n, e, fallback: _fallback);
-  }
-
-  void _failed(String message) {
-    if (!mounted) return;
-    setState(() {
-      _saving = false;
-      _error = message;
-    });
   }
 
   /// Закрытие формы: введённый пароль терять молча нельзя.
@@ -235,9 +221,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppSpacing.md,
             children: [
-              if (_error != null)
+              if (submitError != null)
                 Text(
-                  _error!,
+                  submitError!,
                   style: AppTypography.secondary
                       .copyWith(color: context.tokens.danger),
                   textAlign: TextAlign.center,
@@ -249,15 +235,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     child: AppButton(
                       label: context.l10n.commonCancel,
                       variant: AppButtonVariant.secondary,
-                      onPressed: _saving ? null : _leave,
+                      onPressed: submitting ? null : _leave,
                     ),
                   ),
                   Expanded(
                     child: AppButton(
-                      label: _saving ? context.l10n.commonSaving : context.l10n.passwordSubmit,
+                      label: submitting ? context.l10n.commonSaving : context.l10n.passwordSubmit,
                       // Пока в форме есть ошибки, отправлять нечего.
-                      enabled: _valid && !_saving,
-                      onPressed: (_valid && !_saving) ? _submit : null,
+                      enabled: _valid && !submitting,
+                      onPressed: (_valid && !submitting) ? _submit : null,
                     ),
                   ),
                 ],

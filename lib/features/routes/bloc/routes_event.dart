@@ -18,3 +18,12 @@ class RoutesFilterChanged extends RoutesEvent {
   @override
   List<Object?> get props => [filter];
 }
+
+/// Выбран другой день в ленте дат.
+class RoutesDateChanged extends RoutesEvent {
+  const RoutesDateChanged(this.date);
+  final DateTime date;
+
+  @override
+  List<Object?> get props => [date];
+}

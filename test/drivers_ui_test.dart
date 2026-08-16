@@ -47,6 +47,60 @@ void main() {
       expect(find.text('Азиз Каримов'), findsOneWidget);
       expect(find.text('+998 90 123 45 67'), findsOneWidget);
     });
+
+    testWidgets('поиск не стирает список, пока идёт запрос', (tester) async {
+      await pumpPage(tester, const DriversPage());
+      expect(find.text('Азиз Каримов'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Азиз');
+      // Дебаунс 300 мс, ответ мока ещё 150 — момент, когда запрос в пути.
+      await tester.pump(const Duration(milliseconds: 350));
+
+      // Раньше здесь на месте списка был спиннер, и список мигал на каждую
+      // букву. Теперь показываем прежнюю выдачу и тонкую полоску прогресса.
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.text('Азиз Каримов'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+    });
+
+    testWidgets('на первой загрузке спиннер всё-таки есть', (tester) async {
+      useLargeSurface(tester);
+      await tester.pumpWidget(
+        RepositoryProvider<CrmRepository>.value(
+          value: repo,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
+            theme: AppTheme.light(),
+            home: const DriversPage(),
+          ),
+        ),
+      );
+      // Показывать ещё нечего — здесь спиннер уместен.
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('подпись шапки не выдаёт найденных за всю команду',
+        (tester) async {
+      await pumpPage(tester, const DriversPage());
+      // ScreenHeader рисует подпись капсом.
+      expect(find.textContaining('КОМАНДА · '), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Азиз');
+      await tester.pump(const Duration(milliseconds: 800));
+
+      // «Команда · 1» на двух буквах поиска — неправда: команда прежняя.
+      expect(find.textContaining('КОМАНДА · '), findsNothing);
+      expect(find.textContaining('НАЙДЕНО · '), findsOneWidget);
+    });
   });
 
   group('Карточка водителя', () {

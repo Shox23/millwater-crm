@@ -109,8 +109,10 @@ class CustomerDetailPage extends StatelessWidget {
             children: [
               Expanded(
                 child: StatTile(
+                  // Это остаток тары на руках (серверное `bottle_balance`),
+                  // а не количество капсул в заказе.
                   value: '${customer.capsuleBalance}',
-                  label: context.l10n.customerCapsulesPerOrder,
+                  label: context.l10n.customerCapsulesBalance,
                 ),
               ),
               Expanded(
@@ -118,8 +120,20 @@ class CustomerDetailPage extends StatelessWidget {
               ),
             ],
           ),
-          if (customer.prepayment > 0 || customer.debt > 0)
-            _FinanceBanner(customer: customer),
+          // Оба поля независимы — показываем каждое ненулевое. Долг выше:
+          // раньше он полностью скрывался за предоплатой.
+          if (customer.debt > 0)
+            _FinanceBanner(
+              label: context.l10n.financeDebt,
+              amount: customer.debt,
+              isDebt: true,
+            ),
+          if (customer.prepayment > 0)
+            _FinanceBanner(
+              label: context.l10n.financePrepayment,
+              amount: customer.prepayment,
+              isDebt: false,
+            ),
           AppCard(child: PhoneContactRow(phone: customer.phone)),
         ],
       ),
@@ -144,19 +158,23 @@ class CustomerDetailPage extends StatelessWidget {
   }
 }
 
-/// Крупный финансовый баннер (предоплата/долг) на экране деталей.
+/// Крупный финансовый баннер (предоплата или долг) на экране деталей.
 class _FinanceBanner extends StatelessWidget {
-  const _FinanceBanner({required this.customer});
-  final Customer customer;
+  const _FinanceBanner({
+    required this.label,
+    required this.amount,
+    required this.isDebt,
+  });
+
+  final String label;
+  final int amount;
+  final bool isDebt;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final isPrepay = customer.prepayment > 0;
-    final tone = isPrepay ? t.success : t.danger;
-    final bg = isPrepay ? t.successBg : t.dangerBg;
-    final label = isPrepay ? context.l10n.financePrepayment : context.l10n.financeDebt;
-    final amount = isPrepay ? customer.prepayment : customer.debt;
+    final tone = isDebt ? t.danger : t.success;
+    final bg = isDebt ? t.dangerBg : t.successBg;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),

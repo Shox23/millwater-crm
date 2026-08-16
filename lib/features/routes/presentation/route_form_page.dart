@@ -8,6 +8,7 @@ import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/forms/submit_state.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
@@ -18,28 +19,47 @@ import '../../../core/widgets/initials_avatar.dart';
 import '../../../core/widgets/search_field.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/driver.dart';
+import '../../../data/models/enums.dart';
+import '../../../data/models/route_models.dart';
 import '../../../data/network/api_envelope.dart';
 import '../../../data/repositories/crm_repository.dart';
 
-/// Экран создания маршрута: выбор водителя, даты и заказчиков.
+/// Экран создания и редактирования маршрута: водитель, дата и заказчики.
+///
+/// В режиме правки набор доступных изменений зависит от статуса — см.
+/// [RouteEditRules]: начатый маршрут можно только дополнить точками.
 class RouteFormPage extends StatefulWidget {
-  const RouteFormPage({super.key});
+  const RouteFormPage({super.key, this.route});
+
+  /// Маршрут для правки; `null` — создаём новый.
+  final RouteDetail? route;
+
+  bool get isEdit => route != null;
 
   @override
   State<RouteFormPage> createState() => _RouteFormPageState();
 }
 
-class _RouteFormPageState extends State<RouteFormPage> {
+class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   List<Driver> _drivers = [];
   List<Customer> _customers = [];
   bool _loading = true;
   bool _loadFailed = false;
-  bool _saving = false;
-  String? _error;
 
   String? _driverId;
-  DateTime _date = DateTime.now();
+  late DateTime _date;
   final Set<String> _customerIds = {};
+
+  /// Точки, с которыми маршрут был открыт, — база для вычисления правок.
+  late final Set<String> _initialCustomerIds =
+      widget.route?.stops.map((s) => s.customerId).toSet() ?? const {};
+
+  RouteStatus get _status => widget.route?.status ?? RouteStatus.created;
+
+  /// В создании ограничений нет, в правке их задаёт статус.
+  bool get _canReschedule => !widget.isEdit || _status.canReschedule;
+  bool get _canRemoveCustomers =>
+      !widget.isEdit || _status.canRemoveCustomers;
 
   /// Один ключ на весь экран: повтор после обрыва связи не должен создать
   /// второй такой же маршрут.
@@ -63,6 +83,10 @@ class _RouteFormPageState extends State<RouteFormPage> {
   @override
   void initState() {
     super.initState();
+    final route = widget.route;
+    _date = route?.date ?? DateTime.now();
+    _driverId = route?.driverId;
+    _customerIds.addAll(_initialCustomerIds);
     _load();
   }
 
@@ -91,43 +115,107 @@ class _RouteFormPageState extends State<RouteFormPage> {
     }
   }
 
-  bool get _valid => _driverId != null && _customerIds.isNotEmpty;
+  /// Заказчики, добавленные к исходному составу.
+  Set<String> get _addedCustomers =>
+      _customerIds.difference(_initialCustomerIds);
+
+  /// Заказчики, убранные из исходного состава.
+  Set<String> get _removedCustomers =>
+      _initialCustomerIds.difference(_customerIds);
+
+  /// Есть ли что сохранять. При создании — всегда да.
+  bool get _hasChanges {
+    final route = widget.route;
+    if (route == null) return true;
+    return !DateUtils.isSameDay(_date, route.date) ||
+        _driverId != route.driverId ||
+        _addedCustomers.isNotEmpty ||
+        _removedCustomers.isNotEmpty;
+  }
+
+  bool get _valid =>
+      _driverId != null && _customerIds.isNotEmpty && _hasChanges;
+
+  /// Можно ли тронуть этого заказчика: снять галочку с уже стоящей точки
+  /// разрешено не всегда, поставить новую — почти всегда.
+  bool _canToggle(String customerId) => _customerIds.contains(customerId)
+      ? _canRemoveCustomers || !_initialCustomerIds.contains(customerId)
+      : _status.canAddCustomers;
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    var first = now.subtract(const Duration(days: 30));
+    // Маршрут мог быть заведён давно и всё ещё не выехать. Без этого календарь
+    // падал на ассерте SDK: initialDate оказывался раньше firstDate.
+    if (_date.isBefore(first)) first = _date;
+
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: first,
+      lastDate: now.add(const Duration(days: 365)),
     );
     if (picked != null) setState(() => _date = picked);
   }
 
   Future<void> _save() async {
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      await context.read<CrmRepository>().createRoute(
-            driverId: _driverId!,
-            date: _date,
-            customerIds: _customerIds.toList(),
-            idempotencyKey: _idempotencyKey,
-          );
-      if (mounted) Navigator.of(context).pop(true);
-    } on DioException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = apiErrorMessage(context.l10n, e, fallback: context.l10n.routeFormCreateFailed);
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = context.l10n.routeFormCreateFailed;
-      });
+    final repo = context.read<CrmRepository>();
+    // Строки берём до запроса: после await контекст уже мог уйти.
+    final l10n = context.l10n;
+    final fallback =
+        widget.isEdit ? l10n.routeFormSaveFailed : l10n.routeFormCreateFailed;
+
+    final saved = await submit(
+      () => widget.isEdit ? _applyChanges(repo) : _create(repo),
+      message: (e) => e is DioException
+          ? apiErrorMessage(l10n, e, fallback: fallback)
+          : fallback,
+    );
+
+    if (saved && mounted) Navigator.of(context).pop(true);
+  }
+
+  Future<void> _create(CrmRepository repo) => repo.createRoute(
+        driverId: _driverId!,
+        date: _date,
+        customerIds: _customerIds.toList(),
+        idempotencyKey: _idempotencyKey,
+      );
+
+  /// Применяет правки по одной: операции «сохранить маршрут целиком» у сервера
+  /// нет, каждое изменение — отдельный запрос.
+  ///
+  /// Это не транзакция: при отказе на середине предыдущие правки останутся
+  /// применёнными. Поэтому экран после ошибки перечитывает маршрут, и
+  /// повторное сохранение доделает остаток — набор правок считается заново от
+  /// свежего состояния, а каждая операция идемпотентна.
+  ///
+  /// Порядок фиксирован: сначала скалярные поля (по одному запросу), потом
+  /// удаления и лишь затем добавления — так маршрут ни в один момент не
+  /// раздувается сверх итогового состава.
+  Future<void> _applyChanges(CrmRepository repo) async {
+    final route = widget.route!;
+    final id = route.id;
+
+    if (_canReschedule) {
+      if (!DateUtils.isSameDay(_date, route.date)) {
+        await repo.updateRouteDate(routeId: id, date: _date);
+      }
+      if (_driverId != route.driverId) {
+        await repo.assignDriver(routeId: id, driverId: _driverId!);
+      }
+    }
+
+    if (_canRemoveCustomers) {
+      for (final customerId in _removedCustomers) {
+        await repo.removeRouteCustomer(routeId: id, customerId: customerId);
+      }
+    }
+
+    if (_status.canAddCustomers) {
+      for (final customerId in _addedCustomers) {
+        await repo.addRouteCustomer(routeId: id, customerId: customerId);
+      }
     }
   }
 
@@ -136,7 +224,9 @@ class _RouteFormPageState extends State<RouteFormPage> {
     final t = context.tokens;
 
     return DetailScaffold(
-      title: context.l10n.routeFormTitle,
+      title: widget.isEdit
+          ? context.l10n.routeEditTitle
+          : context.l10n.routeFormTitle,
       body: _loading
           ? const Padding(
               padding: EdgeInsets.only(top: 80),
@@ -154,21 +244,41 @@ class _RouteFormPageState extends State<RouteFormPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: AppSpacing.lg,
               children: [
+                // Объясняем, почему часть формы не поддаётся: заблокированные
+                // поля без причины выглядят поломкой.
+                if (widget.isEdit && !_canReschedule)
+                  AppCard(
+                    child: Row(
+                      spacing: AppSpacing.md,
+                      children: [
+                        Icon(Icons.info_outline, size: 20, color: t.text2),
+                        Expanded(
+                          child: Text(
+                            context.l10n.routeEditInProgressHint,
+                            style: AppTypography.secondary
+                                .copyWith(color: t.text2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 _Section(
                   label: context.l10n.routeFormDate,
                   child: AppCard(
-                    onTap: _pickDate,
+                    onTap: _canReschedule ? _pickDate : null,
                     child: Row(
                       spacing: AppSpacing.md,
                       children: [
                         Icon(Icons.calendar_today_outlined,
-                            size: 20, color: t.primary),
+                            size: 20,
+                            color: _canReschedule ? t.primary : t.text3),
                         Expanded(
                           child: Text(DateFormat('dd.MM.yyyy').format(_date),
-                              style: AppTypography.bodyStrong
-                                  .copyWith(color: t.text)),
+                              style: AppTypography.bodyStrong.copyWith(
+                                  color: _canReschedule ? t.text : t.text2)),
                         ),
-                        Icon(Icons.chevron_right, color: t.text2),
+                        if (_canReschedule)
+                          Icon(Icons.chevron_right, color: t.text2),
                       ],
                     ),
                   ),
@@ -183,14 +293,19 @@ class _RouteFormPageState extends State<RouteFormPage> {
                           spacing: AppSpacing.sm,
                           children: [
                             for (final d in _drivers)
-                              _SelectableRow(
-                                selected: _driverId == d.id,
-                                leading:
-                                    InitialsAvatar(name: d.fullName, size: 40),
-                                title: d.fullName,
-                                subtitle: d.phone,
-                                onTap: () => setState(() => _driverId = d.id),
-                              ),
+                              // В начатом маршруте показываем только его
+                              // водителя: остальные строки были бы мёртвыми.
+                              if (_canReschedule || _driverId == d.id)
+                                _SelectableRow(
+                                  selected: _driverId == d.id,
+                                  leading: InitialsAvatar(
+                                      name: d.fullName, size: 40),
+                                  title: d.fullName,
+                                  subtitle: d.phone,
+                                  onTap: _canReschedule
+                                      ? () => setState(() => _driverId = d.id)
+                                      : null,
+                                ),
                           ],
                         ),
                 ),
@@ -223,17 +338,19 @@ class _RouteFormPageState extends State<RouteFormPage> {
                                 multi: true,
                                 title: c.name,
                                 subtitle: c.address,
-                                onTap: () => setState(() {
-                                  if (!_customerIds.remove(c.id)) {
-                                    _customerIds.add(c.id);
-                                  }
-                                }),
+                                onTap: _canToggle(c.id)
+                                    ? () => setState(() {
+                                          if (!_customerIds.remove(c.id)) {
+                                            _customerIds.add(c.id);
+                                          }
+                                        })
+                                    : null,
                               ),
                           ],
                         ),
                 ),
-                if (_error != null)
-                  Text(_error!,
+                if (submitError != null)
+                  Text(submitError!,
                       style: AppTypography.secondary.copyWith(color: t.danger)),
               ],
             ),
@@ -252,9 +369,14 @@ class _RouteFormPageState extends State<RouteFormPage> {
                   ),
                   Expanded(
                     child: AppButton(
-                      label: _saving ? context.l10n.commonCreating : context.l10n.commonCreate,
-                      enabled: _valid && !_saving,
-                      onPressed: (_valid && !_saving) ? _save : null,
+                      label: switch ((widget.isEdit, submitting)) {
+                        (true, true) => context.l10n.commonSaving,
+                        (true, false) => context.l10n.commonSave,
+                        (false, true) => context.l10n.commonCreating,
+                        (false, false) => context.l10n.commonCreate,
+                      },
+                      enabled: _valid && !submitting,
+                      onPressed: (_valid && !submitting) ? _save : null,
                     ),
                   ),
                 ],
@@ -296,6 +418,10 @@ class _Section extends StatelessWidget {
 }
 
 /// Строка выбора: радио для водителя, чекбокс для заказчиков.
+///
+/// `onTap == null` — строку трогать нельзя (правило [RouteEditRules]); она
+/// гасится, но остаётся видимой: убрать её значило бы скрыть от админа то,
+/// что в маршруте уже есть.
 class _SelectableRow extends StatelessWidget {
   const _SelectableRow({
     required this.selected,
@@ -309,63 +435,70 @@ class _SelectableRow extends StatelessWidget {
   final bool selected;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Widget? leading;
   final bool multi;
+
+  bool get _enabled => onTap != null;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    return Material(
-      color: selected ? t.softOf(t.primary) : t.surface,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        mouseCursor: SystemMouseCursors.click,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: selected ? t.primary : t.border,
-              width: selected ? 1.5 : 1,
+    return Opacity(
+      opacity: _enabled ? 1 : 0.55,
+      child: Material(
+        color: selected ? t.softOf(t.primary) : t.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          mouseCursor: _enabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: selected ? t.primary : t.border,
+                width: selected ? 1.5 : 1,
+              ),
             ),
-          ),
-          child: Row(
-            spacing: AppSpacing.md,
-            children: [
-              ?leading,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 2,
-                  children: [
-                    Text(title,
-                        style:
-                            AppTypography.bodyStrong.copyWith(color: t.text),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    Text(subtitle,
-                        style:
-                            AppTypography.secondary.copyWith(color: t.text2),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ],
+            child: Row(
+              spacing: AppSpacing.md,
+              children: [
+                ?leading,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 2,
+                    children: [
+                      Text(title,
+                          style:
+                              AppTypography.bodyStrong.copyWith(color: t.text),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      Text(subtitle,
+                          style:
+                              AppTypography.secondary.copyWith(color: t.text2),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                multi
-                    ? (selected
-                        ? Icons.check_box_rounded
-                        : Icons.check_box_outline_blank)
-                    : (selected
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked),
-                color: selected ? t.primary : t.text3,
-              ),
-            ],
+                Icon(
+                  multi
+                      ? (selected
+                          ? Icons.check_box_rounded
+                          : Icons.check_box_outline_blank)
+                      : (selected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked),
+                  color: selected ? t.primary : t.text3,
+                ),
+              ],
+            ),
           ),
         ),
       ),

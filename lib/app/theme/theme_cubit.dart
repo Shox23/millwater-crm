@@ -2,23 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../l10n/l10n.dart';
-
+import '../settings/settings_storage.dart';
 
 /// Режим темы приложения: по умолчанию следует системе.
+///
+/// Выбор переживает перезапуск: начальное значение приходит из
+/// [SettingsStorage] (его читает `main` до запуска приложения), а каждое
+/// переключение туда же и записывается.
 class ThemeCubit extends Cubit<ThemeMode> {
-  ThemeCubit() : super(ThemeMode.system);
+  ThemeCubit({ThemeMode initial = ThemeMode.system, SettingsStorage? storage})
+      : _storage = storage ?? const PrefsSettingsStorage(),
+        super(initial);
+
+  final SettingsStorage _storage;
 
   /// Переключает light → dark → system по кругу.
-  void toggle() {
-    emit(switch (state) {
-      ThemeMode.system => ThemeMode.light,
-      ThemeMode.light => ThemeMode.dark,
-      ThemeMode.dark => ThemeMode.system,
-    });
-  }
+  void toggle() => select(switch (state) {
+        ThemeMode.system => ThemeMode.light,
+        ThemeMode.light => ThemeMode.dark,
+        ThemeMode.dark => ThemeMode.system,
+      });
 
   /// Явный выбор режима — из настроек.
-  void select(ThemeMode mode) => emit(mode);
+  ///
+  /// Запись не ждём: экран перекрашивается сразу, а неудачная запись
+  /// означает лишь то, что следующий запуск начнётся с прежнего значения.
+  void select(ThemeMode mode) {
+    emit(mode);
+    _storage.saveThemeMode(mode);
+  }
 
   /// Иконка текущего режима для кнопки переключения.
   static IconData iconFor(ThemeMode mode) => switch (mode) {

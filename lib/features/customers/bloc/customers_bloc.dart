@@ -39,7 +39,9 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     final id = ++_requestId;
     emit(state.copyWith(status: CustomersStatus.loading));
     try {
-      // Фильтрует сервер: локально видна лишь первая страница выдачи.
+      // Фильтрует сервер, а не мы: локальный фильтр поверх серверного прятал
+      // бы часть найденного. Репозиторий обходит страницы сам и отдаёт всю
+      // выдачу целиком — обрезать её здесь тоже нечем.
       final customers = await _repository.getCustomers(search: state.query);
       if (id != _requestId) return;
       emit(state.copyWith(status: CustomersStatus.ready, customers: customers));

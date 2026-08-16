@@ -16,17 +16,34 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
 
   final CrmRepository _repository;
 
+  /// Номер последнего запроса: ответы обогнавших друг друга запросов
+  /// не должны затирать более свежий результат.
+  ///
+  /// Селектор периода это провоцирует: «Сегодня → Неделя → Месяц» тремя
+  /// тапами — и медленный первый ответ лёг бы поверх последнего.
+  int _requestId = 0;
+
   Future<void> _onRequested(
     ReportsRequested event,
     Emitter<ReportsState> emit,
   ) async {
+    final id = ++_requestId;
     emit(state.copyWith(status: ReportsStatus.loading));
     try {
       final (from, to) = _rangeFor(state.period);
-      final summary =
-          await _repository.getReportsSummary(dateFrom: from, dateTo: to);
-      emit(state.copyWith(status: ReportsStatus.ready, summary: summary));
+      // Должников и остаток капсул сводка не отдаёт — их приходится выводить
+      // из справочника заказчиков. Запросы независимы, поэтому параллельно.
+      final (report, customers) = await (
+        _repository.getSummaryReport(dateFrom: from, dateTo: to),
+        _repository.getCustomers(),
+      ).wait;
+      if (id != _requestId) return;
+      emit(state.copyWith(
+        status: ReportsStatus.ready,
+        summary: ReportsSummary.from(report, customers),
+      ));
     } catch (_) {
+      if (id != _requestId) return;
       emit(state.copyWith(status: ReportsStatus.error));
     }
   }
@@ -35,7 +52,10 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     ReportsPeriodChanged event,
     Emitter<ReportsState> emit,
   ) {
-    emit(state.copyWith(period: event.period));
+    // Состояние собираем заново, а не через copyWith: прежние числа надо
+    // именно убрать. Иначе, пока идёт запрос, в шапке уже «Месяц», а в
+    // карточках всё ещё цифры за сегодня.
+    emit(ReportsState(status: ReportsStatus.loading, period: event.period));
     add(const ReportsRequested());
   }
 

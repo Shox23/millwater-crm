@@ -54,7 +54,13 @@ class _CustomersView extends StatelessWidget {
                     AppSpacing.lg,
                   ),
                   child: ScreenHeader(
-                    label: context.l10n.customersHeader(state.customers.length),
+                    // Под поиском в списке лежат найденные, а не вся база:
+                    // «База · 1» на двух набранных буквах — неправда.
+                    label: state.query.trim().isEmpty
+                        ? context.l10n
+                            .customersHeader(state.customers.length)
+                        : context.l10n
+                            .customersHeaderFound(state.customers.length),
                     title: context.l10n.customersTitle,
                     action: AppButton(
                       label: context.l10n.commonAdd,
@@ -74,6 +80,16 @@ class _CustomersView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                // Список больше не стирается на время запроса, поэтому нужен
+                // отдельный признак «запрос в пути». Высота зарезервирована
+                // всегда — иначе список дёргается на каждую букву в поиске.
+                SizedBox(
+                  height: 2,
+                  child: state.status == CustomersStatus.loading &&
+                          state.customers.isNotEmpty
+                      ? const LinearProgressIndicator(minHeight: 2)
+                      : null,
+                ),
                 Expanded(
                   child: _CustomersList(
                     state: state,
@@ -115,8 +131,14 @@ class _CustomersList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.status == CustomersStatus.loading ||
-        state.status == CustomersStatus.initial) {
+    // Спиннер во весь экран — только когда показывать нечего. Иначе список
+    // держим на месте: поиск шлёт запрос по ходу набора, и стирать выдачу на
+    // каждое слово значило бы мигать списком. Заодно RefreshIndicator больше
+    // не вылетает из дерева посреди жеста обновления — а здесь протяжка
+    // единственный способ обновить, кнопки на экране нет.
+    if (state.status == CustomersStatus.initial ||
+        (state.status == CustomersStatus.loading &&
+            state.customers.isEmpty)) {
       return const Center(child: CircularProgressIndicator());
     }
     // Раньше сетевая ошибка доходила сюда и выглядела как «Ничего не найдено».

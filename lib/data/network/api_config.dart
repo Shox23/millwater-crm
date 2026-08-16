@@ -4,7 +4,7 @@
 abstract class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://81.162.55.104',
+    defaultValue: 'https://crm.millwater.uz',
   );
 
   static const Duration connectTimeout = Duration(seconds: 15);

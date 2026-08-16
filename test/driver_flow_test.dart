@@ -149,6 +149,12 @@ void main() {
     });
   });
 
+  /// Полоска «запрос в пути». Именно неопределённая: у карточек маршрутов и
+  /// у hero-карточки свои LinearProgressIndicator, но с заданным value.
+  final refreshBar = find.byWidgetPredicate(
+    (w) => w is LinearProgressIndicator && w.value == null,
+  );
+
   group('Экран «Мои маршруты»', () {
     testWidgets('показывает сводку и список своих маршрутов', (tester) async {
       await pumpPage(
@@ -159,9 +165,11 @@ void main() {
 
       expect(find.text('Мои маршруты'), findsOneWidget);
       expect(find.text('Доставлено доставок'), findsNothing);
-      expect(find.text('мои маршруты'), findsOneWidget);
+      // «Всего» в подписях не случайно: эти два числа за всё время, и только
+      // среднее — за сегодня. Раньше они читались как один период.
+      expect(find.text('всего маршрутов'), findsOneWidget);
       expect(find.text('доставлено сегодня'), findsOneWidget);
-      expect(find.text('заказов'), findsOneWidget);
+      expect(find.text('всего заказов'), findsOneWidget);
       // Денежного показателя у водителя нет — сводный отчёт ему недоступен.
       expect(find.text('Собрано сегодня'), findsNothing);
       // Карточка маршрута вместо водителя показывает число точек.
@@ -184,6 +192,53 @@ void main() {
 
       expect(find.text('Не удалось загрузить маршруты'), findsOneWidget);
       expect(find.text('Повторить'), findsOneWidget);
+    });
+
+    testWidgets('на первой загрузке спиннер есть', (tester) async {
+      useLargeSurface(tester);
+      await tester.pumpWidget(
+        RepositoryProvider<DriverRepository>.value(
+          value: MockDriverRepository(driverId: 'd1'),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
+            theme: AppTheme.light(),
+            home: const MyRoutesPage(),
+          ),
+        ),
+      );
+      // Показывать ещё нечего — спиннер уместен.
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await settle(tester);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('обновление не стирает список', (tester) async {
+      await pumpPage(
+        tester,
+        MockDriverRepository(driverId: 'd1'),
+        const MyRoutesPage(),
+      );
+      expect(find.text('3 точек'), findsOneWidget);
+
+      // Повторный запрос: список остаётся на месте, а «запрос в пути»
+      // показывает тонкая полоска. Раньше здесь всё стирал спиннер, и
+      // RefreshIndicator вылетал из дерева посреди жеста.
+      // Контекст берём у потомка: сам MyRoutesPage стоит НАД своим
+      // BlocProvider и блока не видит.
+      final context = tester.element(find.byType(RefreshIndicator));
+      BlocProvider.of<MyRoutesBloc>(context).add(const MyRoutesRequested());
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(refreshBar, findsOneWidget);
+      expect(find.text('3 точек'), findsOneWidget);
+
+      await settle(tester);
+      expect(refreshBar, findsNothing);
     });
 
     testWidgets('фильтр отсекает маршруты не в этом статусе', (tester) async {

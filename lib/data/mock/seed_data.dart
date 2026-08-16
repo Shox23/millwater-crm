@@ -1,14 +1,23 @@
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
-import '../models/reports_summary.dart';
 import '../models/route_models.dart';
 
 /// Сид-данные, выверенные под цифры макета.
-/// «Сегодня» зафиксировано на 05.07.26, как в шапке экрана «Маршруты».
+///
+/// «Сегодня» — настоящий текущий день, а не фиксированная дата: экран
+/// маршрутов запрашивает список за выбранный в ленте день, и сид с прибитым
+/// прошлым числом отдавал бы пустоту на всех табах. Остальные даты считаются
+/// от него, чтобы фикстура оставалась связной.
 abstract class SeedData {
-  static final DateTime today = DateTime(2026, 7, 5);
+  static final DateTime today = _dayOnly(DateTime.now());
   static final DateTime _created = DateTime(2026, 1, 1);
+
+  static DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  /// День на [days] раньше «сегодня».
+  static DateTime _daysAgo(int days) =>
+      today.subtract(Duration(days: days));
 
   /// Цена капсулы в моках (на сервере задаётся через /admin/prices).
   static const int capsulePrice = 20000;
@@ -73,7 +82,7 @@ abstract class SeedData {
           comment: 'Мирабад',
           capsuleBalance: 5,
           prepayment: 200000,
-          lastOrderDate: DateTime(2026, 7, 3),
+          lastOrderDate: _daysAgo(2),
           createdAt: _created,
         ),
         Customer(
@@ -84,7 +93,7 @@ abstract class SeedData {
           comment: 'Юнусабад',
           capsuleBalance: 8,
           debt: 120000,
-          lastOrderDate: DateTime(2026, 7, 4),
+          lastOrderDate: _daysAgo(1),
           createdAt: _created,
         ),
         Customer(
@@ -94,7 +103,7 @@ abstract class SeedData {
           address: 'Чиланзар, 9-й кв-л',
           comment: 'Чиланзар',
           capsuleBalance: 2,
-          lastOrderDate: DateTime(2026, 7, 2),
+          lastOrderDate: _daysAgo(3),
           createdAt: _created,
         ),
         Customer(
@@ -104,7 +113,7 @@ abstract class SeedData {
           address: 'Куйлюк, база 2',
           comment: 'Куйлюк',
           capsuleBalance: 3,
-          lastOrderDate: DateTime(2026, 7, 1),
+          lastOrderDate: _daysAgo(4),
           createdAt: _created,
         ),
         Customer(
@@ -115,7 +124,7 @@ abstract class SeedData {
           comment: 'М. Улугбек',
           capsuleBalance: 5,
           debt: 300000,
-          lastOrderDate: DateTime(2026, 6, 30),
+          lastOrderDate: _daysAgo(5),
           createdAt: _created,
         ),
         Customer(
@@ -125,7 +134,7 @@ abstract class SeedData {
           address: 'Сергели, 5-й кв-л',
           comment: 'Сергели',
           capsuleBalance: 3,
-          lastOrderDate: DateTime(2026, 7, 4),
+          lastOrderDate: _daysAgo(1),
           createdAt: _created,
         ),
       ];
@@ -225,16 +234,4 @@ abstract class SeedData {
 
     return [r1, r2, r3, r4, r5];
   }
-
-  /// Недельный график (значения — суммы в сум).
-  static const List<WeeklyBar> weekly = [
-    WeeklyBar(label: 'Пн', value: 210000),
-    WeeklyBar(label: 'Вт', value: 340000),
-    WeeklyBar(label: 'Ср', value: 280000),
-    WeeklyBar(label: 'Чт', value: 410000),
-    WeeklyBar(label: 'Пт', value: 280000),
-  ];
-
-  /// Ёмкость по капсулам (для «26 из 47»).
-  static const int capsulesTotal = 47;
 }

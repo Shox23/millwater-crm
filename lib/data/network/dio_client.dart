@@ -80,6 +80,18 @@ class _AuthInterceptor extends QueuedInterceptor {
     handler.next(options);
   }
 
+  /// Тело исходного запроса, пригодное для повторной отправки.
+  ///
+  /// `FormData` одноразова: первая попытка вычитывает её поток, и повтор того
+  /// же объекта ушёл бы с пустым телом. Задевает это ровно тот запрос, где
+  /// 401 наиболее вероятен, — завершение доставки с фото у водителя на плохой
+  /// связи. `clone()` пересобирает part'ы, а `MultipartFile.fromFile` хранит
+  /// не поток, а `() => file.openRead()`, поэтому файл читается заново.
+  ///
+  /// Остальные тела (Map, String) повтор переживают как есть.
+  static dynamic _retryBody(dynamic data) =>
+      data is FormData ? data.clone() : data;
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     final is401 = err.response?.statusCode == 401;
@@ -105,6 +117,7 @@ class _AuthInterceptor extends QueuedInterceptor {
       // Повторяем исходный запрос с новым токеном.
       final opts = err.requestOptions;
       opts.headers['Authorization'] = 'Bearer ${_store.accessToken}';
+      opts.data = _retryBody(opts.data);
       final retry = await _bareDio.fetch(opts);
       return handler.resolve(retry);
     } catch (_) {
@@ -116,7 +129,11 @@ class _AuthInterceptor extends QueuedInterceptor {
 }
 
 /// Собирает настроенный [Dio], разделяемый Auth- и Api-репозиториями.
-Dio buildDio(AuthTokenStore store) {
+///
+/// [adapter] подменяется в тестах и ставится на оба клиента: refresh и повтор
+/// запроса идут через внутренний «голый» Dio, до которого снаружи не
+/// добраться, — без этого шва поведение при 401 проверить нечем.
+Dio buildDio(AuthTokenStore store, {HttpClientAdapter? adapter}) {
   BaseOptions options() => BaseOptions(
         baseUrl: ApiConfig.baseUrl,
         connectTimeout: ApiConfig.connectTimeout,
@@ -127,6 +144,10 @@ Dio buildDio(AuthTokenStore store) {
 
   final bareDio = Dio(options());
   final dio = Dio(options());
+  if (adapter != null) {
+    bareDio.httpClientAdapter = adapter;
+    dio.httpClientAdapter = adapter;
+  }
 
   dio.interceptors.add(_AuthInterceptor(store, bareDio));
   if (kDebugMode) {

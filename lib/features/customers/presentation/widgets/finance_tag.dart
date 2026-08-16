@@ -21,20 +21,22 @@ class FinanceTag extends StatelessWidget {
   final int amount;
   final bool isDebt;
 
-  /// Строит бейдж по данным заказчика, либо null, если баланс нулевой.
-  static FinanceTag? forCustomer(AppLocalizations l10n, Customer c) {
-    if (c.prepayment > 0) {
-      return FinanceTag(
-        label: l10n.financePrepayment,
-        amount: c.prepayment,
-        isDebt: false,
-      );
-    }
-    if (c.debt > 0) {
-      return FinanceTag(label: l10n.financeDebt, amount: c.debt, isDebt: true);
-    }
-    return null;
-  }
+  /// Бейджи по данным заказчика: пусто, один или оба.
+  ///
+  /// Предоплата и долг — независимые поля API, и оба могут быть ненулевыми.
+  /// Раньше здесь стоял `if/else`, и заказчик с предоплатой показывался как
+  /// чистый, даже когда за ним висел долг.
+  static List<FinanceTag> forCustomer(AppLocalizations l10n, Customer c) => [
+        // Долг первым: это то, с чем админу надо что-то делать.
+        if (c.debt > 0)
+          FinanceTag(label: l10n.financeDebt, amount: c.debt, isDebt: true),
+        if (c.prepayment > 0)
+          FinanceTag(
+            label: l10n.financePrepayment,
+            amount: c.prepayment,
+            isDebt: false,
+          ),
+      ];
 
   @override
   Widget build(BuildContext context) {

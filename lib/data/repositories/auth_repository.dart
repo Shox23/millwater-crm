@@ -57,11 +57,18 @@ class AuthRepository {
 
   /// Поднимает сессию с диска и подтверждает её у сервера.
   ///
-  /// Возвращает `null`, если токена нет или он больше не действителен —
-  /// в обоих случаях пользователя ждёт экран входа.
+  /// Возвращает `null`, если сессии нет или сервер её отверг — тогда
+  /// пользователя ждёт экран входа.
+  ///
+  /// Недоступный сервер сессию не трогает: водитель открывает приложение
+  /// в подвале, в лифте и во дворе-колодце, и разлогинивать его там, где
+  /// он даже пароль ввести не сможет, — значит срывать смену. Роль в этом
+  /// случае берётся с диска: её подтвердил прошлый успешный вход, а первый
+  /// же запрос по восстановившейся связи проверит токен заново.
   Future<UserRole?> restoreSession() async {
+    if (!await _store.restore()) return null;
+
     try {
-      if (!await _store.restore()) return null;
       final user = await me();
       // Роль на сервере могли поменять — доверяем ответу, а не диску.
       await _store.setTokens(
@@ -70,11 +77,32 @@ class AuthRepository {
         role: user.role,
       );
       return user.role;
+    } on DioException catch (e) {
+      if (_isUnreachable(e)) return _store.role;
+      // Сервер ответил (401 после неудачного refresh и прочее) — сессии нет.
+      await _store.clear();
+      return null;
     } catch (_) {
+      // Неожиданное (например, сменившийся формат ответа) — безопаснее
+      // попросить войти заново, чем работать с непонятной сессией.
       await _store.clear();
       return null;
     }
   }
+
+  /// Ответа от сервера не было вовсе — о судьбе сессии это ничего не говорит.
+  ///
+  /// `unknown` сюда входит намеренно: в него dio заворачивает `SocketException`,
+  /// а импортировать `dart:io` ради его проверки не хочется.
+  static bool _isUnreachable(DioException e) => switch (e.type) {
+        DioExceptionType.connectionTimeout ||
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.receiveTimeout ||
+        DioExceptionType.connectionError ||
+        DioExceptionType.unknown =>
+          true,
+        _ => false,
+      };
 
   /// Меняет пароль текущей учётной записи (`POST /auth/change-password`).
   ///

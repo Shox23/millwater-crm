@@ -119,6 +119,16 @@ class _MyRoutesView extends StatelessWidget {
                   onSelected: (i) =>
                       bloc.add(MyRoutesFilterChanged(RouteFilter.values[i])),
                 ),
+                // Список больше не стирается на время запроса, поэтому нужен
+                // отдельный признак «запрос в пути». Высота зарезервирована
+                // всегда — иначе список дёргается при каждом обновлении.
+                SizedBox(
+                  height: 2,
+                  child: state.status == MyRoutesStatus.loading &&
+                          state.routes.isNotEmpty
+                      ? const LinearProgressIndicator(minHeight: 2)
+                      : null,
+                ),
                 Expanded(child: _MyRoutesList(state: state, bloc: bloc)),
               ],
             );
@@ -137,8 +147,11 @@ class _MyRoutesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.status == MyRoutesStatus.loading ||
-        state.status == MyRoutesStatus.initial) {
+    // Спиннер во весь экран — только когда показывать нечего. При обновлении
+    // список остаётся на месте: иначе RefreshIndicator вылетает из дерева
+    // прямо во время жеста, а он здесь единственный способ обновить.
+    if (state.status == MyRoutesStatus.initial ||
+        (state.status == MyRoutesStatus.loading && state.routes.isEmpty)) {
       return const Center(child: CircularProgressIndicator());
     }
     if (state.status == MyRoutesStatus.error) {

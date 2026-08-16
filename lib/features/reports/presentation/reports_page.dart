@@ -14,7 +14,6 @@ import '../../../data/repositories/crm_repository.dart';
 import '../bloc/reports_bloc.dart';
 import 'widgets/debtors_card.dart';
 import 'widgets/stat_card.dart';
-import 'widgets/weekly_bar_chart.dart';
 
 class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
@@ -120,12 +119,7 @@ class _ReportsBody extends StatelessWidget {
                 child: StatCard(
                   icon: Icons.payments_outlined,
                   iconColor: t.primary,
-                  // Динамики к прошлому периоду в API нет — показываем при наличии.
-                  aux: summary.revenueChangePct == 0
-                      ? null
-                      : '+${summary.revenueChangePct}%',
-                  auxColor: t.success,
-                  value: MoneyFormatter.sum(context.l10n, summary.revenueToday),
+                  value: MoneyFormatter.sum(context.l10n, summary.revenue),
                   label: context.l10n.reportsRevenue,
                 ),
               ),
@@ -159,24 +153,13 @@ class _ReportsBody extends StatelessWidget {
                 child: StatCard(
                   icon: Icons.water_drop_outlined,
                   iconColor: t.aqua,
-                  aux: summary.capsulesTotal == summary.capsulesActive
-                      ? null
-                      : context.l10n.reportsCapsulesOf(summary.capsulesTotal),
-                  value: context.l10n.reportsCapsulesCount(summary.capsulesActive),
+                  value:
+                      context.l10n.reportsCapsulesCount(summary.capsulesActive),
                   label: context.l10n.reportsCapsules,
                 ),
               ),
             ],
           ),
-          // Недельного разреза в API нет — график показываем, только если есть данные.
-          if (summary.weekly.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            WeeklyBarChart(
-              bars: summary.weekly,
-              total: summary.weeklyTotal,
-              changePct: summary.weeklyChangePct,
-            ),
-          ],
           if (summary.debtors.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             DebtorsCard(total: summary.debtTotal, debtors: summary.debtors),

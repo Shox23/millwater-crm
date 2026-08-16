@@ -76,8 +76,47 @@ abstract class CrmRepository {
   Future<void> deleteRoute(String id);
   Future<void> cancelRoute(String id);
 
+  /// Переносит маршрут на другую дату (`PATCH /admin/routes/{id}`).
+  ///
+  /// Статус этим же эндпоинтом не меняем: отмена живёт в [cancelRoute], а
+  /// остальные статусы сервер выставляет сам по ходу доставок.
+  Future<RouteDetail> updateRouteDate({
+    required String routeId,
+    required DateTime date,
+  });
+
+  /// Переназначает водителя (`PATCH /admin/routes/{id}/driver/{driverId}`).
+  ///
+  /// Сервер отвечает 204 без тела, поэтому обновлённый маршрут нужно
+  /// перечитать через [getRoute] — достраивать его в памяти значит однажды
+  /// показать состояние, которого на сервере нет.
+  Future<void> assignDriver({
+    required String routeId,
+    required String driverId,
+  });
+
+  /// Добавляет заказчика в маршрут
+  /// (`POST /admin/routes/{id}/customers/{customerId}`).
+  /// Ответ 204 — см. оговорку у [assignDriver].
+  Future<void> addRouteCustomer({
+    required String routeId,
+    required String customerId,
+  });
+
+  /// Убирает заказчика из маршрута
+  /// (`DELETE /admin/routes/{id}/customers/{customerId}`).
+  /// Ответ 204 — см. оговорку у [assignDriver].
+  Future<void> removeRouteCustomer({
+    required String routeId,
+    required String customerId,
+  });
+
   // ---- Отчёты ----
-  Future<ReportsSummary> getReportsSummary({
+  /// Сводка за период (`GET /admin/reports/summary`) — как её отдал сервер.
+  ///
+  /// Должников и остаток капсул сводка не содержит; числа для экрана
+  /// собирает [ReportsSummary.from] из этого ответа и списка заказчиков.
+  Future<SummaryReport> getSummaryReport({
     DateTime? dateFrom,
     DateTime? dateTo,
   });

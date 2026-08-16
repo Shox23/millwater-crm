@@ -9,6 +9,7 @@ import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/forms/submit_state.dart';
 import '../../../core/location/device_location.dart';
 import '../../../core/product_config.dart';
 import '../../../core/utils/idempotency.dart';
@@ -45,7 +46,7 @@ class DeliveryCompletionPage extends StatefulWidget {
   State<DeliveryCompletionPage> createState() => _DeliveryCompletionPageState();
 }
 
-class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
+class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with SubmitState {
   late int _capsules;
 
   /// Сколько капсул остаётся у заказчика после доставки. Сервер перезаписывает
@@ -63,8 +64,6 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
   PaymentMethod _method = PaymentMethod.cash;
   late final TextEditingController _amountController;
   XFile? _photo;
-  bool _submitting = false;
-  String? _error;
 
   /// Один ключ на весь экран: повтор после обрыва связи не должен провести
   /// доставку второй раз.
@@ -119,7 +118,13 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
     super.dispose();
   }
 
-  int get _amount => int.tryParse(_amountController.text.trim()) ?? 0;
+  /// Введённая сумма; `null` — поле пустое или не число.
+  ///
+  /// Отличать пустоту от нуля обязательно: ноль — рабочий вход (оплата в
+  /// долг), а стёртое поле раньше уходило на сервер как «оплачено 0».
+  int? get _amountOrNull => int.tryParse(_amountController.text.trim());
+
+  int get _amount => _amountOrNull ?? 0;
 
   /// Снимает координаты в фоне. Неудача ничего не блокирует: доставку можно
   /// завершить и без точки, адрес заказчика никуда не делся.
@@ -134,37 +139,31 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
   }
 
   Future<void> _submit() async {
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
-    try {
-      await context.read<DriverRepository>().completeDelivery(
-            stopId: widget.stop.id,
-            capsules: _capsules,
-            amount: _amount,
-            bottleBalance: _bottleBalance,
-            photoPath: _photo?.path,
-            idempotencyKey: _idempotencyKey,
-            latitude: _fix?.latitude,
-            longitude: _fix?.longitude,
-          );
-      if (mounted) Navigator.of(context).pop(true);
-    } on DioException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _error = e.response?.statusCode == 403
-            ? context.l10n.completionForbidden
-            : apiErrorMessage(context.l10n, e, fallback: context.l10n.completionFailed);
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _error = context.l10n.completionFailed;
-      });
-    }
+    final repo = context.read<DriverRepository>();
+    // Строки берём до запроса: после await контекст уже мог уйти.
+    final l10n = context.l10n;
+
+    final completed = await submit(
+      () => repo.completeDelivery(
+        stopId: widget.stop.id,
+        capsules: _capsules,
+        amount: _amount,
+        bottleBalance: _bottleBalance,
+        photoPath: _photo?.path,
+        idempotencyKey: _idempotencyKey,
+        latitude: _fix?.latitude,
+        longitude: _fix?.longitude,
+      ),
+      // 403 здесь значит ровно одно: маршрут отдали другому водителю.
+      message: (e) => switch (e) {
+        DioException(response: Response(statusCode: 403)) =>
+          l10n.completionForbidden,
+        DioException() => apiErrorMessage(l10n, e, fallback: l10n.completionFailed),
+        _ => l10n.completionFailed,
+      },
+    );
+
+    if (completed && mounted) Navigator.of(context).pop(true);
   }
 
   @override
@@ -205,7 +204,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
               child: _LocationRow(
                 fix: _fix,
                 locating: _locating,
-                onRetry: _submitting ? null : _captureLocation,
+                onRetry: submitting ? null : _captureLocation,
               ),
             ),
           _LabeledCard(
@@ -221,14 +220,26 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
           ),
           _LabeledCard(
             label: context.l10n.completionBalance,
-            child: QuantityStepper(
-              value: _bottleBalance,
-              min: 0,
-              onChanged: (value) => setState(() {
-                _bottleBalance = value;
-                _balanceLocked = true;
-              }),
-              caption: context.l10n.completionBalanceCaption,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppSpacing.md,
+              children: [
+                QuantityStepper(
+                  value: _bottleBalance,
+                  min: 0,
+                  onChanged: (value) => setState(() {
+                    _bottleBalance = value;
+                    _balanceLocked = true;
+                  }),
+                  caption: context.l10n.completionBalanceCaption,
+                ),
+                // Сервер этим числом ЗАМЕНЯЕТ остаток заказчика, а подставлено
+                // сюда количество привезённых — правильного значения взять
+                // негде, водительские эндпоинты остатка не отдают. Пока
+                // счётчик не трогали, предупреждаем: не тронув его, водитель
+                // молча затрёт склад клиента.
+                if (!_balanceLocked) const _BalanceWarning(),
+              ],
             ),
           ),
           _LabeledCard(
@@ -280,25 +291,29 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
                             AppTypography.secondary.copyWith(color: t.text2)),
                   ],
                 ),
-                _AmountHint(
-                  capsules: _capsules,
-                  price: _capsulePrice,
-                  // Кнопка возврата нужна, только если сумма разошлась
-                  // с расчётом: иначе возвращать нечего.
-                  onRestore: _amount == _calculatedAmount
-                      ? null
-                      : _restoreCalculatedAmount,
-                ),
+                if (_amountOrNull == null)
+                  Text(context.l10n.completionAmountRequired,
+                      style: AppTypography.secondary.copyWith(color: t.danger))
+                else
+                  _AmountHint(
+                    capsules: _capsules,
+                    price: _capsulePrice,
+                    // Кнопка возврата нужна, только если сумма разошлась
+                    // с расчётом: иначе возвращать нечего.
+                    onRestore: _amount == _calculatedAmount
+                        ? null
+                        : _restoreCalculatedAmount,
+                  ),
               ],
             ),
           ),
           PhotoAttachTile(
             photo: _photo,
-            enabled: !_submitting,
+            enabled: !submitting,
             onChanged: (photo) => setState(() => _photo = photo),
           ),
-          if (_error != null)
-            Text(_error!,
+          if (submitError != null)
+            Text(submitError!,
                 style: AppTypography.secondary.copyWith(color: t.danger)),
         ],
       ),
@@ -319,9 +334,12 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> {
               ],
             ),
             AppButton(
-              label: _submitting ? context.l10n.commonSaving : context.l10n.completionSubmit,
-              enabled: !_submitting,
-              onPressed: _submitting ? null : _submit,
+              label: submitting ? context.l10n.commonSaving : context.l10n.completionSubmit,
+              // Пустое поле суммы отправлять нельзя: на сервер ушёл бы ноль,
+              // неотличимый от осознанной оплаты в долг.
+              enabled: !submitting && _amountOrNull != null,
+              onPressed:
+                  (submitting || _amountOrNull == null) ? null : _submit,
             ),
           ],
         ),
@@ -415,6 +433,40 @@ class _LocationRow extends StatelessWidget {
             onPressed: onRetry,
           ),
       ],
+    );
+  }
+}
+
+/// Предупреждение под счётчиком остатка.
+///
+/// Висит, пока водитель не подтвердил число своей рукой: значение по умолчанию
+/// равно привезённому количеству, а уходит оно на сервер как новый остаток
+/// заказчика — не сверив со складом, легко стереть то, что там уже было.
+class _BalanceWarning extends StatelessWidget {
+  const _BalanceWarning();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: t.warnBg,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        spacing: AppSpacing.sm,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 18, color: t.warn),
+          Expanded(
+            child: Text(
+              context.l10n.completionBalanceUnchecked,
+              style: AppTypography.secondary.copyWith(color: t.warn),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

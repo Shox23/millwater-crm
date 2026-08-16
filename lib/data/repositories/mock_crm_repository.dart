@@ -1,3 +1,4 @@
+import '../../core/utils/day.dart';
 import '../mock/mock_store.dart';
 import '../mock/seed_data.dart';
 import '../models/customer.dart';
@@ -231,7 +232,7 @@ class MockCrmRepository implements CrmRepository {
     RouteStatus? status,
   }) async {
     await _tick();
-    var result = _routes.toList();
+    var result = _inRange(_routes, dateFrom, dateTo);
     if (driverId != null) {
       result = result.where((r) => r.driverId == driverId).toList();
     }
@@ -239,6 +240,24 @@ class MockCrmRepository implements CrmRepository {
       result = result.where((r) => r.status == status).toList();
     }
     return result.map(_toListItem).toList();
+  }
+
+  /// Маршруты, попавшие в диапазон дат; границы включаются.
+  ///
+  /// Сравниваем по календарному дню: у маршрута дата хранится с полуночью, а
+  /// граница может прийти с любым временем, и `isBefore` тогда врёт.
+  List<RouteDetail> _inRange(
+    List<RouteDetail> routes,
+    DateTime? from,
+    DateTime? to,
+  ) {
+    if (from == null && to == null) return routes.toList();
+    return routes.where((r) {
+      final day = dayOnly(r.date);
+      if (from != null && day.isBefore(dayOnly(from))) return false;
+      if (to != null && day.isAfter(dayOnly(to))) return false;
+      return true;
+    }).toList();
   }
 
   @override
@@ -301,45 +320,96 @@ class MockCrmRepository implements CrmRepository {
     );
   }
 
+  @override
+  Future<RouteDetail> updateRouteDate({
+    required String routeId,
+    required DateTime date,
+  }) async {
+    await _tick();
+    store.replaceRoute(routeId, (r) => store.copyRoute(r, date: date));
+    return _routes.firstWhere((r) => r.id == routeId);
+  }
+
+  @override
+  Future<void> assignDriver({
+    required String routeId,
+    required String driverId,
+  }) async {
+    await _tick();
+    final driver = _drivers.where((d) => d.id == driverId).firstOrNull;
+    store.replaceRoute(
+      routeId,
+      (r) => store.copyRoute(
+        r,
+        driverId: driverId,
+        driverFullName: driver?.fullName ?? '',
+      ),
+    );
+  }
+
+  @override
+  Future<void> addRouteCustomer({
+    required String routeId,
+    required String customerId,
+  }) async {
+    await _tick();
+    final customer = _customers.where((c) => c.id == customerId).firstOrNull;
+    if (customer == null) return;
+
+    store.replaceRoute(routeId, (r) {
+      // Тот же заказчик дважды в одном маршруте — это одна точка, а не две.
+      if (r.stops.any((s) => s.customerId == customerId)) return r;
+      return store.copyRoute(r, stops: [
+        ...r.stops,
+        RouteStop(
+          id: store.nextId('s'),
+          customerId: customer.id,
+          customerName: customer.name,
+          customerAddress: customer.address,
+          customerPhone: customer.phone,
+          status: DeliveryStatus.pending,
+        ),
+      ]);
+    });
+  }
+
+  @override
+  Future<void> removeRouteCustomer({
+    required String routeId,
+    required String customerId,
+  }) async {
+    await _tick();
+    store.replaceRoute(
+      routeId,
+      (r) => store.copyRoute(
+        r,
+        stops: r.stops.where((s) => s.customerId != customerId).toList(),
+      ),
+    );
+  }
+
   // ---- Отчёты ----
   @override
-  Future<ReportsSummary> getReportsSummary({
+  Future<SummaryReport> getSummaryReport({
     DateTime? dateFrom,
     DateTime? dateTo,
   }) async {
     await _tick();
-    final stops = _routes.expand((r) => r.stops).toList();
+    // Сводка считается по тем же маршрутам, что вернул бы getRoutes за этот
+    // период: экран маршрутов показывает её рядом со списком, и разойтись они
+    // не должны.
+    final routes = _inRange(_routes, dateFrom, dateTo);
+    final stops = routes.expand((r) => r.stops).toList();
     final done = stops.where((s) => s.isCompleted).length;
-    final revenue =
-        stops.fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0));
 
-    final debtors = _customers.where((c) => c.debt > 0).toList()
-      ..sort((a, b) => b.debt.compareTo(a.debt));
-    final debtTotal = debtors.fold<int>(0, (sum, c) => sum + c.debt);
-    final capsulesActive =
-        _customers.fold<int>(0, (sum, c) => sum + c.capsuleBalance);
-    final weeklyTotal =
-        SeedData.weekly.fold<int>(0, (sum, b) => sum + b.value);
-
-    return ReportsSummary(
-      revenueToday: revenue,
-      revenueChangePct: 12,
-      deliveriesDone: done,
-      deliveriesTotal: stops.length,
-      debtTotal: debtTotal,
-      debtorsCount: debtors.length,
-      capsulesActive: capsulesActive,
-      capsulesTotal: SeedData.capsulesTotal,
-      weekly: SeedData.weekly,
-      weeklyTotal: weeklyTotal,
-      weeklyChangePct: 18,
-      debtors: debtors
-          .map((c) => Debtor(
-                name: c.name,
-                district: c.comment ?? c.address,
-                amount: c.debt,
-              ))
-          .toList(),
+    return SummaryReport(
+      routesCount: routes.length,
+      completedDeliveries: done,
+      // Сервер считает «всего» как completed + failed, поэтому незавершённые
+      // остановки сида попадают сюда — иначе итог разошёлся бы с боевым.
+      failedDeliveries: stops.length - done,
+      totalRevenue: stops.fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0)),
+      totalDebt: _customers.fold<int>(0, (sum, c) => sum + c.debt),
     );
   }
 }

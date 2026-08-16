@@ -16,11 +16,24 @@ import '../features/auth/presentation/login_page.dart';
 import '../features/driver/presentation/driver_shell.dart';
 import '../features/home/presentation/admin_shell.dart';
 import 'locale_cubit.dart';
+import 'settings/settings_storage.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_cubit.dart';
 
 class CrmApp extends StatefulWidget {
-  const CrmApp({super.key, this.sessionStorage, this.dio});
+  const CrmApp({
+    super.key,
+    this.sessionStorage,
+    this.dio,
+    this.settings = const AppSettings(),
+    this.settingsStorage,
+  });
+
+  /// Тема и язык, прочитанные `main` до первого кадра.
+  final AppSettings settings;
+
+  /// Куда записывать выбор темы и языка. В тестах подменяется на память.
+  final SettingsStorage? settingsStorage;
 
   /// Подменяется в тестах: боевое хранилище ходит в платформенный канал.
   final SessionStorage? sessionStorage;
@@ -51,8 +64,18 @@ class _CrmAppState extends State<CrmApp> {
       value: _authRepository,
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => ThemeCubit()),
-          BlocProvider(create: (_) => LocaleCubit()),
+          BlocProvider(
+            create: (_) => ThemeCubit(
+              initial: widget.settings.themeMode,
+              storage: widget.settingsStorage,
+            ),
+          ),
+          BlocProvider(
+            create: (_) => LocaleCubit(
+              initial: widget.settings.locale,
+              storage: widget.settingsStorage,
+            ),
+          ),
           BlocProvider(
             create: (_) {
               final bloc = AuthBloc(_authRepository);

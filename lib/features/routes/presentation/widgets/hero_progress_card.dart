@@ -14,6 +14,7 @@ class HeroProgressCard extends StatelessWidget {
     required this.done,
     required this.total,
     this.collected,
+    this.collectedLabel,
   });
 
   final int done;
@@ -22,6 +23,10 @@ class HeroProgressCard extends StatelessWidget {
   /// Сумма за период. `null` — блок «Собрано» не рисуется: у водителя
   /// денежного показателя нет, сводный отчёт ему недоступен.
   final int? collected;
+
+  /// Подпись к сумме. `null` — «Собрано сегодня»: карточка по умолчанию
+  /// живёт на сегодняшнем дне.
+  final String? collectedLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +90,8 @@ class HeroProgressCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   spacing: AppSpacing.sm,
                   children: [
-                    Text(context.l10n.routeCollectedToday, style: labelStyle),
+                    Text(collectedLabel ?? context.l10n.routeCollectedToday,
+                        style: labelStyle),
                     MoneyText(
                       amount: amount,
                       numberStyle: AppTypography.screenTitle

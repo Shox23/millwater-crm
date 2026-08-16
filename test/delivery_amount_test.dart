@@ -1,5 +1,6 @@
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/core/product_config.dart';
+import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/data/repositories/driver_repository.dart';
@@ -83,8 +84,14 @@ void main() {
 
   /// Плюс у «КОЛИЧЕСТВА КАПСУЛ»: второй такой же стоит у остатка клиента,
   /// он идёт ниже по экрану.
+  ///
+  /// Экран в тестовое окно целиком не помещается, а часть проверок его
+  /// прокручивает — поэтому перед нажатием подводим счётчик к видимой области.
   Future<void> addCapsule(WidgetTester tester) async {
-    await tester.tap(find.byIcon(Icons.add).first);
+    final plus = find.byIcon(Icons.add).first;
+    await tester.ensureVisible(plus);
+    await tester.pump();
+    await tester.tap(plus);
     await tester.pump();
   }
 
@@ -138,6 +145,10 @@ void main() {
       await tester.pump();
       expect(find.text('Вернуть расчёт'), findsOneWidget);
 
+      // Экран стал выше из-за предупреждения об остатке — ссылка теперь за
+      // краем, и без прокрутки тап по ней промахивается.
+      await tester.ensureVisible(find.text('Вернуть расчёт'));
+      await tester.pump();
       await tester.tap(find.text('Вернуть расчёт'));
       await tester.pump();
 
@@ -159,6 +170,82 @@ void main() {
 
       await addCapsule(tester);
       expect(amountText(tester), '55000');
+    });
+  });
+
+  group('Пустая сумма', () {
+    /// Кнопка «Завершить» — единственная в нижней панели.
+    bool submitEnabled(WidgetTester tester) =>
+        tester.widget<AppButton>(find.widgetWithText(AppButton, 'Завершить'))
+            .enabled;
+
+    testWidgets('стёртое поле не даёт завершить доставку', (tester) async {
+      await pumpPage(tester);
+      expect(submitEnabled(tester), isTrue);
+
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+
+      // Раньше пустое поле читалось как ноль и уходило на сервер как
+      // «оплачено 0» — неотличимо от осознанной оплаты в долг.
+      expect(submitEnabled(tester), isFalse);
+      expect(find.textContaining('Укажите сумму'), findsOneWidget);
+    });
+
+    testWidgets('явный ноль остаётся законным — это оплата в долг',
+        (tester) async {
+      final repo = await pumpPage(tester);
+
+      await tester.enterText(find.byType(TextField), '0');
+      await tester.pump();
+
+      expect(submitEnabled(tester), isTrue);
+      await tester.tap(find.text('Завершить'));
+      await tester.pumpAndSettle();
+
+      expect(repo.amount, 0);
+    });
+
+    testWidgets('после возврата текста кнопка снова доступна', (tester) async {
+      await pumpPage(tester);
+
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      expect(submitEnabled(tester), isFalse);
+
+      await tester.enterText(find.byType(TextField), '5000');
+      await tester.pump();
+      expect(submitEnabled(tester), isTrue);
+      expect(find.textContaining('Укажите сумму'), findsNothing);
+    });
+  });
+
+  group('Остаток капсул у клиента', () {
+    testWidgets('пока счётчик не трогали — предупреждает о перезаписи',
+        (tester) async {
+      await pumpPage(tester);
+
+      // Значение подставлено само и уйдёт на сервер как новый остаток.
+      expect(find.textContaining('заменит прежний остаток'), findsOneWidget);
+    });
+
+    testWidgets('правка счётчика убирает предупреждение', (tester) async {
+      await pumpPage(tester);
+
+      // Второй «плюс» на экране — у остатка клиента.
+      await tester.tap(find.byIcon(Icons.add).at(1));
+      await tester.pump();
+
+      expect(find.textContaining('заменит прежний остаток'), findsNothing);
+    });
+
+    testWidgets('смена количества предупреждение не снимает', (tester) async {
+      await pumpPage(tester);
+
+      // Остаток тянется за количеством, но подтверждением это не считается.
+      await addCapsule(tester);
+
+      expect(find.textContaining('заменит прежний остаток'), findsOneWidget);
     });
   });
 }

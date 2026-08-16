@@ -167,12 +167,28 @@
       }
     }
   },
+  "routesHeaderOn": "На {date}",
+  "@routesHeaderOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "routesTitle": "Маршруты",
   "routesRefresh": "Обновить маршруты",
   "routesCreated": "Маршрут создан",
   "routesLoadFailed": "Не удалось загрузить маршруты",
   "routesEmptyTitle": "Маршрутов пока нет",
-  "routesEmptyHint": "Создайте маршрут: выберите водителя, дату и заказчиков",
+  "routesEmptyDayHint": "На {date} маршрутов нет",
+  "@routesEmptyDayHint": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dateTabsPick": "Выбрать дату",
   "filterEmptyTitle": "В этом фильтре пусто",
   "filterEmptyHint": "Попробуйте другой фильтр",
   "settingsTitle": "Настройки",
@@ -199,6 +215,7 @@
   "routeDoneShort": "выполнено",
   "routeProgressTitle": "Выполнено доставок",
   "routeCollectedToday": "Собрано сегодня",
+  "routeCollected": "Собрано",
   "stopCapsules": "{count} капсул",
   "@stopCapsules": {
     "placeholders": {
@@ -215,6 +232,9 @@
   "routeFormNoDrivers": "Сначала добавьте водителей",
   "routeFormCustomers": "ЗАКАЗЧИКИ",
   "routeFormNoCustomers": "Сначала добавьте заказчиков",
+  "routeEditTitle": "Изменить маршрут",
+  "routeFormSaveFailed": "Не удалось сохранить изменения.",
+  "routeEditInProgressHint": "Маршрут уже в работе: дату и водителя менять поздно, можно только добавить заказчиков.",
   "routeFormSelected": "выбрано: {count}",
   "@routeFormSelected": {
     "placeholders": {
@@ -246,6 +266,14 @@
   "driversTitle": "Водители",
   "driversHeader": "Команда · {count}",
   "@driversHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "driversHeaderFound": "Найдено · {count}",
+  "@driversHeaderFound": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -297,6 +325,14 @@
       }
     }
   },
+  "customersHeaderFound": "Найдено · {count}",
+  "@customersHeaderFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "customersLoadFailed": "Не удалось загрузить заказчиков",
   "customersEmptyTitle": "Заказчиков пока нет",
   "customersEmptyHint": "Добавьте первого — он появится в списке и в маршрутах",
@@ -314,7 +350,7 @@
   },
   "customerDeleteFailed": "Не удалось удалить заказчика.",
   "customerTitle": "Заказчик",
-  "customerCapsulesPerOrder": "капсул / заказ",
+  "customerCapsulesBalance": "капсул на руках",
   "customerLastOrder": "последний заказ",
   "customerLastOrderShort": "посл. заказ {date}",
   "@customerLastOrderShort": {
@@ -338,9 +374,9 @@
   "customerFormCommentHint": "Например, район или ориентир",
   "customerFormSaveFailed": "Не удалось сохранить заказчика.",
   "myRoutesTitle": "Мои маршруты",
-  "myRoutesStatRoutes": "мои маршруты",
+  "myRoutesStatRoutes": "всего маршрутов",
   "myRoutesStatDeliveredToday": "доставлено сегодня",
-  "myRoutesStatOrders": "заказов",
+  "myRoutesStatOrders": "всего заказов",
   "myRoutesEmptyHint": "Когда диспетчер назначит маршрут, он появится здесь",
   "myRouteTitle": "Маршрут",
   "myRouteStatusFailed": "Не удалось изменить статус.",
@@ -365,9 +401,11 @@
     }
   },
   "completionBalance": "КАПСУЛ У КЛИЕНТА",
-  "completionBalanceCaption": "останется после доставки",
+  "completionBalanceCaption": "станет остатком у клиента вместо прежнего",
+  "completionBalanceUnchecked": "Подставлено число привезённых. Сверьте со складом клиента — это значение заменит прежний остаток.",
   "completionMethod": "СПОСОБ ОПЛАТЫ",
   "completionAmount": "СУММА ОПЛАТЫ",
+  "completionAmountRequired": "Укажите сумму. Ноль — если оплаты не было",
   "completionTotal": "Итого к оплате",
   "completionSubmit": "Завершить",
   "completionForbidden": "Завершать доставку может только водитель этого маршрута.",
@@ -481,14 +519,6 @@
   "reportsDeliveries": "Доставки",
   "reportsDebts": "Долги",
   "reportsCapsules": "Капсулы у клиентов",
-  "reportsCapsulesOf": "из {total}",
-  "@reportsCapsulesOf": {
-    "placeholders": {
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "reportsCapsulesCount": "{count} шт",
   "@reportsCapsulesCount": {
     "placeholders": {
@@ -498,15 +528,6 @@
     }
   },
   "reportsDebtors": "Долги заказчиков",
-  "reportsWeekly": "Выручка за неделю",
-  "reportsWeeklyCollected": "{amount} собрано",
-  "@reportsWeeklyCollected": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "capsulesCount": "{count, plural, one{{count} капсула} few{{count} капсулы} other{{count} капсул}}",
   "@capsulesCount": {
     "placeholders": {

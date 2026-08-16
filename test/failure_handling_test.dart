@@ -90,11 +90,11 @@ class _FailingRepository extends MockCrmRepository {
       _read(() => super.getCustomers(search: search, hasDebt: hasDebt));
 
   @override
-  Future<ReportsSummary> getReportsSummary({
+  Future<SummaryReport> getSummaryReport({
     DateTime? dateFrom,
     DateTime? dateTo,
   }) =>
-      _read(() => super.getReportsSummary(dateFrom: dateFrom, dateTo: dateTo));
+      _read(() => super.getSummaryReport(dateFrom: dateFrom, dateTo: dateTo));
 }
 
 void main() {

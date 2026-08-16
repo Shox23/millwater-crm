@@ -39,7 +39,9 @@ class DriversBloc extends Bloc<DriversEvent, DriversState> {
     final id = ++_requestId;
     emit(state.copyWith(status: DriversStatus.loading));
     try {
-      // Фильтрует сервер: локально видна лишь первая страница выдачи.
+      // Фильтрует сервер, а не мы: локальный фильтр поверх серверного прятал
+      // бы часть найденного. Репозиторий обходит страницы сам и отдаёт всю
+      // выдачу целиком — обрезать её здесь тоже нечем.
       final drivers = await _repository.getDrivers(search: state.query);
       if (id != _requestId) return;
       emit(state.copyWith(status: DriversStatus.ready, drivers: drivers));

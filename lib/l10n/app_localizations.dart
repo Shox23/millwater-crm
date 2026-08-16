@@ -680,6 +680,12 @@ abstract class AppLocalizations {
   /// **'Сегодня · {date}'**
   String routesHeaderToday(String date);
 
+  /// No description provided for @routesHeaderOn.
+  ///
+  /// In ru, this message translates to:
+  /// **'На {date}'**
+  String routesHeaderOn(String date);
+
   /// No description provided for @routesTitle.
   ///
   /// In ru, this message translates to:
@@ -710,11 +716,17 @@ abstract class AppLocalizations {
   /// **'Маршрутов пока нет'**
   String get routesEmptyTitle;
 
-  /// No description provided for @routesEmptyHint.
+  /// No description provided for @routesEmptyDayHint.
   ///
   /// In ru, this message translates to:
-  /// **'Создайте маршрут: выберите водителя, дату и заказчиков'**
-  String get routesEmptyHint;
+  /// **'На {date} маршрутов нет'**
+  String routesEmptyDayHint(String date);
+
+  /// No description provided for @dateTabsPick.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать дату'**
+  String get dateTabsPick;
 
   /// No description provided for @filterEmptyTitle.
   ///
@@ -830,6 +842,12 @@ abstract class AppLocalizations {
   /// **'Собрано сегодня'**
   String get routeCollectedToday;
 
+  /// No description provided for @routeCollected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Собрано'**
+  String get routeCollected;
+
   /// No description provided for @stopCapsules.
   ///
   /// In ru, this message translates to:
@@ -883,6 +901,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Сначала добавьте заказчиков'**
   String get routeFormNoCustomers;
+
+  /// No description provided for @routeEditTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить маршрут'**
+  String get routeEditTitle;
+
+  /// No description provided for @routeFormSaveFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось сохранить изменения.'**
+  String get routeFormSaveFailed;
+
+  /// No description provided for @routeEditInProgressHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут уже в работе: дату и водителя менять поздно, можно только добавить заказчиков.'**
+  String get routeEditInProgressHint;
 
   /// No description provided for @routeFormSelected.
   ///
@@ -979,6 +1015,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Команда · {count}'**
   String driversHeader(int count);
+
+  /// No description provided for @driversHeaderFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Найдено · {count}'**
+  String driversHeaderFound(int count);
 
   /// No description provided for @driversSearch.
   ///
@@ -1166,6 +1208,12 @@ abstract class AppLocalizations {
   /// **'База · {count}'**
   String customersHeader(int count);
 
+  /// No description provided for @customersHeaderFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Найдено · {count}'**
+  String customersHeaderFound(int count);
+
   /// No description provided for @customersLoadFailed.
   ///
   /// In ru, this message translates to:
@@ -1226,11 +1274,11 @@ abstract class AppLocalizations {
   /// **'Заказчик'**
   String get customerTitle;
 
-  /// No description provided for @customerCapsulesPerOrder.
+  /// No description provided for @customerCapsulesBalance.
   ///
   /// In ru, this message translates to:
-  /// **'капсул / заказ'**
-  String get customerCapsulesPerOrder;
+  /// **'капсул на руках'**
+  String get customerCapsulesBalance;
 
   /// No description provided for @customerLastOrder.
   ///
@@ -1331,7 +1379,7 @@ abstract class AppLocalizations {
   /// No description provided for @myRoutesStatRoutes.
   ///
   /// In ru, this message translates to:
-  /// **'мои маршруты'**
+  /// **'всего маршрутов'**
   String get myRoutesStatRoutes;
 
   /// No description provided for @myRoutesStatDeliveredToday.
@@ -1343,7 +1391,7 @@ abstract class AppLocalizations {
   /// No description provided for @myRoutesStatOrders.
   ///
   /// In ru, this message translates to:
-  /// **'заказов'**
+  /// **'всего заказов'**
   String get myRoutesStatOrders;
 
   /// No description provided for @myRoutesEmptyHint.
@@ -1409,8 +1457,14 @@ abstract class AppLocalizations {
   /// No description provided for @completionBalanceCaption.
   ///
   /// In ru, this message translates to:
-  /// **'останется после доставки'**
+  /// **'станет остатком у клиента вместо прежнего'**
   String get completionBalanceCaption;
+
+  /// No description provided for @completionBalanceUnchecked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подставлено число привезённых. Сверьте со складом клиента — это значение заменит прежний остаток.'**
+  String get completionBalanceUnchecked;
 
   /// No description provided for @completionMethod.
   ///
@@ -1423,6 +1477,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'СУММА ОПЛАТЫ'**
   String get completionAmount;
+
+  /// No description provided for @completionAmountRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите сумму. Ноль — если оплаты не было'**
+  String get completionAmountRequired;
 
   /// No description provided for @completionTotal.
   ///
@@ -1832,12 +1892,6 @@ abstract class AppLocalizations {
   /// **'Капсулы у клиентов'**
   String get reportsCapsules;
 
-  /// No description provided for @reportsCapsulesOf.
-  ///
-  /// In ru, this message translates to:
-  /// **'из {total}'**
-  String reportsCapsulesOf(int total);
-
   /// No description provided for @reportsCapsulesCount.
   ///
   /// In ru, this message translates to:
@@ -1849,18 +1903,6 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Долги заказчиков'**
   String get reportsDebtors;
-
-  /// No description provided for @reportsWeekly.
-  ///
-  /// In ru, this message translates to:
-  /// **'Выручка за неделю'**
-  String get reportsWeekly;
-
-  /// No description provided for @reportsWeeklyCollected.
-  ///
-  /// In ru, this message translates to:
-  /// **'{amount} собрано'**
-  String reportsWeeklyCollected(String amount);
 
   /// No description provided for @capsulesCount.
   ///

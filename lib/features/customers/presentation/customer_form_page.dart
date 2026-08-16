@@ -7,6 +7,7 @@ import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/forms/submit_state.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
@@ -31,7 +32,7 @@ class CustomerFormPage extends StatefulWidget {
   State<CustomerFormPage> createState() => _CustomerFormPageState();
 }
 
-class _CustomerFormPageState extends State<CustomerFormPage> {
+class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// Правила проверки на языке интерфейса. Пересобираются при смене
   /// локали: `didChangeDependencies` вызывается снова.
   late Validators _v;
@@ -54,8 +55,6 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
   final _addressFocus = FocusNode();
   final _commentFocus = FocusNode();
 
-  bool _saving = false;
-  String? _error;
 
   /// Один ключ на весь экран: повтор после обрыва связи не должен завести
   /// второго заказчика. При редактировании не нужен — PATCH идемпотентен.
@@ -145,47 +144,34 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
   }
 
   Future<void> _save() async {
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
     final repo = context.read<CrmRepository>();
     // Строки берём до запроса: после await контекст уже мог уйти.
     final l10n = context.l10n;
     final phone = UzPhone.normalize(_phone.text);
-    try {
-      if (widget.isEdit) {
-        await repo.updateCustomer(widget.customer!.copyWith(
-          name: _name.text.trim(),
-          phone: phone,
-          address: _address.text.trim(),
-          comment: _commentOrNull,
-        ));
-      } else {
-        await repo.addCustomer(
-          name: _name.text.trim(),
-          phone: phone,
-          address: _address.text.trim(),
-          comment: _commentOrNull,
-          idempotencyKey: _idempotencyKey,
-        );
-      }
-      if (mounted) Navigator.of(context).pop(true);
-    } on DioException catch (e) {
-      // Сервер может отклонить и валидные с виду данные: занятый телефон,
-      // упавшая сеть. Экран обязан ожить, а не остаться с серой кнопкой.
-      _failed(apiErrorMessage(l10n, e, fallback: l10n.customerFormSaveFailed));
-    } catch (_) {
-      _failed(l10n.customerFormSaveFailed);
-    }
-  }
 
-  void _failed(String message) {
-    if (!mounted) return;
-    setState(() {
-      _saving = false;
-      _error = message;
-    });
+    final saved = await submit(
+      () => widget.isEdit
+          ? repo.updateCustomer(widget.customer!.copyWith(
+              name: _name.text.trim(),
+              phone: phone,
+              address: _address.text.trim(),
+              comment: _commentOrNull,
+            ))
+          : repo.addCustomer(
+              name: _name.text.trim(),
+              phone: phone,
+              address: _address.text.trim(),
+              comment: _commentOrNull,
+              idempotencyKey: _idempotencyKey,
+            ),
+      // Сервер может отклонить и валидные с виду данные: занятый телефон,
+      // упавшая сеть.
+      message: (e) => e is DioException
+          ? apiErrorMessage(l10n, e, fallback: l10n.customerFormSaveFailed)
+          : l10n.customerFormSaveFailed,
+    );
+
+    if (saved && mounted) Navigator.of(context).pop(true);
   }
 
   /// Закрытие формы: при изменённых данных спрашиваем подтверждение.
@@ -276,9 +262,9 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppSpacing.md,
             children: [
-              if (_error != null)
+              if (submitError != null)
                 Text(
-                  _error!,
+                  submitError!,
                   style: AppTypography.secondary
                       .copyWith(color: context.tokens.danger),
                   textAlign: TextAlign.center,
@@ -290,17 +276,17 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
                     child: AppButton(
                       label: context.l10n.commonCancel,
                       variant: AppButtonVariant.secondary,
-                      onPressed: _saving ? null : _leave,
+                      onPressed: submitting ? null : _leave,
                     ),
                   ),
                   Expanded(
                     child: AppButton(
-                      label: _saving
+                      label: submitting
                           ? context.l10n.commonSaving
                           : (widget.isEdit ? context.l10n.commonSave : context.l10n.commonAdd),
                       // Пока в форме есть ошибки, отправлять нечего.
-                      enabled: _valid && !_saving,
-                      onPressed: (_valid && !_saving) ? _submit : null,
+                      enabled: _valid && !submitting,
+                      onPressed: (_valid && !submitting) ? _submit : null,
                     ),
                   ),
                 ],

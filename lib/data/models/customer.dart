@@ -36,11 +36,18 @@ class Customer extends Equatable {
   final bool isActive;
   final DateTime createdAt;
 
+  /// Маркер «значение не передавали».
+  ///
+  /// У [comment] `null` — осмысленный вход: «стереть комментарий». Обычный
+  /// `??` их не различает, и форма молча теряла очистку поля: пользователь
+  /// стирал текст, видел «Изменения сохранены», а на сервер уходил прежний.
+  static const Object _unchanged = Object();
+
   Customer copyWith({
     String? name,
     String? phone,
     String? address,
-    String? comment,
+    Object? comment = _unchanged,
     int? capsuleBalance,
     int? prepayment,
     int? debt,
@@ -52,7 +59,8 @@ class Customer extends Equatable {
       name: name ?? this.name,
       phone: phone ?? this.phone,
       address: address ?? this.address,
-      comment: comment ?? this.comment,
+      comment:
+          identical(comment, _unchanged) ? this.comment : comment as String?,
       capsuleBalance: capsuleBalance ?? this.capsuleBalance,
       prepayment: prepayment ?? this.prepayment,
       debt: debt ?? this.debt,

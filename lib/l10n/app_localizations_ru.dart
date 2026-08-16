@@ -321,6 +321,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String routesHeaderOn(String date) {
+    return 'На $date';
+  }
+
+  @override
   String get routesTitle => 'Маршруты';
 
   @override
@@ -336,8 +341,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routesEmptyTitle => 'Маршрутов пока нет';
 
   @override
-  String get routesEmptyHint =>
-      'Создайте маршрут: выберите водителя, дату и заказчиков';
+  String routesEmptyDayHint(String date) {
+    return 'На $date маршрутов нет';
+  }
+
+  @override
+  String get dateTabsPick => 'Выбрать дату';
 
   @override
   String get filterEmptyTitle => 'В этом фильтре пусто';
@@ -399,6 +408,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeCollectedToday => 'Собрано сегодня';
 
   @override
+  String get routeCollected => 'Собрано';
+
+  @override
   String stopCapsules(int count) {
     return '$count капсул';
   }
@@ -427,6 +439,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get routeFormNoCustomers => 'Сначала добавьте заказчиков';
+
+  @override
+  String get routeEditTitle => 'Изменить маршрут';
+
+  @override
+  String get routeFormSaveFailed => 'Не удалось сохранить изменения.';
+
+  @override
+  String get routeEditInProgressHint =>
+      'Маршрут уже в работе: дату и водителя менять поздно, можно только добавить заказчиков.';
 
   @override
   String routeFormSelected(int count) {
@@ -481,6 +503,11 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String driversHeader(int count) {
     return 'Команда · $count';
+  }
+
+  @override
+  String driversHeaderFound(int count) {
+    return 'Найдено · $count';
   }
 
   @override
@@ -582,6 +609,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String customersHeaderFound(int count) {
+    return 'Найдено · $count';
+  }
+
+  @override
   String get customersLoadFailed => 'Не удалось загрузить заказчиков';
 
   @override
@@ -615,7 +647,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get customerTitle => 'Заказчик';
 
   @override
-  String get customerCapsulesPerOrder => 'капсул / заказ';
+  String get customerCapsulesBalance => 'капсул на руках';
 
   @override
   String get customerLastOrder => 'последний заказ';
@@ -668,13 +700,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get myRoutesTitle => 'Мои маршруты';
 
   @override
-  String get myRoutesStatRoutes => 'мои маршруты';
+  String get myRoutesStatRoutes => 'всего маршрутов';
 
   @override
   String get myRoutesStatDeliveredToday => 'доставлено сегодня';
 
   @override
-  String get myRoutesStatOrders => 'заказов';
+  String get myRoutesStatOrders => 'всего заказов';
 
   @override
   String get myRoutesEmptyHint =>
@@ -712,13 +744,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get completionBalance => 'КАПСУЛ У КЛИЕНТА';
 
   @override
-  String get completionBalanceCaption => 'останется после доставки';
+  String get completionBalanceCaption =>
+      'станет остатком у клиента вместо прежнего';
+
+  @override
+  String get completionBalanceUnchecked =>
+      'Подставлено число привезённых. Сверьте со складом клиента — это значение заменит прежний остаток.';
 
   @override
   String get completionMethod => 'СПОСОБ ОПЛАТЫ';
 
   @override
   String get completionAmount => 'СУММА ОПЛАТЫ';
+
+  @override
+  String get completionAmountRequired =>
+      'Укажите сумму. Ноль — если оплаты не было';
 
   @override
   String get completionTotal => 'Итого к оплате';
@@ -940,25 +981,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get reportsCapsules => 'Капсулы у клиентов';
 
   @override
-  String reportsCapsulesOf(int total) {
-    return 'из $total';
-  }
-
-  @override
   String reportsCapsulesCount(int count) {
     return '$count шт';
   }
 
   @override
   String get reportsDebtors => 'Долги заказчиков';
-
-  @override
-  String get reportsWeekly => 'Выручка за неделю';
-
-  @override
-  String reportsWeeklyCollected(String amount) {
-    return '$amount собрано';
-  }
 
   @override
   String capsulesCount(int count) {

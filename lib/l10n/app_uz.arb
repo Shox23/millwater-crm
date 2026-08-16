@@ -167,12 +167,28 @@
       }
     }
   },
+  "routesHeaderOn": "{date} sanasiga",
+  "@routesHeaderOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "routesTitle": "Marshrutlar",
   "routesRefresh": "Marshrutlarni yangilash",
   "routesCreated": "Marshrut yaratildi",
   "routesLoadFailed": "Marshrutlarni yuklab bo‘lmadi",
   "routesEmptyTitle": "Hozircha marshrutlar yo‘q",
-  "routesEmptyHint": "Marshrut yarating: haydovchi, sana va mijozlarni tanlang",
+  "routesEmptyDayHint": "{date} sanasiga marshrutlar yo‘q",
+  "@routesEmptyDayHint": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dateTabsPick": "Sanani tanlash",
   "filterEmptyTitle": "Bu filtrda hech narsa yo‘q",
   "filterEmptyHint": "Boshqa filtrni tanlang",
   "settingsTitle": "Sozlamalar",
@@ -199,6 +215,7 @@
   "routeDoneShort": "bajarildi",
   "routeProgressTitle": "Yetkazib berildi",
   "routeCollectedToday": "Bugun yig‘ildi",
+  "routeCollected": "Yig‘ildi",
   "stopCapsules": "{count} kapsula",
   "@stopCapsules": {
     "placeholders": {
@@ -215,6 +232,9 @@
   "routeFormNoDrivers": "Avval haydovchi qo‘shing",
   "routeFormCustomers": "MIJOZLAR",
   "routeFormNoCustomers": "Avval mijoz qo‘shing",
+  "routeEditTitle": "Marshrutni o‘zgartirish",
+  "routeFormSaveFailed": "O‘zgarishlarni saqlab bo‘lmadi.",
+  "routeEditInProgressHint": "Marshrut allaqachon ishda: sana va haydovchini o‘zgartirish kech, faqat mijoz qo‘shish mumkin.",
   "routeFormSelected": "tanlandi: {count}",
   "@routeFormSelected": {
     "placeholders": {
@@ -246,6 +266,14 @@
   "driversTitle": "Haydovchilar",
   "driversHeader": "Jamoa · {count}",
   "@driversHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "driversHeaderFound": "Topildi · {count}",
+  "@driversHeaderFound": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -297,6 +325,14 @@
       }
     }
   },
+  "customersHeaderFound": "Topildi · {count}",
+  "@customersHeaderFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "customersLoadFailed": "Mijozlarni yuklab bo‘lmadi",
   "customersEmptyTitle": "Hozircha mijozlar yo‘q",
   "customersEmptyHint": "Birinchisini qo‘shing — u ro‘yxatda va marshrutlarda ko‘rinadi",
@@ -314,7 +350,7 @@
   },
   "customerDeleteFailed": "Mijozni o‘chirib bo‘lmadi.",
   "customerTitle": "Mijoz",
-  "customerCapsulesPerOrder": "kapsula / buyurtma",
+  "customerCapsulesBalance": "qo‘lidagi kapsula",
   "customerLastOrder": "oxirgi buyurtma",
   "customerLastOrderShort": "oxirgi buyurtma {date}",
   "@customerLastOrderShort": {
@@ -338,9 +374,9 @@
   "customerFormCommentHint": "Masalan, tuman yoki mo‘ljal",
   "customerFormSaveFailed": "Mijozni saqlab bo‘lmadi.",
   "myRoutesTitle": "Mening marshrutlarim",
-  "myRoutesStatRoutes": "marshrutlarim",
+  "myRoutesStatRoutes": "jami marshrut",
   "myRoutesStatDeliveredToday": "bugun yetkazildi",
-  "myRoutesStatOrders": "buyurtma",
+  "myRoutesStatOrders": "jami buyurtma",
   "myRoutesEmptyHint": "Dispetcher marshrut biriktirsa, u shu yerda paydo bo‘ladi",
   "myRouteTitle": "Marshrut",
   "myRouteStatusFailed": "Holatni o‘zgartirib bo‘lmadi.",
@@ -365,9 +401,11 @@
     }
   },
   "completionBalance": "MIJOZDAGI KAPSULALAR",
-  "completionBalanceCaption": "yetkazgandan keyin qoladi",
+  "completionBalanceCaption": "avvalgi qoldiq o‘rniga shu son yoziladi",
+  "completionBalanceUnchecked": "Olib kelingan soni qo‘yildi. Mijoz omborini tekshiring — bu qiymat avvalgi qoldiqni almashtiradi.",
   "completionMethod": "TO‘LOV USULI",
   "completionAmount": "TO‘LOV SUMMASI",
+  "completionAmountRequired": "Summani kiriting. To‘lov bo‘lmagan bo‘lsa — nol",
   "completionTotal": "Jami to‘lov",
   "completionSubmit": "Yakunlash",
   "completionForbidden": "Yetkazishni faqat shu marshrut haydovchisi yakunlay oladi.",
@@ -481,14 +519,6 @@
   "reportsDeliveries": "Yetkazishlar",
   "reportsDebts": "Qarzlar",
   "reportsCapsules": "Mijozlardagi kapsulalar",
-  "reportsCapsulesOf": "{total} tadan",
-  "@reportsCapsulesOf": {
-    "placeholders": {
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "reportsCapsulesCount": "{count} dona",
   "@reportsCapsulesCount": {
     "placeholders": {
@@ -498,15 +528,6 @@
     }
   },
   "reportsDebtors": "Mijozlar qarzi",
-  "reportsWeekly": "Haftalik tushum",
-  "reportsWeeklyCollected": "{amount} yig‘ildi",
-  "@reportsWeeklyCollected": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "capsulesCount": "{count, plural, other{{count} kapsula}}",
   "@capsulesCount": {
     "placeholders": {

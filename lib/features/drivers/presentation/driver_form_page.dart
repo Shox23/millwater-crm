@@ -7,6 +7,7 @@ import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/forms/submit_state.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
@@ -32,7 +33,7 @@ class DriverFormPage extends StatefulWidget {
   State<DriverFormPage> createState() => _DriverFormPageState();
 }
 
-class _DriverFormPageState extends State<DriverFormPage> {
+class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
   /// Правила проверки на языке интерфейса. Пересобираются при смене
   /// локали: `didChangeDependencies` вызывается снова.
   late Validators _v;
@@ -55,8 +56,6 @@ class _DriverFormPageState extends State<DriverFormPage> {
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
 
-  bool _saving = false;
-  String? _error;
 
   /// Один ключ на весь экран: повтор после обрыва связи не должен завести
   /// второго водителя. При редактировании не нужен — PATCH и так идемпотентен.
@@ -153,47 +152,33 @@ class _DriverFormPageState extends State<DriverFormPage> {
   }
 
   Future<void> _save() async {
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
     final repo = context.read<CrmRepository>();
     // Строки берём до запроса: после await контекст уже мог уйти.
     final l10n = context.l10n;
     final phone = UzPhone.normalize(_phone.text);
-    try {
-      if (widget.isEdit) {
-        await repo.updateDriver(widget.driver!.copyWith(
-          fullName: _name.text.trim(),
-          phone: phone,
-          email: _email.text.trim(),
-        ));
-      } else {
-        await repo.addDriver(
-          fullName: _name.text.trim(),
-          phone: phone,
-          email: _email.text.trim(),
-          password: _password.text,
-          idempotencyKey: _idempotencyKey,
-        );
-      }
-      if (mounted) Navigator.of(context).pop(true);
-    } on DioException catch (e) {
-      // Сервер может отклонить и валидные с виду данные: занятый телефон
-      // или почта, упавшая сеть. Экран обязан ожить, а не остаться
-      // с серой кнопкой.
-      _failed(apiErrorMessage(l10n, e, fallback: l10n.driverFormSaveFailed));
-    } catch (_) {
-      _failed(l10n.driverFormSaveFailed);
-    }
-  }
 
-  void _failed(String message) {
-    if (!mounted) return;
-    setState(() {
-      _saving = false;
-      _error = message;
-    });
+    final saved = await submit(
+      () => widget.isEdit
+          ? repo.updateDriver(widget.driver!.copyWith(
+              fullName: _name.text.trim(),
+              phone: phone,
+              email: _email.text.trim(),
+            ))
+          : repo.addDriver(
+              fullName: _name.text.trim(),
+              phone: phone,
+              email: _email.text.trim(),
+              password: _password.text,
+              idempotencyKey: _idempotencyKey,
+            ),
+      // Сервер может отклонить и валидные с виду данные: занятый телефон
+      // или почта, упавшая сеть.
+      message: (e) => e is DioException
+          ? apiErrorMessage(l10n, e, fallback: l10n.driverFormSaveFailed)
+          : l10n.driverFormSaveFailed,
+    );
+
+    if (saved && mounted) Navigator.of(context).pop(true);
   }
 
   /// Закрытие формы: при изменённых данных спрашиваем подтверждение.
@@ -295,9 +280,9 @@ class _DriverFormPageState extends State<DriverFormPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppSpacing.md,
             children: [
-              if (_error != null)
+              if (submitError != null)
                 Text(
-                  _error!,
+                  submitError!,
                   style: AppTypography.secondary
                       .copyWith(color: context.tokens.danger),
                   textAlign: TextAlign.center,
@@ -309,17 +294,17 @@ class _DriverFormPageState extends State<DriverFormPage> {
                     child: AppButton(
                       label: context.l10n.commonCancel,
                       variant: AppButtonVariant.secondary,
-                      onPressed: _saving ? null : _leave,
+                      onPressed: submitting ? null : _leave,
                     ),
                   ),
                   Expanded(
                     child: AppButton(
-                      label: _saving
+                      label: submitting
                           ? context.l10n.commonSaving
                           : (widget.isEdit ? context.l10n.commonSave : context.l10n.commonAdd),
                       // Пока в форме есть ошибки, отправлять нечего.
-                      enabled: _valid && !_saving,
-                      onPressed: (_valid && !_saving) ? _submit : null,
+                      enabled: _valid && !submitting,
+                      onPressed: (_valid && !submitting) ? _submit : null,
                     ),
                   ),
                 ],

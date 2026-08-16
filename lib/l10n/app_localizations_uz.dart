@@ -321,6 +321,11 @@ class AppLocalizationsUz extends AppLocalizations {
   }
 
   @override
+  String routesHeaderOn(String date) {
+    return '$date sanasiga';
+  }
+
+  @override
   String get routesTitle => 'Marshrutlar';
 
   @override
@@ -336,8 +341,12 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routesEmptyTitle => 'Hozircha marshrutlar yo‘q';
 
   @override
-  String get routesEmptyHint =>
-      'Marshrut yarating: haydovchi, sana va mijozlarni tanlang';
+  String routesEmptyDayHint(String date) {
+    return '$date sanasiga marshrutlar yo‘q';
+  }
+
+  @override
+  String get dateTabsPick => 'Sanani tanlash';
 
   @override
   String get filterEmptyTitle => 'Bu filtrda hech narsa yo‘q';
@@ -399,6 +408,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeCollectedToday => 'Bugun yig‘ildi';
 
   @override
+  String get routeCollected => 'Yig‘ildi';
+
+  @override
   String stopCapsules(int count) {
     return '$count kapsula';
   }
@@ -427,6 +439,16 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get routeFormNoCustomers => 'Avval mijoz qo‘shing';
+
+  @override
+  String get routeEditTitle => 'Marshrutni o‘zgartirish';
+
+  @override
+  String get routeFormSaveFailed => 'O‘zgarishlarni saqlab bo‘lmadi.';
+
+  @override
+  String get routeEditInProgressHint =>
+      'Marshrut allaqachon ishda: sana va haydovchini o‘zgartirish kech, faqat mijoz qo‘shish mumkin.';
 
   @override
   String routeFormSelected(int count) {
@@ -481,6 +503,11 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String driversHeader(int count) {
     return 'Jamoa · $count';
+  }
+
+  @override
+  String driversHeaderFound(int count) {
+    return 'Topildi · $count';
   }
 
   @override
@@ -582,6 +609,11 @@ class AppLocalizationsUz extends AppLocalizations {
   }
 
   @override
+  String customersHeaderFound(int count) {
+    return 'Topildi · $count';
+  }
+
+  @override
   String get customersLoadFailed => 'Mijozlarni yuklab bo‘lmadi';
 
   @override
@@ -615,7 +647,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get customerTitle => 'Mijoz';
 
   @override
-  String get customerCapsulesPerOrder => 'kapsula / buyurtma';
+  String get customerCapsulesBalance => 'qo‘lidagi kapsula';
 
   @override
   String get customerLastOrder => 'oxirgi buyurtma';
@@ -668,13 +700,13 @@ class AppLocalizationsUz extends AppLocalizations {
   String get myRoutesTitle => 'Mening marshrutlarim';
 
   @override
-  String get myRoutesStatRoutes => 'marshrutlarim';
+  String get myRoutesStatRoutes => 'jami marshrut';
 
   @override
   String get myRoutesStatDeliveredToday => 'bugun yetkazildi';
 
   @override
-  String get myRoutesStatOrders => 'buyurtma';
+  String get myRoutesStatOrders => 'jami buyurtma';
 
   @override
   String get myRoutesEmptyHint =>
@@ -712,13 +744,22 @@ class AppLocalizationsUz extends AppLocalizations {
   String get completionBalance => 'MIJOZDAGI KAPSULALAR';
 
   @override
-  String get completionBalanceCaption => 'yetkazgandan keyin qoladi';
+  String get completionBalanceCaption =>
+      'avvalgi qoldiq o‘rniga shu son yoziladi';
+
+  @override
+  String get completionBalanceUnchecked =>
+      'Olib kelingan soni qo‘yildi. Mijoz omborini tekshiring — bu qiymat avvalgi qoldiqni almashtiradi.';
 
   @override
   String get completionMethod => 'TO‘LOV USULI';
 
   @override
   String get completionAmount => 'TO‘LOV SUMMASI';
+
+  @override
+  String get completionAmountRequired =>
+      'Summani kiriting. To‘lov bo‘lmagan bo‘lsa — nol';
 
   @override
   String get completionTotal => 'Jami to‘lov';
@@ -942,25 +983,12 @@ class AppLocalizationsUz extends AppLocalizations {
   String get reportsCapsules => 'Mijozlardagi kapsulalar';
 
   @override
-  String reportsCapsulesOf(int total) {
-    return '$total tadan';
-  }
-
-  @override
   String reportsCapsulesCount(int count) {
     return '$count dona';
   }
 
   @override
   String get reportsDebtors => 'Mijozlar qarzi';
-
-  @override
-  String get reportsWeekly => 'Haftalik tushum';
-
-  @override
-  String reportsWeeklyCollected(String amount) {
-    return '$amount yig‘ildi';
-  }
 
   @override
   String capsulesCount(int count) {

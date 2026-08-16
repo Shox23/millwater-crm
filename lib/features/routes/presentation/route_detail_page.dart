@@ -21,6 +21,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/crm_repository.dart';
+import 'route_form_page.dart';
 import 'stop_detail_page.dart';
 import 'widgets/route_card.dart';
 import 'widgets/stop_card.dart';
@@ -90,6 +91,20 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     await _load();
   }
 
+  /// Открывает форму правки и перечитывает маршрут, если что-то поменялось.
+  ///
+  /// Перечитываем всегда, а не достраиваем состояние из формы: правки
+  /// применяются по одной, и при отказе на середине часть из них уже на
+  /// сервере — единственный источник правды теперь там.
+  Future<void> _editRoute(RouteDetail route) async {
+    final saved = await Navigator.of(context).push<bool>(
+      OverlayPageRoute<bool>(builder: (_) => RouteFormPage(route: route)),
+    );
+    if (saved != true || !mounted) return;
+    _changed = true;
+    await _load();
+  }
+
   /// Админу точка доступна только на просмотр: завершение доставки —
   /// driver-эндпоинт, под админским токеном он отвечает 403.
   void _openStop(RouteStop stop) {
@@ -130,15 +145,33 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                                 .copyWith(color: t.text2)),
                       )
                     : _RouteBody(route: route, onStopTap: _openStop),
+        // Панель целиком исчезает, когда с маршрутом уже нечего делать:
+        // у завершённого и отменённого не осталось ни правок, ни отмены.
         bottomBar: _loadFailed ||
                 route == null ||
-                route.status == RouteStatus.cancelled
+                !(route.status.canCancel || route.status.isEditable)
             ? null
             : BottomActionBar(
-                child: AppButton(
-                  label: context.l10n.routeCancelAction,
-                  variant: AppButtonVariant.secondary,
-                  onPressed: _cancelRoute,
+                child: Row(
+                  spacing: AppSpacing.md,
+                  children: [
+                    if (route.status.canCancel)
+                      Expanded(
+                        child: AppButton(
+                          label: context.l10n.routeCancelAction,
+                          variant: AppButtonVariant.secondary,
+                          onPressed: _cancelRoute,
+                        ),
+                      ),
+                    // Завершённый маршрут править нечего — кнопки нет вовсе.
+                    if (route.status.isEditable)
+                      Expanded(
+                        child: AppButton(
+                          label: context.l10n.commonEdit,
+                          onPressed: () => _editRoute(route),
+                        ),
+                      ),
+                  ],
                 ),
               ),
       ),

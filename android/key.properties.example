@@ -1,0 +1,15 @@
+# Шаблон для android/key.properties — скопировать рядом под этим именем
+# и заполнить. Сам key.properties и файл ключа в репозиторий не попадают.
+#
+# Создать ключ (один раз, хранить в надёжном месте — потерянный ключ означает
+# невозможность обновить уже опубликованное приложение):
+#
+#   keytool -genkey -v -keystore ~/millwater-release.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias millwater
+#
+# storeFile указывается относительно папки android/ либо абсолютным путём.
+
+storeFile=../millwater-release.jks
+storePassword=
+keyAlias=millwater
+keyPassword=

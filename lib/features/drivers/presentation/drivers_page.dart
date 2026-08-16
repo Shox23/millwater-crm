@@ -54,7 +54,12 @@ class _DriversView extends StatelessWidget {
                     AppSpacing.lg,
                   ),
                   child: ScreenHeader(
-                    label: context.l10n.driversHeader(state.drivers.length),
+                    // Под поиском в списке лежат найденные, а не вся команда:
+                    // «Команда · 1» на двух набранных буквах — неправда.
+                    label: state.query.trim().isEmpty
+                        ? context.l10n.driversHeader(state.drivers.length)
+                        : context.l10n
+                            .driversHeaderFound(state.drivers.length),
                     title: context.l10n.driversTitle,
                     action: AppButton(
                       label: context.l10n.commonAdd,
@@ -89,6 +94,16 @@ class _DriversView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                // Список больше не стирается на время запроса, поэтому нужен
+                // отдельный признак «запрос в пути». Высота зарезервирована
+                // всегда — иначе список дёргается на каждую букву в поиске.
+                SizedBox(
+                  height: 2,
+                  child: state.status == DriversStatus.loading &&
+                          state.drivers.isNotEmpty
+                      ? const LinearProgressIndicator(minHeight: 2)
+                      : null,
+                ),
                 Expanded(
                   child: _DriversList(
                     state: state,
@@ -130,8 +145,12 @@ class _DriversList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.status == DriversStatus.loading ||
-        state.status == DriversStatus.initial) {
+    // Спиннер во весь экран — только когда показывать нечего. Иначе список
+    // держим на месте: поиск шлёт запрос по ходу набора, и стирать выдачу на
+    // каждое слово значило бы мигать списком. Заодно RefreshIndicator больше
+    // не вылетает из дерева посреди жеста обновления.
+    if (state.status == DriversStatus.initial ||
+        (state.status == DriversStatus.loading && state.drivers.isEmpty)) {
       return const Center(child: CircularProgressIndicator());
     }
     // Раньше сетевая ошибка доходила сюда и выглядела как «Ничего не найдено».

@@ -90,7 +90,12 @@ class CustomerCard extends StatelessWidget {
               spacing: AppSpacing.md,
               children: [
                 Expanded(child: _CapsuleTag(customer: customer)),
-                ?finance,
+                // Один бейдж занимает свою ширину, как и раньше. Два делят
+                // остаток поровну — иначе на узкой карточке они выдавливают
+                // блок с капсулами.
+                if (finance.length == 1) finance.single,
+                if (finance.length > 1)
+                  for (final tag in finance) Expanded(child: tag),
               ],
             ),
           ),

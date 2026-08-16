@@ -5,6 +5,7 @@ export 'app_card.dart';
 export 'bottom_action_bar.dart';
 export 'confirm_dialog.dart';
 export 'contact_row.dart';
+export 'date_tabs.dart';
 export 'detail_scaffold.dart';
 export 'error_retry_view.dart';
 export 'filter_chips.dart';

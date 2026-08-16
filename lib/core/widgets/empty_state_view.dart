@@ -19,6 +19,7 @@ class EmptyStateView extends StatelessWidget {
     this.hint,
     this.actionLabel,
     this.onAction,
+    this.scrollable = true,
   });
 
   /// Ничего не найдено по запросу [query].
@@ -45,9 +46,17 @@ class EmptyStateView extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// Прокручивать ли содержимое самостоятельно.
+  ///
+  /// `false` — когда виджет стоит внутри уже прокручиваемой страницы: свой
+  /// скролл там перехватывал бы жест обновления, а `LayoutBuilder` ломает
+  /// расчёт высоты в сливере.
+  final bool scrollable;
+
   @override
   Widget build(BuildContext context) {
-    final t = context.tokens;
+    final content = _content(context);
+    if (!scrollable) return content;
     // Пустое состояние делит экран с шапкой, сводкой и фильтрами. Когда места
     // хватает — центрируем; на невысоких экранах даём прокрутить, иначе
     // подсказка с кнопкой обрезаются.
@@ -58,7 +67,15 @@ class EmptyStateView extends StatelessWidget {
             minHeight:
                 constraints.maxHeight.isFinite ? constraints.maxHeight : 0,
           ),
-          child: Center(
+          child: content,
+        ),
+      ),
+    );
+  }
+
+  Widget _content(BuildContext context) {
+    final t = context.tokens;
+    return Center(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.page),
               child: Column(
@@ -96,9 +113,6 @@ class EmptyStateView extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
+          );
   }
 }

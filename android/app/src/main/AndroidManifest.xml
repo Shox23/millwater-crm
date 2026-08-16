@@ -1,13 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Водитель фиксирует координаты точки при завершении доставки.
-         Только на переднем плане: фоновой геолокации приложение не ведёт. -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION здесь намеренно нет.
+         Снятие координат выключено (ProductConfig.captureDeliveryCoordinates),
+         потому что в API нет полей latitude/longitude. Разрешение, которым
+         приложение не пользуется, приходится объявлять в Play Data Safety
+         и объяснять на ревью. Возвращать вместе с включением флага. -->
     <application
-        android:label="crm_millwater"
+        android:label="CRM Millwater"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"

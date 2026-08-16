@@ -9,6 +9,7 @@ import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/forms/submit_state.dart';
 import '../../../core/product_config.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/money_formatter.dart';
@@ -40,7 +41,7 @@ class PricesPage extends StatefulWidget {
   State<PricesPage> createState() => _PricesPageState();
 }
 
-class _PricesPageState extends State<PricesPage> {
+class _PricesPageState extends State<PricesPage> with SubmitState {
   /// Правила проверки на языке интерфейса. Пересобираются при смене
   /// локали: `didChangeDependencies` вызывается снова.
   late Validators _v;
@@ -71,8 +72,6 @@ class _PricesPageState extends State<PricesPage> {
 
   bool _loading = true;
   bool _loadFailed = false;
-  bool _saving = false;
-  String? _error;
 
   /// Один ключ на весь экран: повтор после обрыва связи не должен завести
   /// вторую запись прайса.
@@ -192,31 +191,21 @@ class _PricesPageState extends State<PricesPage> {
     );
     if (!confirmed || !mounted) return;
 
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
+    final repo = context.read<CrmRepository>();
     final l10n = context.l10n;
-    try {
-      await context.read<CrmRepository>().setPrices(
-            capsulePrice: _capsuleValue,
-            depositPrice: _depositValue,
-            idempotencyKey: _idempotencyKey,
-          );
-      if (mounted) Navigator.of(context).pop(true);
-    } on DioException catch (e) {
-      _failed(apiErrorMessage(l10n, e, fallback: l10n.pricesSaveFailed));
-    } catch (_) {
-      _failed(l10n.pricesSaveFailed);
-    }
-  }
 
-  void _failed(String message) {
-    if (!mounted) return;
-    setState(() {
-      _saving = false;
-      _error = message;
-    });
+    final saved = await submit(
+      () => repo.setPrices(
+        capsulePrice: _capsuleValue,
+        depositPrice: _depositValue,
+        idempotencyKey: _idempotencyKey,
+      ),
+      message: (e) => e is DioException
+          ? apiErrorMessage(l10n, e, fallback: l10n.pricesSaveFailed)
+          : l10n.pricesSaveFailed,
+    );
+
+    if (saved && mounted) Navigator.of(context).pop(true);
   }
 
   @override
@@ -297,8 +286,8 @@ class _PricesPageState extends State<PricesPage> {
                           failed: _historyFailed,
                         ),
                       ),
-                      if (_error != null)
-                        Text(_error!,
+                      if (submitError != null)
+                        Text(submitError!,
                             style: AppTypography.secondary
                                 .copyWith(color: t.danger)),
                     ],
@@ -315,17 +304,17 @@ class _PricesPageState extends State<PricesPage> {
                       label: context.l10n.commonCancel,
                       variant: AppButtonVariant.secondary,
                       onPressed:
-                          _saving ? null : () => Navigator.of(context).pop(false),
+                          submitting ? null : () => Navigator.of(context).pop(false),
                     ),
                   ),
                   Expanded(
                     child: AppButton(
-                      label: _saving ? context.l10n.commonSaving : context.l10n.commonSave,
+                      label: submitting ? context.l10n.commonSaving : context.l10n.commonSave,
                       // Кнопка молчит и когда цифры те же: сохранять нечего,
                       // а лишний POST завёл бы дубль записи в истории.
-                      enabled: _valid && _changed && !_saving,
+                      enabled: _valid && _changed && !submitting,
                       onPressed:
-                          (_valid && _changed && !_saving) ? _submit : null,
+                          (_valid && _changed && !submitting) ? _submit : null,
                     ),
                   ),
                 ],

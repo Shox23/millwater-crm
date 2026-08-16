@@ -1,4 +1,4 @@
-package com.example.crm_millwater
+package uz.millwater.crm
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,4 +1,5 @@
 import 'package:crm_millwater/data/models/enums.dart';
+import 'package:crm_millwater/data/models/reports_summary.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,17 +23,32 @@ void main() {
       expect(stops, 10);
       expect(done, 5);
 
-      final summary = await repo.getReportsSummary();
-      expect(summary.revenueToday, 280000);
-      expect(summary.deliveriesDone, 5);
-      expect(summary.deliveriesTotal, 10);
+      final report = await repo.getSummaryReport();
+      expect(report.totalRevenue, 280000);
+      expect(report.completedDeliveries, 5);
+      expect(report.completedDeliveries + report.failedDeliveries, 10);
     });
 
     test('отчёт: долги 420 000 у 2 клиентов, капсул 26', () async {
-      final s = await repo.getReportsSummary();
+      // Должников и капсулы сводка не отдаёт — их сводит ReportsSummary.from
+      // из ответа сервера и справочника заказчиков.
+      final s = ReportsSummary.from(
+        await repo.getSummaryReport(),
+        await repo.getCustomers(),
+      );
       expect(s.debtTotal, 420000);
       expect(s.debtorsCount, 2);
       expect(s.capsulesActive, 26);
+    });
+
+    test('должники в отчёте идут по убыванию суммы', () async {
+      final s = ReportsSummary.from(
+        await repo.getSummaryReport(),
+        await repo.getCustomers(),
+      );
+      final amounts = s.debtors.map((d) => d.amount).toList();
+      final descending = [...amounts]..sort((a, b) => b.compareTo(a));
+      expect(amounts, descending);
     });
 
     test('поиск водителя по имени', () async {
