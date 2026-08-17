@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/utils/day.dart';
 import '../../../data/models/enums.dart';
+import '../../../data/models/notification_event.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/crm_repository.dart';
 
@@ -10,14 +13,26 @@ part 'routes_event.dart';
 part 'routes_state.dart';
 
 class RoutesBloc extends Bloc<RoutesEvent, RoutesState> {
-  RoutesBloc(this._repository)
+  RoutesBloc(this._repository, {Stream<NotificationEvent>? notifications})
       : super(RoutesState(date: dayOnly(DateTime.now()))) {
     on<RoutesRequested>(_onRequested);
     on<RoutesFilterChanged>(_onFilterChanged);
     on<RoutesDateChanged>(_onDateChanged);
+
+    // Водитель закрыл доставку — список и «собрано» устарели прямо сейчас.
+    // Слипания всплесков нет намеренно: события порождают действия водителя
+    // в дороге, а их частота — единицы в минуту.
+    _notifications = notifications?.listen((_) => add(const RoutesRequested()));
   }
 
   final CrmRepository _repository;
+  StreamSubscription<NotificationEvent>? _notifications;
+
+  @override
+  Future<void> close() async {
+    await _notifications?.cancel();
+    return super.close();
+  }
 
   Future<void> _onRequested(
     RoutesRequested event,

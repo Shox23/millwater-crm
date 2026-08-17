@@ -1,12 +1,15 @@
 import 'package:equatable/equatable.dart';
 
 /// Водитель. Соответствует DriverResponse из Water CRM API.
+///
+/// Почты у водителя нет: сервер её не хранит и не принимает — ни в
+/// `CreateDriver`, ни в `UpdateDriver`, ни в ответе. Учётка заводится по
+/// телефону и паролю.
 class Driver extends Equatable {
   const Driver({
     required this.id,
     required this.fullName,
     required this.phone,
-    required this.email,
     this.userId,
     this.tripCount = 0,
     this.todayTripCount = 0,
@@ -20,7 +23,6 @@ class Driver extends Equatable {
   final String? userId;
   final String fullName;
   final String phone;
-  final String email;
   final int tripCount;
   final int todayTripCount;
   final DateTime createdAt;
@@ -29,7 +31,6 @@ class Driver extends Equatable {
   Driver copyWith({
     String? fullName,
     String? phone,
-    String? email,
     int? tripCount,
     int? todayTripCount,
   }) {
@@ -38,7 +39,6 @@ class Driver extends Equatable {
       userId: userId,
       fullName: fullName ?? this.fullName,
       phone: phone ?? this.phone,
-      email: email ?? this.email,
       tripCount: tripCount ?? this.tripCount,
       todayTripCount: todayTripCount ?? this.todayTripCount,
       createdAt: createdAt,
@@ -51,7 +51,6 @@ class Driver extends Equatable {
         userId: json['user_id'] as String?,
         fullName: json['full_name'] as String,
         phone: json['phone'] as String,
-        email: json['email'] as String? ?? '',
         tripCount: json['trip_count'] as int? ?? 0,
         todayTripCount: json['today_trip_count'] as int? ?? 0,
         createdAt: DateTime.parse(json['created_at'] as String),
@@ -61,15 +60,12 @@ class Driver extends Equatable {
       );
 
   /// Тело для PATCH /admin/drivers/{id} (частичное обновление).
-  ///
-  /// Почта необязательна: пустую строку сервер не принимает — не шлём ключ.
   Map<String, dynamic> toUpdateJson() => {
         'full_name': fullName,
         'phone': phone,
-        if (email.trim().isNotEmpty) 'email': email.trim(),
       };
 
   @override
   List<Object?> get props =>
-      [id, userId, fullName, phone, email, tripCount, todayTripCount];
+      [id, userId, fullName, phone, tripCount, todayTripCount];
 }

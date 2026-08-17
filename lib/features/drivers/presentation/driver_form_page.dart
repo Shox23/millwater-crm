@@ -8,6 +8,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/forms/submit_state.dart';
+import '../../../core/product_config.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
@@ -48,12 +49,10 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
 
   late final TextEditingController _name;
   late final TextEditingController _phone;
-  late final TextEditingController _email;
   late final TextEditingController _password;
 
   final _nameFocus = FocusNode();
   final _phoneFocus = FocusNode();
-  final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
 
 
@@ -67,20 +66,10 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
     _v.notEmpty(context.l10n.driverFormNameEmpty),
     _v.maxLen(120),
   ]);
-  /// При создании почта обязательна: `POST /admin/drivers` требует её и без
-  /// неё отвечает 422. При редактировании `PATCH` разрешает её не слать.
-  FormFieldValidator<String> get _emailCreateRule => Validators.all([
-    _v.emailRequired,
-    _v.maxLen(120),
-  ]);
-  FormFieldValidator<String> get _emailEditRule => Validators.all([
-    _v.email,
-    _v.maxLen(120),
-  ]);
-
-  FormFieldValidator<String> get _emailRule =>
-      widget.isEdit ? _emailEditRule : _emailCreateRule;
   FormFieldValidator<String> get _passwordRule => _v.password();
+
+  /// Заготовка пароля для новой учётки — см. [ProductConfig].
+  static const String _defaultPassword = ProductConfig.defaultDriverPassword;
 
   @override
   void initState() {
@@ -91,19 +80,21 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
     _phone = TextEditingController(
       text: driver == null ? UzPhone.prefix : UzPhone.format(driver.phone),
     );
-    _email = TextEditingController(text: driver?.email ?? '');
-    _password = TextEditingController();
+    // Стартовый пароль подставлен заранее: сбросить его админ потом не сможет
+    // (эндпоинта нет), а водитель меняет его сам после первого входа.
+    // Значение можно перебить прямо в поле.
+    _password = TextEditingController(
+      text: driver == null ? _defaultPassword : '',
+    );
   }
 
   @override
   void dispose() {
     _name.dispose();
     _phone.dispose();
-    _email.dispose();
     _password.dispose();
     _nameFocus.dispose();
     _phoneFocus.dispose();
-    _emailFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
   }
@@ -114,8 +105,9 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
     return _name.text.trim() != (driver?.fullName ?? '') ||
         UzPhone.normalize(_phone.text) !=
             UzPhone.normalize(driver?.phone ?? '') ||
-        _email.text.trim() != (driver?.email ?? '') ||
-        _password.text.isNotEmpty;
+        // При создании пароль уже заполнен заготовкой — «грязной» форму делает
+        // только его правка, иначе выход сразу спрашивал бы подтверждение.
+        _password.text != (driver == null ? _defaultPassword : '');
   }
 
   Future<void> _submit() async {
@@ -133,7 +125,6 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
   List<(FocusNode, String?)> get _checks => [
         (_nameFocus, _nameRule(_name.text)),
         (_phoneFocus, _v.phone(_phone.text)),
-        (_emailFocus, _emailRule(_email.text)),
         // Пароль задаётся только при создании — это учётная запись водителя.
         if (!widget.isEdit) (_passwordFocus, _passwordRule(_password.text)),
       ];
@@ -162,17 +153,15 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
           ? repo.updateDriver(widget.driver!.copyWith(
               fullName: _name.text.trim(),
               phone: phone,
-              email: _email.text.trim(),
             ))
           : repo.addDriver(
               fullName: _name.text.trim(),
               phone: phone,
-              email: _email.text.trim(),
               password: _password.text,
               idempotencyKey: _idempotencyKey,
             ),
-      // Сервер может отклонить и валидные с виду данные: занятый телефон
-      // или почта, упавшая сеть.
+      // Сервер может отклонить и валидные с виду данные: занятый телефон,
+      // упавшая сеть.
       message: (e) => e is DioException
           ? apiErrorMessage(l10n, e, fallback: l10n.driverFormSaveFailed)
           : l10n.driverFormSaveFailed,
@@ -199,9 +188,6 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
 
   @override
   Widget build(BuildContext context) {
-    // В режиме редактирования почта — последнее поле формы.
-    final emailIsLast = widget.isEdit;
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -240,29 +226,18 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
                 keyboardType: TextInputType.phone,
                 inputFormatters: const [UzPhoneInputFormatter()],
                 autofillHints: const [AutofillHints.telephoneNumber],
-                textInputAction: TextInputAction.next,
-                onSubmitted: (_) => _emailFocus.requestFocus(),
-              ),
-              LabeledTextField(
-                label: context.l10n.driverFormEmail,
-                hint: 'driver@aqua.uz',
-                helper: widget.isEdit ? context.l10n.commonOptional : null,
-                controller: _email,
-                focusNode: _emailFocus,
-                validator: _emailRule,
-                keyboardType: TextInputType.emailAddress,
-                maxLength: 120,
-                autofillHints: const [AutofillHints.email],
                 textInputAction:
-                    emailIsLast ? TextInputAction.done : TextInputAction.next,
+                    widget.isEdit ? TextInputAction.done : TextInputAction.next,
                 onSubmitted: (_) =>
-                    emailIsLast ? _submit() : _passwordFocus.requestFocus(),
+                    widget.isEdit ? _submit() : _passwordFocus.requestFocus(),
               ),
               if (!widget.isEdit)
                 LabeledTextField(
                   label: context.l10n.driverFormPassword,
                   hint: '••••••••',
-                  helper: context.l10n.minSixChars,
+                  // Объясняем заготовку: иначе непонятно, откуда взялся пароль
+                  // и что водителю его потом менять.
+                  helper: context.l10n.driverFormPasswordHelper,
                   controller: _password,
                   focusNode: _passwordFocus,
                   validator: _passwordRule,

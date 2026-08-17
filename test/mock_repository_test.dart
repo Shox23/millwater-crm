@@ -67,7 +67,6 @@ void main() {
       final created = await repo.addDriver(
         fullName: 'Тест Тестов',
         phone: '+998 90 000 00 00',
-        email: 'test@aqua.uz',
         password: 'secret123',
       );
       expect((await repo.getDrivers()).length, 6);
@@ -91,6 +90,7 @@ void main() {
         capsules: 4,
         amount: 80000,
         bottleBalance: 4,
+        method: PaymentMethod.cash,
       );
 
       final updated = await repo.getRoute(route.id);

@@ -8,9 +8,11 @@ import '../data/network/dio_client.dart';
 import '../data/network/session_storage.dart';
 import '../data/repositories/api_crm_repository.dart';
 import '../data/repositories/api_driver_repository.dart';
+import '../data/repositories/api_notifications_repository.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/crm_repository.dart';
 import '../data/repositories/driver_repository.dart';
+import '../data/repositories/notifications_repository.dart';
 import '../features/auth/bloc/auth_bloc.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/driver/presentation/driver_shell.dart';
@@ -93,6 +95,7 @@ class _CrmAppState extends State<CrmApp> {
           buildWhen: (a, b) => a.role != b.role || a.status != b.status,
           builder: (context, auth) => _RoleScopedRepositories(
             dio: _dio,
+            tokenStore: _tokenStore,
             role: auth.isAuthenticated ? auth.role : null,
             child: _buildApp(auth),
           ),
@@ -144,21 +147,40 @@ class _CrmAppState extends State<CrmApp> {
   }
 }
 
-/// Кладёт в дерево репозиторий, соответствующий роли, — и только его.
+/// Кладёт в дерево репозитории, соответствующие роли, — и только их.
 ///
 /// У водителя `CrmRepository` физически отсутствует, поэтому «доступ по
-/// ролям» не зависит от того, что кто-то вызовет не тот метод. До входа
-/// не предоставляется ничего.
+/// ролям» не зависит от того, что кто-то вызовет не тот метод. То же и с
+/// потоком уведомлений: админский поток несёт события по всем водителям, и
+/// в водительское поддерево он не попадает. До входа не предоставляется
+/// ничего.
 class _RoleScopedRepositories extends StatelessWidget {
   const _RoleScopedRepositories({
     required this.dio,
+    required this.tokenStore,
     required this.role,
     required this.child,
   });
 
   final Dio dio;
+
+  /// Нужен потоку уведомлений: 401 он чинит сам, минуя интерсептор.
+  final AuthTokenStore tokenStore;
   final UserRole? role;
   final Widget child;
+
+  /// Соединение открывается лениво — на первого подписчика [events], —
+  /// поэтому провайдер в дереве сам по себе сокет не держит.
+  Widget _withNotifications(
+    NotificationsRepository Function() create,
+    Widget child,
+  ) {
+    return RepositoryProvider<NotificationsRepository>(
+      create: (_) => create(),
+      dispose: (repo) => repo.dispose(),
+      child: child,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,11 +188,18 @@ class _RoleScopedRepositories extends StatelessWidget {
       null => child,
       UserRole.admin => RepositoryProvider<CrmRepository>(
           create: (_) => ApiCrmRepository(dio),
-          child: child,
+          child: _withNotifications(
+            () => ApiNotificationsRepository.admin(dio, tokenStore: tokenStore),
+            child,
+          ),
         ),
       UserRole.driver => RepositoryProvider<DriverRepository>(
           create: (_) => ApiDriverRepository(dio),
-          child: child,
+          child: _withNotifications(
+            () =>
+                ApiNotificationsRepository.driver(dio, tokenStore: tokenStore),
+            child,
+          ),
         ),
     };
   }

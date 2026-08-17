@@ -12,6 +12,7 @@ import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/detail_scaffold.dart';
@@ -55,6 +56,8 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   final _addressFocus = FocusNode();
   final _commentFocus = FocusNode();
 
+  /// У заказчика стоит кулер — влияет на то, как водитель обслуживает точку.
+  late bool _hasCooler;
 
   /// Один ключ на весь экран: повтор после обрыва связи не должен завести
   /// второго заказчика. При редактировании не нужен — PATCH идемпотентен.
@@ -83,6 +86,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     );
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
+    _hasCooler = customer?.hasCooler ?? false;
   }
 
   @override
@@ -108,7 +112,8 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
         UzPhone.normalize(_phone.text) !=
             UzPhone.normalize(customer?.phone ?? '') ||
         _address.text.trim() != (customer?.address ?? '') ||
-        _comment.text.trim() != (customer?.comment ?? '');
+        _comment.text.trim() != (customer?.comment ?? '') ||
+        _hasCooler != (customer?.hasCooler ?? false);
   }
 
   Future<void> _submit() async {
@@ -156,12 +161,14 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
               phone: phone,
               address: _address.text.trim(),
               comment: _commentOrNull,
+              hasCooler: _hasCooler,
             ))
           : repo.addCustomer(
               name: _name.text.trim(),
               phone: phone,
               address: _address.text.trim(),
               comment: _commentOrNull,
+              hasCooler: _hasCooler,
               idempotencyKey: _idempotencyKey,
             ),
       // Сервер может отклонить и валидные с виду данные: занятый телефон,
@@ -252,6 +259,25 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 maxLength: 300,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
+              ),
+              AppCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        context.l10n.customerFormHasCooler,
+                        style: AppTypography.bodyStrong
+                            .copyWith(color: context.tokens.text),
+                      ),
+                    ),
+                    Switch(
+                      value: _hasCooler,
+                      onChanged: submitting
+                          ? null
+                          : (value) => setState(() => _hasCooler = value),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

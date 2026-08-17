@@ -104,12 +104,6 @@ class DriverDetailPage extends StatelessWidget {
                 PhoneContactRow(phone: driver.phone),
                 const Divider(),
                 ContactRow(
-                  icon: Icons.mail_outline,
-                  label: context.l10n.driverEmail,
-                  value: driver.email.isEmpty ? '—' : driver.email,
-                ),
-                const Divider(),
-                ContactRow(
                   icon: Icons.event_outlined,
                   label: context.l10n.driverCreatedAt,
                   value: DateFormat('dd.MM.yyyy').format(driver.createdAt),

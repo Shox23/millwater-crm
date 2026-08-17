@@ -30,7 +30,6 @@ abstract class SeedData {
           id: 'd1',
           fullName: 'Азиз Каримов',
           phone: '+998 90 123 45 67',
-          email: 'aziz.karimov@aqua.uz',
           tripCount: 128,
           todayTripCount: 4,
           createdAt: _created,
@@ -39,7 +38,6 @@ abstract class SeedData {
           id: 'd2',
           fullName: 'Бобур Рахимов',
           phone: '+998 93 245 67 89',
-          email: 'bobur.rakhimov@aqua.uz',
           tripCount: 96,
           todayTripCount: 3,
           createdAt: _created,
@@ -48,7 +46,6 @@ abstract class SeedData {
           id: 'd3',
           fullName: 'Шерзод Юлдашев',
           phone: '+998 90 555 12 34',
-          email: 'sherzod.yuldashev@aqua.uz',
           tripCount: 154,
           todayTripCount: 2,
           createdAt: _created,
@@ -57,7 +54,6 @@ abstract class SeedData {
           id: 'd4',
           fullName: 'Дилшод Нуриддинов',
           phone: '+998 94 321 00 11',
-          email: 'dilshod.nuriddinov@aqua.uz',
           tripCount: 71,
           todayTripCount: 1,
           createdAt: _created,
@@ -66,7 +62,6 @@ abstract class SeedData {
           id: 'd5',
           fullName: 'Фаррух Тошматов',
           phone: '+998 97 888 77 66',
-          email: 'farrukh.toshmatov@aqua.uz',
           tripCount: 43,
           todayTripCount: 0,
           createdAt: _created,
@@ -171,7 +166,7 @@ abstract class SeedData {
       completedCount: 1,
       totalCustomers: 3,
       stops: [
-        stop('s1', c['c1']!, 5, DeliveryStatus.paid, paid: true),
+        stop('s1', c['c1']!, 5, DeliveryStatus.delivered, paid: true),
         stop('s2', c['c4']!, 3, DeliveryStatus.onWay),
         stop('s3', c['c1']!, 2, DeliveryStatus.pending),
       ],
@@ -187,7 +182,7 @@ abstract class SeedData {
       totalCustomers: 2,
       stops: [
         stop('s4', c['c2']!, 8, DeliveryStatus.onWay),
-        stop('s5', c['c5']!, 5, DeliveryStatus.paid, paid: true),
+        stop('s5', c['c5']!, 5, DeliveryStatus.delivered, paid: true),
       ],
     );
 
@@ -200,7 +195,7 @@ abstract class SeedData {
       completedCount: 2,
       totalCustomers: 2,
       stops: [
-        stop('s6', c['c6']!, 4, DeliveryStatus.paid, paid: true),
+        stop('s6', c['c6']!, 4, DeliveryStatus.delivered, paid: true),
         stop('s7', c['c4']!, 4, DeliveryStatus.delivered),
       ],
     );

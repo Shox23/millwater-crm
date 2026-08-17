@@ -101,6 +101,19 @@ class CustomerDetailPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Кулер отмечаем только когда он есть: строка «кулера нет» у
+                // большинства заказчиков была бы шумом.
+                if (customer.hasCooler)
+                  Row(
+                    spacing: 4,
+                    children: [
+                      Icon(Icons.water_drop_outlined,
+                          size: 16, color: t.primary),
+                      Text(context.l10n.customerHasCooler,
+                          style: AppTypography.secondary
+                              .copyWith(color: t.primary)),
+                    ],
+                  ),
               ],
             ),
           ),

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../l10n/l10n.dart';
+import '../../../data/models/notification_event.dart';
 import '../../../data/models/reports_summary.dart';
 import '../../../data/repositories/crm_repository.dart';
 
@@ -9,12 +12,25 @@ part 'reports_event.dart';
 part 'reports_state.dart';
 
 class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
-  ReportsBloc(this._repository) : super(const ReportsState()) {
+  ReportsBloc(this._repository, {Stream<NotificationEvent>? notifications})
+      : super(const ReportsState()) {
     on<ReportsRequested>(_onRequested);
     on<ReportsPeriodChanged>(_onPeriodChanged);
+
+    // Выручка и число доставок меняются ровно теми же событиями, что и
+    // список маршрутов, — см. `RoutesBloc`.
+    _notifications =
+        notifications?.listen((_) => add(const ReportsRequested()));
   }
 
   final CrmRepository _repository;
+  StreamSubscription<NotificationEvent>? _notifications;
+
+  @override
+  Future<void> close() async {
+    await _notifications?.cancel();
+    return super.close();
+  }
 
   /// Номер последнего запроса: ответы обогнавших друг друга запросов
   /// не должны затирать более свежий результат.
@@ -59,8 +75,14 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     add(const ReportsRequested());
   }
 
+  (DateTime, DateTime) _rangeFor(ReportPeriod period) => rangeFor(period);
+
   /// Границы периода для запроса отчёта.
-  (DateTime, DateTime) _rangeFor(ReportPeriod period) {
+  ///
+  /// Публичная, потому что теми же границами выгружается Excel: посчитай их
+  /// кнопка экспорта сама — и однажды выгрузила бы не тот период, который
+  /// показан на экране.
+  static (DateTime, DateTime) rangeFor(ReportPeriod period) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     return switch (period) {

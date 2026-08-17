@@ -1,4 +1,5 @@
 import 'package:crm_millwater/app/theme/app_theme.dart';
+import 'package:crm_millwater/core/product_config.dart';
 import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/data/models/driver.dart';
@@ -202,27 +203,11 @@ void main() {
   });
 
   group('Форма водителя', () {
-    testWidgets('почта необязательна, но формат проверяется', (tester) async {
-      await pumpForm(tester, const DriverFormPage());
-
-      await tester.enterText(inputFor('Электронная почта'), 'driver@');
-      await settle(tester);
-      expect(find.text('Неверный формат почты'), findsNothing);
-
-      await leaveField(tester);
-      expect(find.text('Неверный формат почты'), findsOneWidget);
-
-      await tester.enterText(inputFor('Электронная почта'), '');
-      await settle(tester);
-      expect(find.text('Неверный формат почты'), findsNothing);
-    });
-
     testWidgets('короткий пароль не даёт нажать «Добавить»', (tester) async {
       await pumpForm(tester, const DriverFormPage());
 
       await tester.enterText(inputFor('Имя водителя'), 'Азиз Каримов');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
-      await tester.enterText(inputFor('Электронная почта'), 'aziz@aqua.uz');
       await tester.enterText(inputFor('Пароль для входа'), '12345');
       await leaveField(tester);
       await settle(tester);
@@ -236,17 +221,15 @@ void main() {
       expect((await drivers(tester)).length, 5);
     });
 
-    testWidgets('без почты водитель не создаётся', (tester) async {
-      // `POST /admin/drivers` требует email и без него отвечает 422 —
-      // ловим это в форме, а не запросом.
+    testWidgets('пустой пароль водителя не пропускает', (tester) async {
       await pumpForm(tester, const DriverFormPage());
 
       await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
       await tester.enterText(inputFor('Номер телефона'), '911234567');
-      await tester.enterText(inputFor('Пароль для входа'), 'secret1');
+      // Стереть заготовку можно — тогда создавать нечего.
+      await tester.enterText(inputFor('Пароль для входа'), '');
       await settle(tester);
 
-      // Почта пустая — кнопка недоступна, даже если её ни разу не открывали.
       expect(submitEnabled(tester, 'Добавить'), isFalse);
 
       await tester.tap(find.text('Добавить'));
@@ -256,20 +239,20 @@ void main() {
         (await drivers(tester)).where((d) => d.fullName == 'Тимур Юсупов'),
         isEmpty,
       );
-
-      // Заглянув в поле и уйдя из него, водитель увидит и подсказку.
-      await tester.tap(inputFor('Электронная почта'));
-      await leaveField(tester);
-      expect(find.text('Введите электронную почту'), findsOneWidget);
     });
 
-    testWidgets('водитель сохраняется с почтой', (tester) async {
+    testWidgets('водитель заводится со стартовым паролем из заготовки',
+        (tester) async {
       await pumpForm(tester, const DriverFormPage());
+
+      // Пароль подставлен заранее — админу достаточно имени и телефона.
+      expect(
+        tester.widget<TextField>(inputFor('Пароль для входа')).controller!.text,
+        ProductConfig.defaultDriverPassword,
+      );
 
       await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
       await tester.enterText(inputFor('Номер телефона'), '911234567');
-      await tester.enterText(inputFor('Электронная почта'), 'timur@aqua.uz');
-      await tester.enterText(inputFor('Пароль для входа'), 'secret1');
       await settle(tester);
 
       expect(submitEnabled(tester, 'Добавить'), isTrue);
@@ -279,7 +262,6 @@ void main() {
       final added = (await drivers(tester))
           .firstWhere((d) => d.fullName == 'Тимур Юсупов');
       expect(added.phone, '+998911234567');
-      expect(added.email, 'timur@aqua.uz');
     });
 
     testWidgets('кнопка «показать пароль» раскрывает ввод', (tester) async {

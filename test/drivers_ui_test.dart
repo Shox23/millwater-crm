@@ -113,8 +113,6 @@ void main() {
 
       expect(find.text('Дата создания'), findsOneWidget);
       expect(find.text('01.01.2026'), findsOneWidget);
-      // Почта осталась в карточке — в строке списка ей места нет.
-      expect(find.text('aziz.karimov@aqua.uz'), findsOneWidget);
     });
   });
 }

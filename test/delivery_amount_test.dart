@@ -32,6 +32,7 @@ class _RecordingDriverRepository extends MockDriverRepository {
     required int capsules,
     required int amount,
     required int bottleBalance,
+    required PaymentMethod method,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
@@ -43,6 +44,7 @@ class _RecordingDriverRepository extends MockDriverRepository {
       capsules: capsules,
       amount: amount,
       bottleBalance: bottleBalance,
+      method: method,
       photoPath: photoPath,
       idempotencyKey: idempotencyKey,
     );

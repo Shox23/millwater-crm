@@ -1124,12 +1124,6 @@ abstract class AppLocalizations {
   /// **'поездок сегодня'**
   String get driverTripsToday;
 
-  /// No description provided for @driverEmail.
-  ///
-  /// In ru, this message translates to:
-  /// **'Почта'**
-  String get driverEmail;
-
   /// No description provided for @driverCreatedAt.
   ///
   /// In ru, this message translates to:
@@ -1172,17 +1166,17 @@ abstract class AppLocalizations {
   /// **'Введите имя водителя'**
   String get driverFormNameEmpty;
 
-  /// No description provided for @driverFormEmail.
-  ///
-  /// In ru, this message translates to:
-  /// **'Электронная почта'**
-  String get driverFormEmail;
-
   /// No description provided for @driverFormPassword.
   ///
   /// In ru, this message translates to:
   /// **'Пароль для входа'**
   String get driverFormPassword;
+
+  /// No description provided for @driverFormPasswordHelper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Стартовый пароль — водитель сменит его в настройках'**
+  String get driverFormPasswordHelper;
 
   /// No description provided for @driverFormSaveFailed.
   ///
@@ -1273,6 +1267,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Заказчик'**
   String get customerTitle;
+
+  /// No description provided for @customerHasCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'Есть кулер'**
+  String get customerHasCooler;
+
+  /// No description provided for @customerFormHasCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'У заказчика есть кулер'**
+  String get customerFormHasCooler;
 
   /// No description provided for @customerCapsulesBalance.
   ///
@@ -1861,6 +1867,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Отчёты'**
   String get reportsTitle;
+
+  /// No description provided for @reportsExport.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выгрузить в Excel'**
+  String get reportsExport;
+
+  /// No description provided for @reportsExportSubject.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчёт Millwater'**
+  String get reportsExportSubject;
+
+  /// No description provided for @reportsExportFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось выгрузить отчёт.'**
+  String get reportsExportFailed;
 
   /// No description provided for @reportsLoadFailed.
   ///

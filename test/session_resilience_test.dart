@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/user_role.dart';
 import 'package:crm_millwater/data/network/dio_client.dart';
 import 'package:crm_millwater/data/network/session_storage.dart';
@@ -161,6 +162,7 @@ void main() {
         capsules: 2,
         amount: 40000,
         bottleBalance: 2,
+        method: PaymentMethod.card,
         photoPath: photo.path,
       );
 

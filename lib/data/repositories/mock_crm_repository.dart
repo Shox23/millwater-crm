@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../core/utils/day.dart';
 import '../mock/mock_store.dart';
 import '../mock/seed_data.dart';
@@ -5,6 +7,7 @@ import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
 import '../models/price_settings.dart';
+import '../models/report_export.dart';
 import '../models/reports_summary.dart';
 import '../models/route_models.dart';
 import 'crm_repository.dart';
@@ -106,7 +109,7 @@ class MockCrmRepository implements CrmRepository {
       return List.unmodifiable(_drivers);
     }
     return _drivers
-        .where((d) => _matches(search, [d.fullName, d.phone, d.email]))
+        .where((d) => _matches(search, [d.fullName, d.phone]))
         .toList();
   }
 
@@ -120,7 +123,6 @@ class MockCrmRepository implements CrmRepository {
   Future<Driver> addDriver({
     required String fullName,
     required String phone,
-    required String email,
     required String password,
     String? idempotencyKey,
   }) async {
@@ -132,7 +134,6 @@ class MockCrmRepository implements CrmRepository {
       id: store.nextId('d'),
       fullName: fullName,
       phone: phone,
-      email: email,
       createdAt: DateTime.now(),
     );
     _drivers.add(driver);
@@ -181,6 +182,7 @@ class MockCrmRepository implements CrmRepository {
     required String phone,
     required String address,
     String? comment,
+    bool hasCooler = false,
     String? idempotencyKey,
   }) async {
     await _tick();
@@ -193,6 +195,7 @@ class MockCrmRepository implements CrmRepository {
       phone: phone,
       address: address,
       comment: comment,
+      hasCooler: hasCooler,
       createdAt: DateTime.now(),
     );
     _customers.add(customer);
@@ -410,6 +413,22 @@ class MockCrmRepository implements CrmRepository {
       failedDeliveries: stops.length - done,
       totalRevenue: stops.fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0)),
       totalDebt: _customers.fold<int>(0, (sum, c) => sum + c.debt),
+    );
+  }
+
+  @override
+  Future<ReportExport> exportSummaryReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) async {
+    await _tick();
+    // Настоящий xlsx здесь не нужен: экран проверяет, что файл дошёл и ушёл
+    // в «Поделиться», а не его содержимое. Первые байты — сигнатура ZIP,
+    // с которой начинается любой xlsx.
+    return ReportExport(
+      bytes: Uint8List.fromList([0x50, 0x4B, 0x03, 0x04, ...List.filled(60, 0)]),
+      filename: 'millwater-report.xlsx',
     );
   }
 }

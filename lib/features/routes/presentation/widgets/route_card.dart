@@ -14,7 +14,7 @@ import '../../../../data/models/route_models.dart';
 
 /// Тон пилюли по статусу доставки (остановки).
 StatusTone deliveryTone(DeliveryStatus status) => switch (status) {
-      DeliveryStatus.delivered || DeliveryStatus.paid => StatusTone.success,
+      DeliveryStatus.delivered => StatusTone.success,
       DeliveryStatus.onWay => StatusTone.progress,
       DeliveryStatus.pending => StatusTone.neutral,
       DeliveryStatus.failed => StatusTone.danger,
@@ -24,7 +24,7 @@ StatusTone deliveryTone(DeliveryStatus status) => switch (status) {
 Color deliveryColor(BuildContext context, DeliveryStatus status) {
   final t = context.tokens;
   return switch (status) {
-    DeliveryStatus.delivered || DeliveryStatus.paid => t.success,
+    DeliveryStatus.delivered => t.success,
     DeliveryStatus.onWay => t.primary,
     DeliveryStatus.pending => t.text3,
     DeliveryStatus.failed => t.danger,

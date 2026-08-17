@@ -97,12 +97,14 @@ void main() {
         capsules: 3,
         amount: 60000,
         bottleBalance: 3,
+        // Фото прикладывают только к оплате картой.
+        method: PaymentMethod.card,
         photoPath: '/tmp/check.jpg',
       );
 
       final route = await repo.getMyRoute('r1');
       final stop = route!.stops.firstWhere((s) => s.id == 's2');
-      expect(stop.status, DeliveryStatus.paid);
+      expect(stop.status, DeliveryStatus.delivered);
       expect(stop.deliveredCapsules, 3);
       expect(stop.paymentAmount, 60000);
       expect(stop.paymentPhoto, '/tmp/check.jpg');
@@ -117,6 +119,7 @@ void main() {
         capsules: 3,
         amount: 60000,
         bottleBalance: 3,
+        method: PaymentMethod.cash,
         idempotencyKey: 'key-1',
       );
       // Связь оборвалась, водитель нажал «Завершить» ещё раз.
@@ -125,6 +128,7 @@ void main() {
         capsules: 99,
         amount: 999999,
         bottleBalance: 99,
+        method: PaymentMethod.cash,
         idempotencyKey: 'key-1',
       );
 
@@ -141,7 +145,12 @@ void main() {
       final admin = MockCrmRepository(store: store);
 
       await driver.completeDelivery(
-          stopId: 's2', capsules: 3, amount: 60000, bottleBalance: 3);
+        stopId: 's2',
+        capsules: 3,
+        amount: 60000,
+        bottleBalance: 3,
+        method: PaymentMethod.cash,
+      );
 
       final route = await admin.getRoute('r1');
       expect(route!.completedCount, 2);
@@ -274,10 +283,32 @@ void main() {
 
       expect(find.byType(DeliveryCompletionPage), findsOneWidget);
       expect(find.text('КОЛИЧЕСТВО КАПСУЛ'), findsOneWidget);
+      // По умолчанию оплата наличными — подтверждать снимком нечего.
+      expect(find.text('Фото оплаты'), findsNothing);
+    });
+
+    testWidgets('фото просят только при оплате картой', (tester) async {
+      await pumpPage(
+        tester,
+        MockDriverRepository(driverId: 'd1'),
+        const MyRouteDetailPage(routeId: 'r1'),
+      );
+      await tester.tap(find.text('Салон «Zebo»'));
+      await settle(tester);
+
+      expect(find.text('Фото оплаты'), findsNothing);
+
+      await tester.tap(find.text('Карта'));
+      await settle(tester);
+
       expect(find.text('Фото оплаты'), findsOneWidget);
-      // Плитка фото больше не заглушка.
-      expect(find.text('Скоро'), findsNothing);
       expect(find.text('Камера'), findsOneWidget);
+
+      // Вернулись к наличным — тайл снова скрыт.
+      await tester.tap(find.text('Наличные'));
+      await settle(tester);
+
+      expect(find.text('Фото оплаты'), findsNothing);
     });
 
     testWidgets('завершённая точка на завершение не открывается',

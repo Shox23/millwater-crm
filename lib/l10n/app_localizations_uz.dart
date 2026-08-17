@@ -565,9 +565,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get driverTripsToday => 'bugungi reyslar';
 
   @override
-  String get driverEmail => 'Pochta';
-
-  @override
   String get driverCreatedAt => 'Yaratilgan sana';
 
   @override
@@ -589,10 +586,11 @@ class AppLocalizationsUz extends AppLocalizations {
   String get driverFormNameEmpty => 'Haydovchi ismini kiriting';
 
   @override
-  String get driverFormEmail => 'Elektron pochta';
+  String get driverFormPassword => 'Kirish uchun parol';
 
   @override
-  String get driverFormPassword => 'Kirish uchun parol';
+  String get driverFormPasswordHelper =>
+      'Boshlang‘ich parol — haydovchi uni sozlamalarda o‘zgartiradi';
 
   @override
   String get driverFormSaveFailed => 'Haydovchini saqlab bo‘lmadi.';
@@ -645,6 +643,12 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get customerTitle => 'Mijoz';
+
+  @override
+  String get customerHasCooler => 'Kuler bor';
+
+  @override
+  String get customerFormHasCooler => 'Mijozda kuler bor';
 
   @override
   String get customerCapsulesBalance => 'qo‘lidagi kapsula';
@@ -966,6 +970,15 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get reportsTitle => 'Hisobotlar';
+
+  @override
+  String get reportsExport => 'Excelga yuklash';
+
+  @override
+  String get reportsExportSubject => 'Millwater hisoboti';
+
+  @override
+  String get reportsExportFailed => 'Hisobotni yuklab bo‘lmadi.';
 
   @override
   String get reportsLoadFailed => 'Hisobotlarni yuklab bo‘lmadi';

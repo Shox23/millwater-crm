@@ -6,8 +6,10 @@ import 'package:crm_millwater/app/app.dart';
 import 'package:crm_millwater/data/models/user_role.dart';
 import 'package:crm_millwater/data/network/dio_client.dart';
 import 'package:crm_millwater/data/network/session_storage.dart';
+import 'package:crm_millwater/data/repositories/api_notifications_repository.dart';
 import 'package:crm_millwater/data/repositories/auth_repository.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
+import 'package:crm_millwater/data/repositories/notifications_repository.dart';
 import 'package:crm_millwater/features/auth/presentation/login_page.dart';
 import 'package:crm_millwater/features/driver/presentation/driver_shell.dart';
 import 'package:crm_millwater/features/home/presentation/admin_shell.dart';
@@ -245,6 +247,46 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(pushedContext.read<CrmRepository>(), isA<CrmRepository>());
+    });
+
+    /// Какой поток уведомлений оказался в дереве у этой роли.
+    ///
+    /// Админский поток несёт события по всем водителям: водителю его давать
+    /// нельзя, и держится это тем же способом, что и остальные репозитории —
+    /// в его поддереве такого провайдера просто нет.
+    Future<String> streamPathFor(WidgetTester tester, UserRole role) async {
+      final adapter = _FakeAdapter(
+        (path) => switch (path) {
+          '/auth/me' => (
+              200,
+              {'id': 'u1', 'phone': '+998901234567', 'role': role.wire},
+            ),
+          _ => (200, const {'items': <Object>[], 'total': 0}),
+        },
+      );
+      await pumpApp(
+        tester,
+        storage: storedSession(role),
+        dio: dioWith(adapter),
+      );
+
+      final context = tester.element(find.byType(Navigator).first);
+      final repo = context.read<NotificationsRepository>();
+      return (repo as ApiNotificationsRepository).path;
+    }
+
+    testWidgets('админ получает поток по всем водителям', (tester) async {
+      expect(
+        await streamPathFor(tester, UserRole.admin),
+        ApiNotificationsRepository.adminPath,
+      );
+    });
+
+    testWidgets('водителю админский поток не достаётся', (tester) async {
+      expect(
+        await streamPathFor(tester, UserRole.driver),
+        ApiNotificationsRepository.driverPath,
+      );
     });
 
     testWidgets('протухший токен возвращает на вход', (tester) async {

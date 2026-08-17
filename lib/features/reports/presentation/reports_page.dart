@@ -3,10 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../l10n/l10n.dart';
 
+import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/export/file_sharer.dart';
 import '../../../core/utils/money_formatter.dart';
+import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../data/models/reports_summary.dart';
@@ -16,21 +19,28 @@ import 'widgets/debtors_card.dart';
 import 'widgets/stat_card.dart';
 
 class ReportsPage extends StatelessWidget {
-  const ReportsPage({super.key});
+  const ReportsPage({super.key, this.fileSharer = const PlatformFileSharer()});
+
+  /// Куда уходит выгруженный Excel. В тестах подменяется: и файловая система,
+  /// и лист «Поделиться» — платформенные каналы.
+  final FileSharer fileSharer;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          ReportsBloc(context.read<CrmRepository>())
-            ..add(const ReportsRequested()),
-      child: const _ReportsView(),
+      create: (context) => ReportsBloc(
+        context.read<CrmRepository>(),
+        notifications: context.notificationEvents,
+      )..add(const ReportsRequested()),
+      child: _ReportsView(fileSharer: fileSharer),
     );
   }
 }
 
 class _ReportsView extends StatelessWidget {
-  const _ReportsView();
+  const _ReportsView({required this.fileSharer});
+
+  final FileSharer fileSharer;
 
   @override
   Widget build(BuildContext context) {
@@ -53,11 +63,20 @@ class _ReportsView extends StatelessWidget {
                   child: ScreenHeader(
                     label: context.l10n.reportsLabel,
                     title: context.l10n.reportsTitle,
-                    action: _PeriodSelector(
-                      period: state.period,
-                      onChanged: (p) => context.read<ReportsBloc>().add(
-                        ReportsPeriodChanged(p),
-                      ),
+                    action: Row(
+                      spacing: AppSpacing.sm,
+                      children: [
+                        _ExportButton(
+                          period: state.period,
+                          fileSharer: fileSharer,
+                        ),
+                        _PeriodSelector(
+                          period: state.period,
+                          onChanged: (p) => context.read<ReportsBloc>().add(
+                            ReportsPeriodChanged(p),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -166,6 +185,71 @@ class _ReportsBody extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Кнопка выгрузки отчёта в Excel.
+///
+/// Период берётся тот же, что показан на экране: границы считает
+/// [ReportsBloc.rangeFor], одна на оба пути.
+class _ExportButton extends StatefulWidget {
+  const _ExportButton({required this.period, required this.fileSharer});
+
+  final ReportPeriod period;
+  final FileSharer fileSharer;
+
+  @override
+  State<_ExportButton> createState() => _ExportButtonState();
+}
+
+class _ExportButtonState extends State<_ExportButton> {
+  bool _busy = false;
+
+  Future<void> _export() async {
+    setState(() => _busy = true);
+    final repo = context.read<CrmRepository>();
+    final l10n = context.l10n;
+    final (from, to) = ReportsBloc.rangeFor(widget.period);
+
+    try {
+      final export = await repo.exportSummaryReport(dateFrom: from, dateTo: to);
+      await widget.fileSharer.share(
+        bytes: export.bytes,
+        filename: export.filename,
+        subject: l10n.reportsExportSubject,
+      );
+    } catch (_) {
+      // Молча гасить нельзя: админ нажал кнопку и ждёт файл.
+      if (mounted) showAppSnackBar(context, l10n.reportsExportFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+
+    if (_busy) {
+      return const SizedBox(
+        width: 36,
+        height: 36,
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    return IconButton(
+      onPressed: _export,
+      icon: Icon(Icons.file_download_outlined, color: t.text2),
+      tooltip: context.l10n.reportsExport,
+      visualDensity: VisualDensity.compact,
     );
   }
 }

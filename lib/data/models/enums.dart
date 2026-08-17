@@ -5,8 +5,7 @@ enum DeliveryStatus {
   pending('pending'),
   onWay('on_way'),
   delivered('delivered'),
-  failed('failed'),
-  paid('paid');
+  failed('failed');
 
   const DeliveryStatus(this.wire);
 
@@ -19,7 +18,6 @@ enum DeliveryStatus {
         DeliveryStatus.onWay => l10n.deliveryOnWay,
         DeliveryStatus.delivered => l10n.deliveryDelivered,
         DeliveryStatus.failed => l10n.deliveryFailed,
-        DeliveryStatus.paid => l10n.deliveryPaid,
       };
 
   static DeliveryStatus fromJson(String value) =>
@@ -114,13 +112,18 @@ enum RouteFilter {
       };
 }
 
-/// Способ оплаты — только для интерфейса завершения доставки.
-/// API его не принимает (в CompleteDelivery такого поля нет).
+/// Способ оплаты. Значения совпадают с API (`PaymentMethod`), поле
+/// обязательное при завершении доставки.
 enum PaymentMethod {
-  cash,
-  card,
-  transfer,
-  debt;
+  cash('cash'),
+  card('card'),
+  transfer('transfer'),
+  debt('debt');
+
+  const PaymentMethod(this.wire);
+
+  /// Значение, которым способ называется в API.
+  final String wire;
 
   /// Подпись способа оплаты на языке интерфейса.
   String label(AppLocalizations l10n) => switch (this) {
@@ -129,4 +132,12 @@ enum PaymentMethod {
         PaymentMethod.transfer => l10n.paymentTransfer,
         PaymentMethod.debt => l10n.paymentDebt,
       };
+
+  /// Нужно ли фото подтверждения.
+  ///
+  /// Только у карты: перевод подтверждается чеком из банковского приложения,
+  /// а наличные, безнал по счёту и долг фотографировать нечего.
+  bool get needsPhoto => this == PaymentMethod.card;
+
+  String toJson() => wire;
 }

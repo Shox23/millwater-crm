@@ -17,6 +17,7 @@ class Customer extends Equatable {
     this.debt = 0,
     this.lastOrderDate,
     this.isActive = true,
+    this.hasCooler = false,
     required this.createdAt,
   });
 
@@ -34,6 +35,13 @@ class Customer extends Equatable {
   final int debt;
   final DateTime? lastOrderDate;
   final bool isActive;
+
+  /// У заказчика стоит кулер (`has_cooler`).
+  ///
+  /// Влияет на выезд: к кулеру капсулу ставят, без него воду переливают, — и
+  /// водителю это надо знать заранее.
+  final bool hasCooler;
+
   final DateTime createdAt;
 
   /// Маркер «значение не передавали».
@@ -53,6 +61,7 @@ class Customer extends Equatable {
     int? debt,
     DateTime? lastOrderDate,
     bool? isActive,
+    bool? hasCooler,
   }) {
     return Customer(
       id: id,
@@ -66,6 +75,7 @@ class Customer extends Equatable {
       debt: debt ?? this.debt,
       lastOrderDate: lastOrderDate ?? this.lastOrderDate,
       isActive: isActive ?? this.isActive,
+      hasCooler: hasCooler ?? this.hasCooler,
       createdAt: createdAt,
     );
   }
@@ -83,6 +93,7 @@ class Customer extends Equatable {
             ? null
             : DateTime.parse(json['last_order_date'] as String),
         isActive: json['is_active'] as bool? ?? true,
+        hasCooler: json['has_cooler'] as bool? ?? false,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
@@ -93,6 +104,7 @@ class Customer extends Equatable {
         'address': address,
         'comment': comment,
         'is_active': isActive,
+        'has_cooler': hasCooler,
       };
 
   @override
@@ -107,5 +119,6 @@ class Customer extends Equatable {
         debt,
         lastOrderDate,
         isActive,
+        hasCooler,
       ];
 }

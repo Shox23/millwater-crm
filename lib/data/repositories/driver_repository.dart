@@ -25,7 +25,9 @@ abstract class DriverRepository {
   /// [bottleBalance] — сколько капсул остаётся у заказчика после доставки.
   /// В OpenAPI поле помечено необязательным, но без него сервер отвечает 500,
   /// а полученным значением он **перезаписывает** остаток заказчика.
-  /// [photoPath] — файл фото оплаты, если водитель его приложил.
+  /// [method] — способ оплаты; поле обязательное, без него сервер отвечает 422.
+  /// [photoPath] — фото подтверждения. Осмысленно только при оплате картой
+  /// ([PaymentMethod.needsPhoto]), у остальных способов подтверждать нечего.
   /// [idempotencyKey] один и тот же при повторной отправке: связь у водителя
   /// плохая, и повтор не должен провести доставку дважды.
   /// [latitude]/[longitude] — где стоял телефон в момент доставки; сервер
@@ -37,6 +39,7 @@ abstract class DriverRepository {
     required int capsules,
     required int amount,
     required int bottleBalance,
+    required PaymentMethod method,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,

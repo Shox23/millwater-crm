@@ -52,7 +52,6 @@ class _FlakyRepository extends MockCrmRepository {
   Future<Driver> addDriver({
     required String fullName,
     required String phone,
-    required String email,
     required String password,
     String? idempotencyKey,
   }) async {
@@ -64,7 +63,6 @@ class _FlakyRepository extends MockCrmRepository {
     return super.addDriver(
       fullName: fullName,
       phone: phone,
-      email: email,
       password: password,
       idempotencyKey: idempotencyKey,
     );
@@ -150,15 +148,14 @@ void main() {
       await repositoryWith(adapter).addDriver(
         fullName: 'Новый Водитель',
         phone: '+998901234567',
-        email: 'new@aqua.uz',
         password: 'secret1',
         idempotencyKey: 'driver-1',
       );
 
       expect(adapter.keys['/admin/drivers'], 'driver-1');
-      // Активация пароля — отдельный вызов, дублей не создаёт: повторный
-      // set-password сервер отклоняет сам.
-      expect(adapter.keys['/auth/set-password'], isNull);
+      // Пароль уходит внутри того же запроса: второго шага больше нет, и
+      // `/auth/set-password` на сервере тоже не осталось.
+      expect(adapter.keys.containsKey('/auth/set-password'), isFalse);
     });
 
     test('без ключа заголовок не отправляется', () async {
@@ -196,14 +193,12 @@ void main() {
       final first = await repo.addDriver(
         fullName: 'Тест Тестов',
         phone: '+998900000000',
-        email: 'test@aqua.uz',
         password: 'secret1',
         idempotencyKey: 'driver-42',
       );
       final second = await repo.addDriver(
         fullName: 'Тест Тестов',
         phone: '+998900000000',
-        email: 'test@aqua.uz',
         password: 'secret1',
         idempotencyKey: 'driver-42',
       );
@@ -268,7 +263,6 @@ void main() {
 
       await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
       await tester.enterText(inputFor('Номер телефона'), '911234567');
-      await tester.enterText(inputFor('Электронная почта'), 'timur@aqua.uz');
       await tester.enterText(inputFor('Пароль для входа'), 'secret1');
       await tester.pump(const Duration(milliseconds: 400));
 

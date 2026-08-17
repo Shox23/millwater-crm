@@ -49,6 +49,7 @@ class _FailingRepository extends MockCrmRepository {
     required String phone,
     required String address,
     String? comment,
+    bool hasCooler = false,
     String? idempotencyKey,
   }) async {
     if (onWrite != null) _throwWrite();
@@ -57,6 +58,7 @@ class _FailingRepository extends MockCrmRepository {
       phone: phone,
       address: address,
       comment: comment,
+      hasCooler: hasCooler,
       idempotencyKey: idempotencyKey,
     );
   }
@@ -65,7 +67,6 @@ class _FailingRepository extends MockCrmRepository {
   Future<Driver> addDriver({
     required String fullName,
     required String phone,
-    required String email,
     required String password,
     String? idempotencyKey,
   }) async {
@@ -73,7 +74,6 @@ class _FailingRepository extends MockCrmRepository {
     return super.addDriver(
       fullName: fullName,
       phone: phone,
-      email: email,
       password: password,
       idempotencyKey: idempotencyKey,
     );
@@ -174,7 +174,6 @@ void main() {
 
       await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
       await tester.enterText(inputFor('Номер телефона'), '911234567');
-      await tester.enterText(inputFor('Электронная почта'), 'timur@aqua.uz');
       await tester.enterText(inputFor('Пароль для входа'), 'secret1');
       // Кадр после ввода: кнопка разблокируется, только когда форма валидна.
       await settle(tester);

@@ -20,6 +20,9 @@ class MockDriverRepository implements DriverRepository {
   /// Последний отправленный остаток капсул — для проверок в тестах.
   int? lastBottleBalance;
 
+  /// Последний отправленный способ оплаты — для проверок в тестах.
+  PaymentMethod? lastMethod;
+
   Future<void> _tick() =>
       Future<void>.delayed(const Duration(milliseconds: 150));
 
@@ -80,6 +83,7 @@ class MockDriverRepository implements DriverRepository {
     required int capsules,
     required int amount,
     required int bottleBalance,
+    required PaymentMethod method,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
@@ -87,6 +91,7 @@ class MockDriverRepository implements DriverRepository {
   }) async {
     await _tick();
     lastBottleBalance = bottleBalance;
+    lastMethod = method;
     if (idempotencyKey != null && !seenIdempotencyKeys.add(idempotencyKey)) {
       return;
     }
@@ -98,7 +103,7 @@ class MockDriverRepository implements DriverRepository {
         customerName: s.customerName,
         customerAddress: s.customerAddress,
         customerPhone: s.customerPhone,
-        status: DeliveryStatus.paid,
+        status: DeliveryStatus.delivered,
         // Как это сделает сервер: присланные координаты запоминаются у точки,
         // а если водитель их не снял — прежние не затираются.
         customerLatitude: latitude ?? s.customerLatitude,

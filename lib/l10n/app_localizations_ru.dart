@@ -565,9 +565,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get driverTripsToday => 'поездок сегодня';
 
   @override
-  String get driverEmail => 'Почта';
-
-  @override
   String get driverCreatedAt => 'Дата создания';
 
   @override
@@ -589,10 +586,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get driverFormNameEmpty => 'Введите имя водителя';
 
   @override
-  String get driverFormEmail => 'Электронная почта';
+  String get driverFormPassword => 'Пароль для входа';
 
   @override
-  String get driverFormPassword => 'Пароль для входа';
+  String get driverFormPasswordHelper =>
+      'Стартовый пароль — водитель сменит его в настройках';
 
   @override
   String get driverFormSaveFailed => 'Не удалось сохранить водителя.';
@@ -645,6 +643,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get customerTitle => 'Заказчик';
+
+  @override
+  String get customerHasCooler => 'Есть кулер';
+
+  @override
+  String get customerFormHasCooler => 'У заказчика есть кулер';
 
   @override
   String get customerCapsulesBalance => 'капсул на руках';
@@ -964,6 +968,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reportsTitle => 'Отчёты';
+
+  @override
+  String get reportsExport => 'Выгрузить в Excel';
+
+  @override
+  String get reportsExportSubject => 'Отчёт Millwater';
+
+  @override
+  String get reportsExportFailed => 'Не удалось выгрузить отчёт.';
 
   @override
   String get reportsLoadFailed => 'Не удалось загрузить отчёты';

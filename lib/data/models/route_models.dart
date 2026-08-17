@@ -81,8 +81,9 @@ class RouteStop extends Equatable {
   final String? paymentPhoto;
   final DateTime? completedAt;
 
-  bool get isCompleted =>
-      status == DeliveryStatus.delivered || status == DeliveryStatus.paid;
+  /// Доставка выполнена. `failed` сюда не входит: точка закрыта, но привезти
+  /// не удалось, и в «выполнено N из M» ей не место.
+  bool get isCompleted => status == DeliveryStatus.delivered;
 
   /// Точку можно отдать нативному приложению карт, а не веб-геокодеру.
   bool get hasCoordinates =>

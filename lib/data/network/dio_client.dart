@@ -27,6 +27,13 @@ class AuthTokenStore {
   /// Вызывается, когда refresh не удался — сессия истекла.
   VoidCallback? onSessionExpired;
 
+  /// Обновление пары токенов; ставит [buildDio].
+  ///
+  /// Сам стор в сеть не ходит, но добраться до обновления нужно не только
+  /// интерсептору: поток уведомлений при 401 переподключается сам, а
+  /// [TokenRefresher] спрятан внутри клиента.
+  Future<bool> Function()? refreshTokens;
+
   bool get isAuthenticated => accessToken != null;
 
   /// Поднимает сессию из хранилища. Возвращает true, если токен нашёлся.
@@ -62,14 +69,69 @@ class AuthTokenStore {
   }
 }
 
+/// Ключ в `RequestOptions.extra`: не обновлять токен и не повторять запрос
+/// при 401, отдать ошибку вызывающему как есть.
+///
+/// Нужен потоку уведомлений: «повторить» для него значит открыть соединение
+/// заново и продолжить с `Last-Event-ID`, а не вернуть кому-то ответ.
+const kNoAuthRetry = 'no_auth_retry';
+
+/// Обновляет пару токенов по refresh-токену.
+///
+/// Вынесено из интерсептора, потому что тем же путём обновляет токен поток
+/// уведомлений: там 401 приходит на открытии соединения, и повтор запроса
+/// интерсептором ему не поможет.
+///
+/// Параллельные вызовы разделяют одну попытку: у потока и у обычного запроса
+/// токен протухает одновременно, а второй refresh с уже потраченным
+/// одноразовым токеном сервер отклонит — и разлогинит живую сессию.
+class TokenRefresher {
+  TokenRefresher(this._store, this._dio);
+
+  final AuthTokenStore _store;
+
+  /// Dio без интерсепторов: иначе 401 на самом refresh ушёл бы на второй круг.
+  final Dio _dio;
+
+  Future<bool>? _inFlight;
+
+  /// `false` — сессия не восстановилась; она уже стёрта, экран входа впереди.
+  Future<bool> refresh() =>
+      _inFlight ??= _refresh().whenComplete(() => _inFlight = null);
+
+  Future<bool> _refresh() async {
+    final token = _store.refreshToken;
+    if (token == null) return false;
+    try {
+      final res = await _dio.post('/auth/refresh', data: {
+        'refresh_token': token,
+      });
+      final data = asMap(res.data);
+      // Пишем и в хранилище: иначе после ротации на диске останется
+      // протухшая пара и следующий запуск начнётся с разлогина.
+      await _store.setTokens(
+        access: data['access_token'] as String,
+        refresh: data['refresh_token'] as String,
+      );
+      return true;
+    } catch (_) {
+      await _store.clear();
+      _store.onSessionExpired?.call();
+      return false;
+    }
+  }
+}
+
 /// Подставляет Bearer-токен и обновляет его при 401 (один раз), повторяя запрос.
 class _AuthInterceptor extends QueuedInterceptor {
-  _AuthInterceptor(this._store, this._bareDio);
+  _AuthInterceptor(this._store, this._bareDio, this._refresher);
 
   final AuthTokenStore _store;
 
   /// Dio без интерсепторов — для refresh и повтора запроса.
   final Dio _bareDio;
+
+  final TokenRefresher _refresher;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -97,23 +159,15 @@ class _AuthInterceptor extends QueuedInterceptor {
     final is401 = err.response?.statusCode == 401;
     final isAuthCall = err.requestOptions.path.contains('/auth/');
     final canRefresh = _store.refreshToken != null;
+    final ownRetry = err.requestOptions.extra[kNoAuthRetry] == true;
 
-    if (!is401 || isAuthCall || !canRefresh) {
+    if (!is401 || isAuthCall || !canRefresh || ownRetry) {
       return handler.next(err);
     }
 
-    try {
-      final res = await _bareDio.post('/auth/refresh', data: {
-        'refresh_token': _store.refreshToken,
-      });
-      final data = asMap(res.data);
-      // Пишем и в хранилище: иначе после ротации на диске останется
-      // протухшая пара и следующий запуск начнётся с разлогина.
-      await _store.setTokens(
-        access: data['access_token'] as String,
-        refresh: data['refresh_token'] as String,
-      );
+    if (!await _refresher.refresh()) return handler.next(err);
 
+    try {
       // Повторяем исходный запрос с новым токеном.
       final opts = err.requestOptions;
       opts.headers['Authorization'] = 'Bearer ${_store.accessToken}';
@@ -121,8 +175,8 @@ class _AuthInterceptor extends QueuedInterceptor {
       final retry = await _bareDio.fetch(opts);
       return handler.resolve(retry);
     } catch (_) {
-      await _store.clear();
-      _store.onSessionExpired?.call();
+      // Токен обновился, а повтор всё равно не прошёл: сессия тут ни при чём,
+      // отдаём исходную ошибку вызывающему.
       return handler.next(err);
     }
   }
@@ -149,7 +203,12 @@ Dio buildDio(AuthTokenStore store, {HttpClientAdapter? adapter}) {
     dio.httpClientAdapter = adapter;
   }
 
-  dio.interceptors.add(_AuthInterceptor(store, bareDio));
+  // Один обновлятель на клиента: поток уведомлений обновляет токен в обход
+  // интерсептора, и две параллельные попытки сожгли бы refresh-токен.
+  final refresher = TokenRefresher(store, bareDio);
+  store.refreshTokens = refresher.refresh;
+
+  dio.interceptors.add(_AuthInterceptor(store, bareDio, refresher));
   if (kDebugMode) {
     dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
   }

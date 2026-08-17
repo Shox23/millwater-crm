@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../l10n/l10n.dart';
 
+import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
@@ -14,6 +17,7 @@ import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
+import '../../../data/models/notification_event.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/driver_repository.dart';
 import '../../routes/presentation/widgets/build_route_section.dart';
@@ -36,18 +40,36 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
   bool _loading = true;
   bool _loadFailed = false;
   bool _changed = false;
+  StreamSubscription<NotificationEvent>? _notifications;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // Админ досыпал точку в маршрут, пока водитель в пути, — новый адрес
+    // должен появиться сам, без жеста обновления. События про другие
+    // маршруты сюда не относятся.
+    _notifications = context.notificationEvents
+        ?.where((e) => e.routeId == widget.routeId)
+        .listen((_) => _load(silent: true));
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _loadFailed = false;
-    });
+  @override
+  void dispose() {
+    _notifications?.cancel();
+    super.dispose();
+  }
+
+  /// [silent] — обновление по уведомлению, а не по действию водителя.
+  Future<void> _load({bool silent = false}) async {
+    // Фоновое обновление не гасит карточку спиннером: водитель в этот момент
+    // на неё смотрит, а то и стоит у двери заказчика.
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _loadFailed = false;
+      });
+    }
     try {
       final route =
           await context.read<DriverRepository>().getMyRoute(widget.routeId);
@@ -59,6 +81,9 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
     } catch (_) {
       // Ошибка сети — не то же самое, что «маршрут не найден».
       if (!mounted) return;
+      // Неудачное фоновое обновление оставляет на экране то, что уже есть:
+      // список точек водителю нужнее, чем сообщение об обрыве связи.
+      if (silent) return;
       setState(() {
         _loading = false;
         _loadFailed = true;

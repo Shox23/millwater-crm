@@ -2,6 +2,7 @@ import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
 import '../models/price_settings.dart';
+import '../models/report_export.dart';
 import '../models/reports_summary.dart';
 import '../models/route_models.dart';
 
@@ -34,10 +35,14 @@ abstract class CrmRepository {
 
   /// [idempotencyKey] один и тот же при повторной отправке формы: связь
   /// рвётся, и повтор не должен завести второго водителя.
+  /// Заводит водителя вместе с паролем (`POST /admin/drivers`).
+  ///
+  /// Пароля «по умолчанию» на сервере нет, и сбросить его админ не может —
+  /// эндпоинта для этого в API не осталось. Стартовый пароль подставляет
+  /// форма ([ProductConfig.defaultDriverPassword]), а водитель меняет его сам.
   Future<Driver> addDriver({
     required String fullName,
     required String phone,
-    required String email,
     required String password,
     String? idempotencyKey,
   });
@@ -53,6 +58,7 @@ abstract class CrmRepository {
     required String phone,
     required String address,
     String? comment,
+    bool hasCooler = false,
     String? idempotencyKey,
   });
   Future<Customer> updateCustomer(Customer customer);
@@ -119,5 +125,15 @@ abstract class CrmRepository {
   Future<SummaryReport> getSummaryReport({
     DateTime? dateFrom,
     DateTime? dateTo,
+  });
+
+  /// Выгружает отчёт за период в Excel (`GET /admin/reports/export`).
+  ///
+  /// Границы обязательны — сервер без них отвечает 422. [driverId] сужает
+  /// выгрузку до одного водителя.
+  Future<ReportExport> exportSummaryReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../../core/utils/money_parser.dart';
@@ -5,6 +7,7 @@ import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
 import '../models/price_settings.dart';
+import '../models/report_export.dart';
 import '../models/reports_summary.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
@@ -144,29 +147,22 @@ class ApiCrmRepository implements CrmRepository {
   Future<Driver> addDriver({
     required String fullName,
     required String phone,
-    required String email,
     required String password,
     String? idempotencyKey,
   }) async {
-    // `CreateDriver` требует email и **не принимает пароль** — учётная запись
-    // создаётся без него и получает PASSWORD_NOT_SET при входе.
+    // Пароль уходит прямо в `CreateDriver` — учётка сразу рабочая. Раньше это
+    // делалось вторым запросом в `/auth/set-password`, и создание водителя
+    // было неатомарным: упавший второй шаг оставлял учётку без пароля.
     final res = await _dio.post(
       '/admin/drivers',
       data: {
         'full_name': fullName,
         'phone': phone,
-        'email': email.trim(),
+        'password': password,
       },
       options: _idempotent(idempotencyKey),
     );
-    final driver = Driver.fromJson(asMap(res.data));
-
-    // Пароль задаётся отдельным шагом активации, иначе водитель войти не может.
-    await _dio.post('/auth/set-password', data: {
-      'phone': phone,
-      'password': password,
-    });
-    return driver;
+    return Driver.fromJson(asMap(res.data));
   }
 
   @override
@@ -205,6 +201,7 @@ class ApiCrmRepository implements CrmRepository {
     required String phone,
     required String address,
     String? comment,
+    bool hasCooler = false,
     String? idempotencyKey,
   }) async {
     final res = await _dio.post(
@@ -214,6 +211,7 @@ class ApiCrmRepository implements CrmRepository {
         'phone': phone,
         'address': address,
         'comment': ?comment,
+        'has_cooler': hasCooler,
       },
       options: _idempotent(idempotencyKey),
     );
@@ -326,5 +324,50 @@ class ApiCrmRepository implements CrmRepository {
       if (dateTo != null) 'date_to': _formatDate(dateTo),
     });
     return SummaryReport.fromJson(asMap(res.data));
+  }
+
+  @override
+  Future<ReportExport> exportSummaryReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) async {
+    final res = await _dio.get<List<int>>(
+      '/admin/reports/export',
+      queryParameters: {
+        'date_from': _formatDate(dateFrom),
+        'date_to': _formatDate(dateTo),
+        'driver_id': ?driverId,
+      },
+      // Тело — файл, а не JSON: разбирать его нечем и незачем.
+      options: Options(responseType: ResponseType.bytes),
+    );
+
+    return ReportExport(
+      bytes: Uint8List.fromList(res.data ?? const []),
+      filename: _filenameFrom(res.headers) ??
+          'millwater-${_formatDate(dateFrom)}_${_formatDate(dateTo)}.xlsx',
+    );
+  }
+
+  /// Имя файла из `Content-Disposition`, если сервер его прислал.
+  ///
+  /// Разбираем и `filename*=UTF-8''...` (RFC 5987, там имя процент-кодировано),
+  /// и обычный `filename="..."`. Пропущенное расширение файлу не добавляем:
+  /// заголовок либо есть и полон, либо мы собираем имя сами.
+  static String? _filenameFrom(Headers headers) {
+    final header = headers.value('content-disposition');
+    if (header == null) return null;
+
+    final extended =
+        RegExp("filename\\*=UTF-8''([^;]+)", caseSensitive: false)
+            .firstMatch(header);
+    if (extended != null) {
+      return Uri.decodeComponent(extended.group(1)!.trim());
+    }
+
+    final plain = RegExp('filename="?([^";]+)"?', caseSensitive: false)
+        .firstMatch(header);
+    return plain?.group(1)?.trim();
   }
 }

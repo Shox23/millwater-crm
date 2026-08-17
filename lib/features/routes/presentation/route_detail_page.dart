@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../l10n/l10n.dart';
 
+import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
@@ -19,6 +22,7 @@ import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/initials_avatar.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
+import '../../../data/models/notification_event.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/crm_repository.dart';
 import 'route_form_page.dart';
@@ -41,18 +45,36 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   bool _loading = true;
   bool _loadFailed = false;
   bool _changed = false;
+  StreamSubscription<NotificationEvent>? _notifications;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // Водитель тронулся или закрыл точку — карточка обновляется сама.
+    // Чужие маршруты пропускаем: их перечитает список, когда до него дойдёт
+    // очередь, а здесь лишний запрос ничего на экране не изменит.
+    _notifications = context.notificationEvents
+        ?.where((e) => e.routeId == widget.routeId)
+        .listen((_) => _load(silent: true));
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _loadFailed = false;
-    });
+  @override
+  void dispose() {
+    _notifications?.cancel();
+    super.dispose();
+  }
+
+  /// [silent] — обновление по уведомлению, а не по действию пользователя.
+  Future<void> _load({bool silent = false}) async {
+    // Фоновое обновление не гасит карточку спиннером: на неё в этот момент
+    // смотрят, и подмена содержимого индикатором читается как сбой.
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _loadFailed = false;
+      });
+    }
     try {
       final route =
           await context.read<CrmRepository>().getRoute(widget.routeId);
@@ -64,6 +86,9 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     } catch (_) {
       // Ошибка сети — не то же самое, что «маршрут не найден».
       if (!mounted) return;
+      // Неудачное фоновое обновление оставляет то, что уже показано:
+      // менять живую карточку на экран ошибки никто не просил.
+      if (silent) return;
       setState(() {
         _loading = false;
         _loadFailed = true;

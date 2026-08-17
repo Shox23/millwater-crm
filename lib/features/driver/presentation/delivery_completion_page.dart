@@ -104,6 +104,18 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     });
   }
 
+  /// Смена способа оплаты.
+  ///
+  /// Уход с карты стирает уже прикреплённый снимок: тайл исчезает с экрана, и
+  /// оставшееся фото ушло бы на сервер незаметно для водителя — приложенным к
+  /// оплате, которая его не предполагает.
+  void _onMethodChanged(PaymentMethod method) {
+    setState(() {
+      _method = method;
+      if (!method.needsPhoto) _photo = null;
+    });
+  }
+
   /// Возвращает сумму к расчёту по прайсу после ручной правки.
   void _restoreCalculatedAmount() {
     setState(() {
@@ -149,6 +161,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
         capsules: _capsules,
         amount: _amount,
         bottleBalance: _bottleBalance,
+        method: _method,
         photoPath: _photo?.path,
         idempotencyKey: _idempotencyKey,
         latitude: _fix?.latitude,
@@ -247,7 +260,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             child: SegmentedToggle<PaymentMethod>(
               value: _method,
               columns: 2,
-              onChanged: (m) => setState(() => _method = m),
+              onChanged: _onMethodChanged,
               options: [
                 for (final method in PaymentMethod.values)
                   SegmentOption(
@@ -307,11 +320,14 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               ],
             ),
           ),
-          PhotoAttachTile(
-            photo: _photo,
-            enabled: !submitting,
-            onChanged: (photo) => setState(() => _photo = photo),
-          ),
+          // Подтверждать снимком есть что только у карты: перевод виден в
+          // банковском приложении. У наличных и долга фотографировать нечего.
+          if (_method.needsPhoto)
+            PhotoAttachTile(
+              photo: _photo,
+              enabled: !submitting,
+              onChanged: (photo) => setState(() => _photo = photo),
+            ),
           if (submitError != null)
             Text(submitError!,
                 style: AppTypography.secondary.copyWith(color: t.danger)),

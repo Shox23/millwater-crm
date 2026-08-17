@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../l10n/l10n.dart';
 
+import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../core/navigation/overlay_route.dart';
 import '../../../core/utils/day.dart';
@@ -29,9 +30,10 @@ class RoutesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          RoutesBloc(context.read<CrmRepository>())
-            ..add(const RoutesRequested()),
+      create: (context) => RoutesBloc(
+        context.read<CrmRepository>(),
+        notifications: context.notificationEvents,
+      )..add(const RoutesRequested()),
       child: const _RoutesView(),
     );
   }

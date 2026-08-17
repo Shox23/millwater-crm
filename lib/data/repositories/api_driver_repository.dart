@@ -48,6 +48,7 @@ class ApiDriverRepository implements DriverRepository {
     required int capsules,
     required int amount,
     required int bottleBalance,
+    required PaymentMethod method,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
@@ -56,6 +57,7 @@ class ApiDriverRepository implements DriverRepository {
     final form = FormData.fromMap({
       'delivered_bottles': capsules,
       'payment_amount': MoneyParser.toApi(amount),
+      'payment_method': method.toJson(),
       // Без этого поля сервер отвечает 500, хотя в схеме оно необязательное.
       'bottle_balance': bottleBalance,
       if (photoPath != null)
