@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_spacing.dart';
 import 'app_tokens.dart';
+import 'app_typography.dart';
 
 /// Сборка ThemeData из набора токенов.
 ///
@@ -25,7 +25,10 @@ abstract class AppTheme {
         error: t.danger,
         onSurface: t.text,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+      // Шрифт лежит в сборке (assets/fonts) — раньше его тянул google_fonts
+      // с fonts.gstatic.com при первом запуске.
+      textTheme: base.textTheme.apply(
+        fontFamily: AppTypography.fontFamily,
         bodyColor: t.text,
         displayColor: t.text,
       ),
@@ -35,16 +38,12 @@ abstract class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: t.surface,
-        hintStyle: GoogleFonts.inter(
-          color: t.text3,
-          fontWeight: FontWeight.w500,
-        ),
-        helperStyle: GoogleFonts.inter(
+        hintStyle: AppTypography.body.copyWith(color: t.text3),
+        helperStyle: AppTypography.secondary.copyWith(
           color: t.text3,
           fontSize: 12,
-          fontWeight: FontWeight.w500,
         ),
-        errorStyle: GoogleFonts.inter(
+        errorStyle: AppTypography.secondary.copyWith(
           color: t.danger,
           fontSize: 12,
           fontWeight: FontWeight.w600,

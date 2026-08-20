@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crm_millwater/app/theme/app_theme.dart';
@@ -237,7 +238,71 @@ void main() {
       );
       expect(off.hasCooler, isFalse);
     });
+
+    test('кулер лежит в теле POST и PATCH, а не теряется по дороге', () async {
+      // Мок проверяет модель, но не то, что поле дошло до сети: между
+      // репозиторием и сервером есть сборка тела, и молча потерять его
+      // может именно она.
+      final adapter = _RecordingCustomerAdapter();
+      final dio = Dio(BaseOptions(baseUrl: 'http://test'))
+        ..httpClientAdapter = adapter;
+      final repo = ApiCrmRepository(dio);
+
+      final created = await repo.addCustomer(
+        name: 'Влад',
+        phone: '+998901234567',
+        address: 'Чиланзар, 5',
+        hasCooler: true,
+      );
+      expect(adapter.bodies.last['has_cooler'], isTrue);
+
+      await repo.updateCustomer(created.copyWith(hasCooler: false));
+      expect(adapter.bodies.last['has_cooler'], isFalse);
+      expect(adapter.methods, ['POST', 'PATCH']);
+    });
   });
+}
+
+/// Запоминает тела запросов к `/admin/customers` и отвечает заказчиком,
+/// собранным из присланных полей.
+class _RecordingCustomerAdapter implements HttpClientAdapter {
+  final List<Map<String, dynamic>> bodies = [];
+  final List<String> methods = [];
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    methods.add(options.method);
+    final body = (options.data as Map).cast<String, dynamic>();
+    bodies.add(body);
+
+    return ResponseBody.fromString(
+      jsonEncode({
+        'id': 'c1',
+        'full_name': body['full_name'],
+        'phone': body['phone'],
+        'address': body['address'],
+        'bottle_balance': 0,
+        'prepayment': '0.00',
+        'debt': '0.00',
+        'last_order_date': null,
+        'is_active': true,
+        'has_cooler': body['has_cooler'],
+        'comment': body['comment'],
+        'created_at': '2026-01-01T00:00:00Z',
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
 }
 
 /// Разбирает заказчика из ответа сервера — обёртка ради читаемости тестов.

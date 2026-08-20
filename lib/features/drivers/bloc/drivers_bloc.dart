@@ -13,6 +13,7 @@ class DriversBloc extends Bloc<DriversEvent, DriversState> {
   DriversBloc(this._repository) : super(const DriversState()) {
     on<DriversRequested>(_onRequested);
     on<DriversSearchChanged>(_onSearchChanged);
+    on<DriversNextPageRequested>(_onNextPage);
   }
 
   final CrmRepository _repository;
@@ -40,14 +41,56 @@ class DriversBloc extends Bloc<DriversEvent, DriversState> {
     emit(state.copyWith(status: DriversStatus.loading));
     try {
       // Фильтрует сервер, а не мы: локальный фильтр поверх серверного прятал
-      // бы часть найденного. Репозиторий обходит страницы сам и отдаёт всю
-      // выдачу целиком — обрезать её здесь тоже нечем.
-      final drivers = await _repository.getDrivers(search: state.query);
+      // бы часть найденного. Берём первую страницу — остальные догрузит
+      // прокрутка, см. [DriversNextPageRequested].
+      final page = await _repository.getDriversPage(search: state.query);
       if (id != _requestId) return;
-      emit(state.copyWith(status: DriversStatus.ready, drivers: drivers));
+      emit(state.copyWith(
+        status: DriversStatus.ready,
+        drivers: page.items,
+        page: page.page,
+        hasMore: page.hasMore,
+        total: page.total,
+        loadingMore: false,
+      ));
     } catch (_) {
       if (id != _requestId) return;
-      emit(state.copyWith(status: DriversStatus.error));
+      emit(state.copyWith(status: DriversStatus.error, loadingMore: false));
+    }
+  }
+
+  /// Догружает следующую страницу в конец списка.
+  ///
+  /// Молча выходит, если грузить нечего или загрузка уже идёт: событие
+  /// приходит из обработчика прокрутки и повторяется на каждый кадр у края.
+  Future<void> _onNextPage(
+    DriversNextPageRequested event,
+    Emitter<DriversState> emit,
+  ) async {
+    if (!state.hasMore || state.loadingMore) return;
+    if (state.status == DriversStatus.loading) return;
+
+    final id = _requestId;
+    emit(state.copyWith(loadingMore: true));
+    try {
+      final page = await _repository.getDriversPage(
+        page: state.page + 1,
+        search: state.query,
+      );
+      // Пока страница шла, поиск могли поменять — её содержимое уже не о том.
+      if (id != _requestId) return;
+      emit(state.copyWith(
+        drivers: [...state.drivers, ...page.items],
+        page: page.page,
+        hasMore: page.hasMore,
+        total: page.total,
+        loadingMore: false,
+      ));
+    } catch (_) {
+      if (id != _requestId) return;
+      // Показанное не рушим: не догрузилось — значит, список остался прежним,
+      // а повторить можно ещё одной прокруткой.
+      emit(state.copyWith(loadingMore: false));
     }
   }
 

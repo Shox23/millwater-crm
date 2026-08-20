@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../l10n/l10n.dart';
+import '../../../core/utils/throttle.dart';
 import '../../../data/models/notification_event.dart';
 import '../../../data/models/reports_summary.dart';
 import '../../../data/repositories/crm_repository.dart';
@@ -18,16 +19,23 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     on<ReportsPeriodChanged>(_onPeriodChanged);
 
     // Выручка и число доставок меняются ровно теми же событиями, что и
-    // список маршрутов, — см. `RoutesBloc`.
-    _notifications =
-        notifications?.listen((_) => add(const ReportsRequested()));
+    // список маршрутов, — см. `RoutesBloc`. Пересчёт здесь дороже: вместе со
+    // сводкой заново тянется весь справочник заказчиков (должников и остаток
+    // капсул сводка не отдаёт), поэтому склеивать всплески тем более нужно.
+    _notifications = notifications?.listen(
+      (_) => _reload(() {
+        if (!isClosed) add(const ReportsRequested());
+      }),
+    );
   }
 
   final CrmRepository _repository;
   StreamSubscription<NotificationEvent>? _notifications;
+  final _reload = Throttle(kNotificationReloadWindow);
 
   @override
   Future<void> close() async {
+    _reload.dispose();
     await _notifications?.cancel();
     return super.close();
   }

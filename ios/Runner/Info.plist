@@ -71,11 +71,16 @@
 	<string>Камера нужна, чтобы сфотографировать чек или подтверждение оплаты при завершении доставки.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Доступ к галерее нужен, чтобы прикрепить фото оплаты к завершённой доставке.</string>
-	<!-- NSLocationWhenInUseUsageDescription здесь намеренно нет.
-	     Снятие координат выключено (ProductConfig.captureDeliveryCoordinates),
-	     потому что в API нет полей latitude/longitude, а разрешение, которое
-	     приложение не использует, — повод для отказа на ревью App Store.
-	     Возвращать одновременно с включением флага. -->
+	<!-- Нужно кнопке «Построить маршрут» (BuildRouteSection): стартом
+	     маршрута в Яндекс.Картах становится текущее место водителя.
+	     Без этого ключа geolocator бросает PermissionDefinitionsNotFoundException,
+	     ошибка гасится в catch, и маршрут молча строится от первой точки.
+
+	     Это не то же самое, что ProductConfig.captureDeliveryCoordinates:
+	     тот флаг про запись координат точки на сервер и выключен, потому что
+	     полей latitude/longitude в API нет. Функции независимы. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Местоположение нужно, чтобы построить маршрут доставки от того места, где вы сейчас находитесь.</string>
 	<!-- Без этого canLaunchUrl('yandexmaps://') всегда вернёт false,
 	     и маршрут не уйдёт в установленное приложение Яндекс.Карт. -->
 	<key>LSApplicationQueriesSchemes</key>

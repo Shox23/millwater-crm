@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../models/user_role.dart';
 import 'api_config.dart';
 import 'api_envelope.dart';
+import 'breadcrumb_interceptor.dart';
 import 'session_storage.dart';
 
 /// Хранилище сессии: токены и роль в памяти + запись в защищённое хранилище.
@@ -209,6 +210,9 @@ Dio buildDio(AuthTokenStore store, {HttpClientAdapter? adapter}) {
   store.refreshTokens = refresher.refresh;
 
   dio.interceptors.add(_AuthInterceptor(store, bareDio, refresher));
+  // След запросов в отчёте об ошибке. После интерсептора авторизации: повтор
+  // после обновления токена должен попасть в след как отдельная попытка.
+  dio.interceptors.add(BreadcrumbInterceptor());
   if (kDebugMode) {
     dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
   }

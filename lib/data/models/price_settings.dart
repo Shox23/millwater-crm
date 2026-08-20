@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/utils/money_parser.dart';
+import 'json.dart';
 
 /// Прайс компании. Соответствует PriceSettingsResponse из Water CRM API.
 ///
@@ -26,10 +27,10 @@ class PriceSettings extends Equatable {
   final DateTime createdAt;
 
   factory PriceSettings.fromJson(Map<String, dynamic> json) => PriceSettings(
-        id: json['id'] as String,
+        id: requireString(json['id'], 'id'),
         capsulePrice: MoneyParser.toSum(json['water_price']),
         depositPrice: MoneyParser.toSum(json['deposit_price']),
-        createdAt: DateTime.parse(json['created_at'] as String),
+        createdAt: dateOr(json['created_at'], epoch),
       );
 
   @override

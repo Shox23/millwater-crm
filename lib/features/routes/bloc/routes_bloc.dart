@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/utils/day.dart';
+import '../../../core/utils/throttle.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/models/notification_event.dart';
 import '../../../data/models/route_models.dart';
@@ -20,16 +21,22 @@ class RoutesBloc extends Bloc<RoutesEvent, RoutesState> {
     on<RoutesDateChanged>(_onDateChanged);
 
     // Водитель закрыл доставку — список и «собрано» устарели прямо сейчас.
-    // Слипания всплесков нет намеренно: события порождают действия водителя
-    // в дороге, а их частота — единицы в минуту.
-    _notifications = notifications?.listen((_) => add(const RoutesRequested()));
+    // Первое событие перечитывает список сразу, всплеск за ним — один раз:
+    // утром десять водителей закрывают точки почти одновременно.
+    _notifications = notifications?.listen(
+      (_) => _reload(() {
+        if (!isClosed) add(const RoutesRequested());
+      }),
+    );
   }
 
   final CrmRepository _repository;
   StreamSubscription<NotificationEvent>? _notifications;
+  final _reload = Throttle(kNotificationReloadWindow);
 
   @override
   Future<void> close() async {
+    _reload.dispose();
     await _notifications?.cancel();
     return super.close();
   }

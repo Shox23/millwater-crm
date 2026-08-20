@@ -1,9 +1,30 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION здесь намеренно нет.
-         Снятие координат выключено (ProductConfig.captureDeliveryCoordinates),
-         потому что в API нет полей latitude/longitude. Разрешение, которым
-         приложение не пользуется, приходится объявлять в Play Data Safety
-         и объяснять на ревью. Возвращать вместе с включением флага. -->
+    <!-- Без INTERNET приложение не сделает ни одного запроса к API.
+         Flutter объявляет это разрешение только в debug- и profile-манифестах
+         (см. android/app/src/{debug,profile}/AndroidManifest.xml), чтобы
+         работали hot reload и отладчик; в релиз оно попадает только отсюда.
+         Ни один из подключённых плагинов его не приносит — проверено по их
+         манифестам. Отсутствие здесь не видно ни в отладке, ни в тестах:
+         release-сборка молча остаётся без сети. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Геолокация нужна кнопке «Построить маршрут» (BuildRouteSection):
+         стартом маршрута в Яндекс.Картах становится текущее место водителя,
+         иначе первый отрезок пути — «где я сейчас → первая точка» — выпадает.
+         Замер делается по нажатию кнопки, а не в фоне, поэтому WHEN_IN_USE
+         достаточно и ACCESS_BACKGROUND_LOCATION не нужен.
+
+         Это не то же самое, что ProductConfig.captureDeliveryCoordinates:
+         тот флаг про запись координат точки на сервер, и он выключен, потому
+         что полей latitude/longitude в API нет. Функции независимы — раньше
+         разрешение убрали заодно с флагом, и построение маршрута от места
+         водителя молча перестало работать на обеих платформах.
+
+         COARSE объявлен рядом с FINE: на Android 12+ пользователь вправе
+         выдать только приблизительное местоположение, и для точки старта
+         маршрута этого хватает. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="CRM Millwater"
         android:name="${applicationName}"

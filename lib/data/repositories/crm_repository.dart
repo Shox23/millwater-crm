@@ -2,6 +2,7 @@ import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
 import '../models/price_settings.dart';
+import '../models/result_page.dart';
 import '../models/report_export.dart';
 import '../models/reports_summary.dart';
 import '../models/route_models.dart';
@@ -30,7 +31,15 @@ abstract class CrmRepository {
   });
 
   // ---- Водители ----
+  /// Все водители сразу.
+  ///
+  /// Обходит страницы внутри себя. Нужен там, где выбирают из полного
+  /// списка, — в форме создания маршрута. Для списка, который листают,
+  /// есть [getDriversPage].
   Future<List<Driver>> getDrivers({String? search});
+
+  /// Одна страница списка водителей, считая с первой.
+  Future<ResultPage<Driver>> getDriversPage({int page = 1, String? search});
   Future<Driver?> getDriver(String id);
 
   /// [idempotencyKey] один и тот же при повторной отправке формы: связь
@@ -38,8 +47,9 @@ abstract class CrmRepository {
   /// Заводит водителя вместе с паролем (`POST /admin/drivers`).
   ///
   /// Пароля «по умолчанию» на сервере нет, и сбросить его админ не может —
-  /// эндпоинта для этого в API не осталось. Стартовый пароль подставляет
-  /// форма ([ProductConfig.defaultDriverPassword]), а водитель меняет его сам.
+  /// эндпоинта для этого в API нет. Стартовый пароль генерирует форма
+  /// ([DriverPassword.generate]) — свой на каждую учётку, — показывает его
+  /// админу до отправки, а водитель меняет его сам после первого входа.
   Future<Driver> addDriver({
     required String fullName,
     required String phone,
@@ -50,7 +60,20 @@ abstract class CrmRepository {
   Future<void> deleteDriver(String id);
 
   // ---- Заказчики ----
+  /// Все заказчики сразу.
+  ///
+  /// Обходит страницы внутри себя. Нужен форме создания маршрута и экрану
+  /// отчётов: должников и остаток капсул сводка не отдаёт, и они выводятся
+  /// из справочника (см. `ReportsSummary.from`). Для списка, который
+  /// листают, есть [getCustomersPage].
   Future<List<Customer>> getCustomers({String? search, bool? hasDebt});
+
+  /// Одна страница списка заказчиков, считая с первой.
+  Future<ResultPage<Customer>> getCustomersPage({
+    int page = 1,
+    String? search,
+    bool? hasDebt,
+  });
   Future<Customer?> getCustomer(String id);
   /// [idempotencyKey] — см. [addDriver].
   Future<Customer> addCustomer({

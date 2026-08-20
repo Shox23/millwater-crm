@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/utils/money_parser.dart';
+import 'json.dart';
 import 'enums.dart';
 
 /// Строка списка маршрутов (AdminRouteListItem или водительский RouteListItem).
@@ -29,13 +30,13 @@ class RouteListItem extends Equatable {
   final String? driverFullName;
 
   factory RouteListItem.fromJson(Map<String, dynamic> json) => RouteListItem(
-        id: json['id'] as String,
-        date: DateTime.parse(json['date'] as String),
-        status: RouteStatus.fromJson(json['status'] as String),
-        completedCount: json['completed_count'] as int? ?? 0,
-        totalCustomers: json['total_customers'] as int? ?? 0,
-        driverId: json['driver_id'] as String?,
-        driverFullName: json['driver_full_name'] as String?,
+        id: requireString(json['id'], 'id'),
+        date: dateOr(json['date'], epoch),
+        status: RouteStatus.fromJson(stringOr(json['status'])),
+        completedCount: intOr(json['completed_count']),
+        totalCustomers: intOr(json['total_customers']),
+        driverId: optionalString(json['driver_id']),
+        driverFullName: optionalString(json['driver_full_name']),
       );
 
   @override
@@ -90,23 +91,21 @@ class RouteStop extends Equatable {
       customerLatitude != null && customerLongitude != null;
 
   factory RouteStop.fromJson(Map<String, dynamic> json) => RouteStop(
-        id: json['id'] as String,
-        customerId: json['customer_id'] as String,
-        customerName: json['customer_full_name'] as String? ?? '',
-        customerAddress: json['customer_address'] as String? ?? '',
-        customerPhone: json['customer_phone'] as String? ?? '',
-        status: DeliveryStatus.fromJson(json['status'] as String),
+        id: requireString(json['id'], 'id'),
+        customerId: stringOr(json['customer_id']),
+        customerName: stringOr(json['customer_full_name']),
+        customerAddress: stringOr(json['customer_address']),
+        customerPhone: stringOr(json['customer_phone']),
+        status: DeliveryStatus.fromJson(stringOr(json['status'])),
         // `num?`, а не `double?`: целое значение приходит из JSON как int.
-        customerLatitude: (json['customer_latitude'] as num?)?.toDouble(),
-        customerLongitude: (json['customer_longitude'] as num?)?.toDouble(),
-        deliveredCapsules: json['delivered_bottles'] as int?,
+        customerLatitude: optionalDouble(json['customer_latitude']),
+        customerLongitude: optionalDouble(json['customer_longitude']),
+        deliveredCapsules: optionalInt(json['delivered_bottles']),
         paymentAmount: json['payment_amount'] == null
             ? null
             : MoneyParser.toSum(json['payment_amount']),
-        paymentPhoto: json['payment_photo'] as String?,
-        completedAt: json['completed_at'] == null
-            ? null
-            : DateTime.parse(json['completed_at'] as String),
+        paymentPhoto: optionalString(json['payment_photo']),
+        completedAt: optionalDate(json['completed_at']),
       );
 
   @override
@@ -152,16 +151,16 @@ class RouteDetail extends Equatable {
       stops.fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0));
 
   factory RouteDetail.fromJson(Map<String, dynamic> json) => RouteDetail(
-        id: json['id'] as String,
-        date: DateTime.parse(json['date'] as String),
-        status: RouteStatus.fromJson(json['status'] as String),
-        completedCount: json['completed_count'] as int? ?? 0,
-        totalCustomers: json['total_customers'] as int? ?? 0,
-        driverId: json['driver_id'] as String?,
-        driverFullName: json['driver_full_name'] as String?,
-        stops: ((json['route_customers'] as List?) ?? [])
-            .map((e) => RouteStop.fromJson((e as Map).cast<String, dynamic>()))
-            .toList(),
+        id: requireString(json['id'], 'id'),
+        date: dateOr(json['date'], epoch),
+        status: RouteStatus.fromJson(stringOr(json['status'])),
+        completedCount: intOr(json['completed_count']),
+        totalCustomers: intOr(json['total_customers']),
+        driverId: optionalString(json['driver_id']),
+        driverFullName: optionalString(json['driver_full_name']),
+        // Точка без идентификатора пропускается: открыть и завершить её всё
+        // равно нечем, а из-за неё терялся бы весь маршрут.
+        stops: parseList(json['route_customers'], RouteStop.fromJson),
       );
 
   @override

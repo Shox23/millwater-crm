@@ -142,7 +142,11 @@ class _FileLabel extends StatelessWidget {
       future: photo.length(),
       builder: (context, snapshot) {
         final size = snapshot.data;
-        final suffix = size == null ? '' : context.l10n.photoSize((size / 1024).round());
+        // Разделитель собирается здесь, а не внутри строки локали: ведущий
+        // пробел в переводе — первое, что теряется при правке текста.
+        final suffix = size == null
+            ? ''
+            : ' · ${context.l10n.photoSize((size / 1024).round())}';
         return Text(
           '${photo.name}$suffix',
           style: style,

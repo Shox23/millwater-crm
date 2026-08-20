@@ -8,7 +8,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/forms/submit_state.dart';
-import '../../../core/product_config.dart';
+import '../../../core/utils/driver_password.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
@@ -68,8 +68,12 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
   ]);
   FormFieldValidator<String> get _passwordRule => _v.password();
 
-  /// Заготовка пароля для новой учётки — см. [ProductConfig].
-  static const String _defaultPassword = ProductConfig.defaultDriverPassword;
+  /// Стартовый пароль новой учётки — свой на каждого водителя.
+  ///
+  /// Генерируется один раз на экран, а не в `initState` каждой перестройки:
+  /// на него опирается [_dirty], и меняйся он под руками — форма спрашивала бы
+  /// подтверждение выхода у того, кто ничего не трогал.
+  final String _generatedPassword = DriverPassword.generate();
 
   @override
   void initState() {
@@ -80,11 +84,11 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
     _phone = TextEditingController(
       text: driver == null ? UzPhone.prefix : UzPhone.format(driver.phone),
     );
-    // Стартовый пароль подставлен заранее: сбросить его админ потом не сможет
-    // (эндпоинта нет), а водитель меняет его сам после первого входа.
-    // Значение можно перебить прямо в поле.
+    // Сгенерированный пароль подставлен заранее и виден админу до отправки:
+    // сбросить его потом не сможет никто (эндпоинта нет), а водитель меняет
+    // его сам после первого входа. Значение можно перебить прямо в поле.
     _password = TextEditingController(
-      text: driver == null ? _defaultPassword : '',
+      text: driver == null ? _generatedPassword : '',
     );
   }
 
@@ -107,7 +111,7 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
             UzPhone.normalize(driver?.phone ?? '') ||
         // При создании пароль уже заполнен заготовкой — «грязной» форму делает
         // только его правка, иначе выход сразу спрашивал бы подтверждение.
-        _password.text != (driver == null ? _defaultPassword : '');
+        _password.text != (driver == null ? _generatedPassword : '');
   }
 
   Future<void> _submit() async {
@@ -235,13 +239,17 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
                 LabeledTextField(
                   label: context.l10n.driverFormPassword,
                   hint: '••••••••',
-                  // Объясняем заготовку: иначе непонятно, откуда взялся пароль
-                  // и что водителю его потом менять.
+                  // Пароль сгенерирован и нигде больше не хранится: сбросить
+                  // его нечем (эндпоинта в API нет), поэтому подсказка требует
+                  // передать его водителю, а не объясняет заготовку.
                   helper: context.l10n.driverFormPasswordHelper,
                   controller: _password,
                   focusNode: _passwordFocus,
                   validator: _passwordRule,
                   obscureText: true,
+                  // Без копирования сгенерированный пароль пришлось бы
+                  // переписывать с экрана вручную.
+                  copyable: true,
                   autofillHints: const [AutofillHints.newPassword],
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _submit(),

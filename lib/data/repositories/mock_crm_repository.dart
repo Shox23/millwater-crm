@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../../core/utils/day.dart';
 import '../mock/mock_store.dart';
 import '../mock/seed_data.dart';
+import '../models/result_page.dart';
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
@@ -101,6 +102,26 @@ class MockCrmRepository implements CrmRepository {
     return _remember(idempotencyKey, created);
   }
 
+  /// Размер страницы. Меньше боевой сотни намеренно: с сидом из шести
+  /// заказчиков сотня никогда не дала бы второй страницы, и догрузку было бы
+  /// нечем проверить.
+  static const int pageSize = 4;
+
+  /// Отрезает страницу [page] (считая с единицы) от полной выдачи.
+  ResultPage<T> _slice<T>(List<T> all, int page) {
+    final start = (page - 1) * pageSize;
+    if (start >= all.length) {
+      return ResultPage(items: const [], page: page, hasMore: false, total: all.length);
+    }
+    final end = start + pageSize;
+    return ResultPage(
+      items: all.sublist(start, end > all.length ? all.length : end),
+      page: page,
+      hasMore: end < all.length,
+      total: all.length,
+    );
+  }
+
   // ---- Водители ----
   @override
   Future<List<Driver>> getDrivers({String? search}) async {
@@ -111,6 +132,12 @@ class MockCrmRepository implements CrmRepository {
     return _drivers
         .where((d) => _matches(search, [d.fullName, d.phone]))
         .toList();
+  }
+
+  @override
+  Future<ResultPage<Driver>> getDriversPage({int page = 1, String? search}) async {
+    final all = await getDrivers(search: search);
+    return _slice(all, page);
   }
 
   @override
@@ -168,6 +195,16 @@ class MockCrmRepository implements CrmRepository {
       result = result.where((c) => c.debt > 0).toList();
     }
     return result;
+  }
+
+  @override
+  Future<ResultPage<Customer>> getCustomersPage({
+    int page = 1,
+    String? search,
+    bool? hasDebt,
+  }) async {
+    final all = await getCustomers(search: search, hasDebt: hasDebt);
+    return _slice(all, page);
   }
 
   @override

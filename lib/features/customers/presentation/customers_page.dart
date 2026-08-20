@@ -10,6 +10,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
+import '../../../core/widgets/load_more_notifier.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/search_field.dart';
 import '../../../data/repositories/crm_repository.dart';
@@ -57,10 +58,8 @@ class _CustomersView extends StatelessWidget {
                     // Под поиском в списке лежат найденные, а не вся база:
                     // «База · 1» на двух набранных буквах — неправда.
                     label: state.query.trim().isEmpty
-                        ? context.l10n
-                            .customersHeader(state.customers.length)
-                        : context.l10n
-                            .customersHeaderFound(state.customers.length),
+                        ? context.l10n.customersHeader(state.total)
+                        : context.l10n.customersHeaderFound(state.total),
                     title: context.l10n.customersTitle,
                     action: AppButton(
                       label: context.l10n.commonAdd,
@@ -85,7 +84,8 @@ class _CustomersView extends StatelessWidget {
                 // всегда — иначе список дёргается на каждую букву в поиске.
                 SizedBox(
                   height: 2,
-                  child: state.status == CustomersStatus.loading &&
+                  child:
+                      state.status == CustomersStatus.loading &&
                           state.customers.isNotEmpty
                       ? const LinearProgressIndicator(minHeight: 2)
                       : null,
@@ -137,8 +137,7 @@ class _CustomersList extends StatelessWidget {
     // не вылетает из дерева посреди жеста обновления — а здесь протяжка
     // единственный способ обновить, кнопки на экране нет.
     if (state.status == CustomersStatus.initial ||
-        (state.status == CustomersStatus.loading &&
-            state.customers.isEmpty)) {
+        (state.status == CustomersStatus.loading && state.customers.isEmpty)) {
       return const Center(child: CircularProgressIndicator());
     }
     // Раньше сетевая ошибка доходила сюда и выглядела как «Ничего не найдено».
@@ -166,62 +165,69 @@ class _CustomersList extends StatelessWidget {
     }
     return RefreshIndicator(
       onRefresh: () => _refresh(),
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          0,
-          AppSpacing.page,
-          AppSpacing.xl,
-        ),
-        itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-        itemBuilder: (context, i) {
-          final customer = items[i];
-          return CustomerCard(
-            customer: customer,
-            onTap: () async {
-              final changed = await Navigator.of(context).push<bool>(
-                OverlayPageRoute(
-                  builder: (_) => CustomerDetailPage(customer: customer),
-                ),
-              );
-              if (changed == true) bloc.add(const CustomersRequested());
-            },
-            onEdit: () async {
-              final saved = await Navigator.of(context).push<bool>(
-                OverlayPageRoute(
-                  builder: (_) => CustomerFormPage(customer: customer),
-                ),
-              );
-              if (saved == true) {
+      child: LoadMoreNotifier(
+        onLoadMore: () => bloc.add(const CustomersNextPageRequested()),
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            0,
+            AppSpacing.page,
+            AppSpacing.xl,
+          ),
+          // Лишний элемент в конце — строка догрузки.
+          itemCount: items.length + 1,
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+          itemBuilder: (context, i) {
+            if (i == items.length) {
+              return LoadMoreFooter(loading: state.loadingMore);
+            }
+            final customer = items[i];
+            return CustomerCard(
+              customer: customer,
+              onTap: () async {
+                final changed = await Navigator.of(context).push<bool>(
+                  OverlayPageRoute(
+                    builder: (_) => CustomerDetailPage(customer: customer),
+                  ),
+                );
+                if (changed == true) bloc.add(const CustomersRequested());
+              },
+              onEdit: () async {
+                final saved = await Navigator.of(context).push<bool>(
+                  OverlayPageRoute(
+                    builder: (_) => CustomerFormPage(customer: customer),
+                  ),
+                );
+                if (saved == true) {
+                  bloc.add(const CustomersRequested());
+                  if (context.mounted) {
+                    showAppSnackBar(context, context.l10n.changesSaved);
+                  }
+                }
+              },
+              onDelete: () async {
+                final confirmed = await showConfirmDialog(
+                  context,
+                  title: context.l10n.customerDeleteTitle,
+                  message: context.l10n.customerDeleteMessage(customer.name),
+                );
+                if (!confirmed || !context.mounted) return;
+                final repo = context.read<CrmRepository>();
+                final ok = await runGuarded(
+                  context,
+                  () => repo.deleteCustomer(customer.id),
+                  fallback: context.l10n.customerDeleteFailed,
+                );
+                if (!ok) return;
                 bloc.add(const CustomersRequested());
                 if (context.mounted) {
-                  showAppSnackBar(context, context.l10n.changesSaved);
+                  showAppSnackBar(context, context.l10n.customerDeleted);
                 }
-              }
-            },
-            onDelete: () async {
-              final confirmed = await showConfirmDialog(
-                context,
-                title: context.l10n.customerDeleteTitle,
-                message: context.l10n.customerDeleteMessage(customer.name),
-              );
-              if (!confirmed || !context.mounted) return;
-              final repo = context.read<CrmRepository>();
-              final ok = await runGuarded(
-                context,
-                () => repo.deleteCustomer(customer.id),
-                fallback: context.l10n.customerDeleteFailed,
-              );
-              if (!ok) return;
-              bloc.add(const CustomersRequested());
-              if (context.mounted) {
-                showAppSnackBar(context, context.l10n.customerDeleted);
-              }
-            },
-          );
-        },
+              },
+            );
+          },
+        ),
       ),
     );
   }

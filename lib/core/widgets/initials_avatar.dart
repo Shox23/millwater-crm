@@ -11,11 +11,17 @@ class InitialsAvatar extends StatelessWidget {
     required this.name,
     this.size = 44,
     this.color,
+    this.radius,
   });
 
   final String name;
   final double size;
   final Color? color;
+
+  /// Скругление. По умолчанию [AppRadius.avatar] — как во всех мобильных
+  /// экранах; десктопу нужны и мелкие аватары в строках таблицы, и крупные
+  /// в карточках водителей, а один радиус на оба размера смотрится неверно.
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +38,7 @@ class InitialsAvatar extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(AppRadius.avatar),
+        borderRadius: BorderRadius.circular(radius ?? AppRadius.avatar),
       ),
       child: Text(
         Initials.of(name),

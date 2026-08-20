@@ -49,3 +49,14 @@ app.*.map.json
 /android/key.properties
 *.jks
 *.keystore
+
+# Кеш исходных вариативных шрифтов — их заново скачивает tool/build_fonts.py.
+/assets/fonts/.src/
+
+# Окружение для сборки шрифтов.
+/.fontenv/
+
+# Параметры сборки: DSN Sentry, адрес API, цена капсулы.
+# В git не идут — у боевого стенда, тестового и CI они разные.
+# Шаблон со всеми ключами: dart_defines.example.json
+/dart_defines.json

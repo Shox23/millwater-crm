@@ -39,7 +39,6 @@ dependencies:
   flutter_bloc: ^9.1.1
   equatable: ^2.1.0
   intl: ^0.20.2
-  google_fonts: ^8.2.0
   dio: ^5.11.0
   url_launcher: ^6.3.2
   flutter_secure_storage: ^10.3.1
@@ -48,6 +47,7 @@ dependencies:
   shared_preferences: ^2.5.5
   path_provider: ^2.1.6
   share_plus: ^13.3.0
+  sentry_flutter: ^9.0.0
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +59,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  yaml: ^3.1.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -72,6 +73,43 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Шрифты лежат в сборке, а не качаются в рантайме.
+  #
+  # Раньше их тянул google_fonts с fonts.gstatic.com при первом запуске:
+  # водитель, впервые открывший приложение без связи, видел системный шрифт
+  # вместо макета, а обращение к стороннему сервису приходилось объявлять
+  # в Play Data Safety и App Privacy.
+  #
+  # Файлы получены из вариативных Inter и Onest (SIL OFL 1.1): ось веса
+  # закреплена в статические начертания, набор символов урезан до латиницы,
+  # кириллицы и используемой типографики. Пересобираются скриптом
+  # tool/build_fonts.py — 1,2 МБ на все десять файлов вместо 8 МБ полных.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-400.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-500.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-600.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-700.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-800.ttf
+          weight: 800
+    - family: Onest
+      fonts:
+        - asset: assets/fonts/Onest-400.ttf
+          weight: 400
+        - asset: assets/fonts/Onest-500.ttf
+          weight: 500
+        - asset: assets/fonts/Onest-600.ttf
+          weight: 600
+        - asset: assets/fonts/Onest-700.ttf
+          weight: 700
+        - asset: assets/fonts/Onest-800.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -18,3 +18,10 @@ class DriversSearchChanged extends DriversEvent {
   @override
   List<Object?> get props => [query];
 }
+
+/// Дочитать следующую страницу в конец списка.
+///
+/// Приходит из обработчика прокрутки, когда список подошёл к концу.
+class DriversNextPageRequested extends DriversEvent {
+  const DriversNextPageRequested();
+}

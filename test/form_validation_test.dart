@@ -1,5 +1,4 @@
 import 'package:crm_millwater/app/theme/app_theme.dart';
-import 'package:crm_millwater/core/product_config.dart';
 import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/data/models/driver.dart';
@@ -241,15 +240,17 @@ void main() {
       );
     });
 
-    testWidgets('водитель заводится со стартовым паролем из заготовки',
+    testWidgets('водитель заводится со сгенерированным паролем',
         (tester) async {
       await pumpForm(tester, const DriverFormPage());
 
       // Пароль подставлен заранее — админу достаточно имени и телефона.
-      expect(
-        tester.widget<TextField>(inputFor('Пароль для входа')).controller!.text,
-        ProductConfig.defaultDriverPassword,
-      );
+      final generated =
+          tester.widget<TextField>(inputFor('Пароль для входа')).controller!.text;
+      expect(generated, hasLength(8));
+      // Общей заготовки на всех больше нет: под учёткой водителя не войдёт
+      // тот, кто просто знает номер телефона.
+      expect(generated, isNot('123456'));
 
       await tester.enterText(inputFor('Имя водителя'), 'Тимур Юсупов');
       await tester.enterText(inputFor('Номер телефона'), '911234567');
@@ -263,6 +264,7 @@ void main() {
           .firstWhere((d) => d.fullName == 'Тимур Юсупов');
       expect(added.phone, '+998911234567');
     });
+
 
     testWidgets('кнопка «показать пароль» раскрывает ввод', (tester) async {
       await pumpForm(tester, const DriverFormPage());

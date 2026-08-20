@@ -29,6 +29,18 @@ class _AdminShellState extends State<AdminShell> {
     ReportsPage(),
   ];
 
+  /// Вкладки, которые уже открывали.
+  ///
+  /// `IndexedStack` строит всех своих детей сразу, а каждая вкладка на
+  /// создании шлёт свой запрос — вход админа поднимал четыре независимые
+  /// пачки, часть из них многостраничные, и держал в памяти три экрана,
+  /// на которые никто не смотрит.
+  ///
+  /// Невиданная вкладка подменяется заглушкой и строится при первом
+  /// открытии. Обратно в заглушку не превращается: перейти на соседнюю
+  /// вкладку и вернуться не должно означать перезагрузку списка.
+  final _opened = {0};
+
   @override
   Widget build(BuildContext context) {
     // Подписи вкладок строятся в build: при смене языка список должен
@@ -45,11 +57,20 @@ class _AdminShellState extends State<AdminShell> {
     ];
 
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(
+        index: _index,
+        children: [
+          for (var i = 0; i < _pages.length; i++)
+            if (_opened.contains(i)) _pages[i] else const SizedBox.shrink(),
+        ],
+      ),
       bottomNavigationBar: AppBottomNav(
         currentIndex: _index,
         items: items,
-        onTap: (i) => setState(() => _index = i),
+        onTap: (i) => setState(() {
+          _index = i;
+          _opened.add(i);
+        }),
       ),
     );
   }

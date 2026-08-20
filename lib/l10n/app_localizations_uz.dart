@@ -15,7 +15,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get commonCancel => 'Bekor qilish';
 
   @override
-  String get commonCancelShort => 'Bekor qilish';
+  String get commonCancelShort => 'Bekor';
 
   @override
   String get commonDelete => 'O‘chirish';
@@ -82,7 +82,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get leaveWithoutSavingMessage => 'Kiritilgan ma’lumotlar yo‘qoladi.';
 
   @override
-  String get errorGeneric => 'So‘rov bajarilmadi.';
+  String get errorGeneric => 'Amalni bajarib bo‘lmadi. Yana urinib ko‘ring.';
 
   @override
   String get errorNoConnection => 'Server bilan aloqa yo‘q.';
@@ -113,7 +113,12 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String fieldPhoneIncomplete(int count) {
-    return 'Raqam to‘liq emas — +998 dan keyin $count ta raqam kerak';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ta raqam',
+    );
+    return 'Raqam to‘liq emas — +998 dan keyin $_temp0 kerak';
   }
 
   @override
@@ -127,12 +132,22 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String fieldMinLength(int count) {
-    return 'Kamida $count ta belgi';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ta belgi',
+    );
+    return 'Kamida $_temp0';
   }
 
   @override
   String fieldMaxLength(int count) {
-    return '$count ta belgidan ko‘p emas';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ta belgi',
+    );
+    return '${_temp0}dan ko‘p emas';
   }
 
   @override
@@ -142,6 +157,87 @@ class AppLocalizationsUz extends AppLocalizations {
   String get fieldHidePassword => 'Parolni yashirish';
 
   @override
+  String get validationGeneric => 'To‘ldirish to‘g‘riligini tekshiring';
+
+  @override
+  String validationRequired(String field) {
+    return '«$field» maydonini to‘ldiring';
+  }
+
+  @override
+  String validationTooShort(String field) {
+    return '«$field» maydonidagi qiymat juda qisqa';
+  }
+
+  @override
+  String validationTooLong(String field) {
+    return '«$field» maydonidagi qiymat juda uzun';
+  }
+
+  @override
+  String validationNotNumber(String field) {
+    return '«$field» maydoniga son kerak';
+  }
+
+  @override
+  String validationOutOfRange(String field) {
+    return '«$field» maydonidagi qiymat ruxsat etilgan chegaradan tashqarida';
+  }
+
+  @override
+  String validationBadFormat(String field) {
+    return '«$field» maydonidagi format noto‘g‘ri';
+  }
+
+  @override
+  String get apiFieldFullName => 'Ism yoki nomi';
+
+  @override
+  String get apiFieldPhone => 'Telefon';
+
+  @override
+  String get apiFieldAddress => 'Manzil';
+
+  @override
+  String get apiFieldComment => 'Izoh';
+
+  @override
+  String get apiFieldPassword => 'Parol';
+
+  @override
+  String get apiFieldOldPassword => 'Joriy parol';
+
+  @override
+  String get apiFieldNewPassword => 'Yangi parol';
+
+  @override
+  String get apiFieldDate => 'Sana';
+
+  @override
+  String get apiFieldDriver => 'Haydovchi';
+
+  @override
+  String get apiFieldCustomers => 'Mijozlar';
+
+  @override
+  String get apiFieldCapsules => 'Kapsulalar soni';
+
+  @override
+  String get apiFieldAmount => 'To‘lov summasi';
+
+  @override
+  String get apiFieldPaymentMethod => 'To‘lov usuli';
+
+  @override
+  String get apiFieldBalance => 'Kapsulalar qoldig‘i';
+
+  @override
+  String get apiFieldPrice => 'Kapsula narxi';
+
+  @override
+  String get apiFieldDeposit => 'Idish garovi';
+
+  @override
   String get phoneCallUnavailable => 'Qo‘ng‘iroq imkonsiz — raqam nusxalandi';
 
   @override
@@ -149,6 +245,12 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get phoneCopy => 'Raqamdan nusxa olish';
+
+  @override
+  String get fieldCopy => 'Nusxa olish';
+
+  @override
+  String get fieldCopied => 'Nusxa olindi';
 
   @override
   String get photoTitle => 'To‘lov surati';
@@ -170,7 +272,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String photoSize(int size) {
-    return ' · $size KB';
+    return '$size KB';
   }
 
   @override
@@ -256,7 +358,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get paymentCard => 'Karta';
 
   @override
-  String get paymentTransfer => 'Pul o‘tkazma';
+  String get paymentTransfer => 'Pul o‘tkazmasi';
 
   @override
   String get paymentDebt => 'Qarzga';
@@ -395,7 +497,12 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String routeStopsCount(int count) {
-    return '$count nuqta';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nuqta',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -412,7 +519,12 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String stopCapsules(int count) {
-    return '$count kapsula';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kapsula',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -568,7 +680,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get driverCreatedAt => 'Yaratilgan sana';
 
   @override
-  String get driverTripsAndToday => '  ·  bugun ';
+  String get driverTripsAndToday => 'bugun';
 
   @override
   String get driverFormEditTitle => 'Haydovchini tahrirlash';
@@ -590,7 +702,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get driverFormPasswordHelper =>
-      'Boshlang‘ich parol — haydovchi uni sozlamalarda o‘zgartiradi';
+      'Parolni haydovchiga bering — keyin uni tiklab bo‘lmaydi';
 
   @override
   String get driverFormSaveFailed => 'Haydovchini saqlab bo‘lmadi.';
@@ -822,7 +934,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get profileAccountLabel => 'Hisob';
 
   @override
-  String get profileAccountSection => 'HISOB YOZUVI';
+  String get profileAccountSection => 'HISOB';
 
   @override
   String get settingsAppearance => 'KO‘RINISH';
@@ -1032,4 +1144,239 @@ class AppLocalizationsUz extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get desktopBrandSubtitle => 'Suv yetkazib berish';
+
+  @override
+  String get desktopNavGroup => 'ISH';
+
+  @override
+  String get desktopOnLineTitle => 'BUGUN LINIYADA';
+
+  @override
+  String desktopOnLineOf(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count haydovchidan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopSearchHint => 'Qidirish';
+
+  @override
+  String get desktopNotifications => 'Bildirishnomalar';
+
+  @override
+  String get desktopAddDriver => 'Haydovchi';
+
+  @override
+  String get desktopAddCustomer => 'Mijoz';
+
+  @override
+  String desktopRoutesSubtitle(String date, int count) {
+    return '$date · $count ta ishda';
+  }
+
+  @override
+  String get desktopDriverStubTitle => 'Bu — administratorning ish joyi';
+
+  @override
+  String get desktopDriverStubHint =>
+      'Marshrutlar va yetkazmalar mobil ilovada ochiladi — telefondan kiring.';
+
+  @override
+  String driversCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count haydovchi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String customersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mijoz',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get filterDelivered => 'Yetkazilgan';
+
+  @override
+  String get desktopColCustomer => 'MIJOZ';
+
+  @override
+  String get desktopColDriver => 'HAYDOVCHI';
+
+  @override
+  String get desktopColCapsules => 'KAPSULALAR';
+
+  @override
+  String get desktopColSum => 'SUMMA';
+
+  @override
+  String get desktopColPayment => 'TO‘LOV';
+
+  @override
+  String get desktopColStatus => 'HOLAT';
+
+  @override
+  String get desktopKpiCollected => 'Kun davomida yig‘ildi';
+
+  @override
+  String get desktopKpiDebt => 'Kun davomida qarzga';
+
+  @override
+  String get desktopKpiCapsules => 'Berilgan kapsulalar';
+
+  @override
+  String get desktopKpiPlannedStops => 'Rejadagi nuqtalar';
+
+  @override
+  String get desktopKpiPlannedDrivers => 'Kunga haydovchilar';
+
+  @override
+  String get desktopKpiPlannedCustomers => 'Rejadagi mijozlar';
+
+  @override
+  String get desktopSummaryDone => 'Bajarilgan yetkazmalar';
+
+  @override
+  String get desktopSummaryPlanned => 'Rejalashtirilgan yetkazmalar';
+
+  @override
+  String get desktopDebtShort => 'Qarzga';
+
+  @override
+  String get desktopDateToday => 'bugun';
+
+  @override
+  String desktopDatePlanned(int count) {
+    return '$count ta rejada';
+  }
+
+  @override
+  String get desktopDayEmpty => 'Bu kunga yetkazmalar yo‘q';
+
+  @override
+  String get desktopDayEmptyHint =>
+      'Marshrut yarating yoki boshqa kunni tanlang';
+
+  @override
+  String get desktopDebtEstimated => 'kapsula narxi bo‘yicha taxmin';
+
+  @override
+  String routesCountPlural(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count marshrut',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commonClose => 'Yopish';
+
+  @override
+  String get desktopDeliveryTitle => 'Yetkazma';
+
+  @override
+  String get desktopFinishRoute => 'Marshrutni yakunlash';
+
+  @override
+  String get desktopMarkDebtPaid => 'Qarz to‘lovini belgilash';
+
+  @override
+  String get desktopFinishedAndPaid => 'Yakunlangan va to‘langan';
+
+  @override
+  String get desktopDriverOnlyHint =>
+      'Yetkazmani haydovchi o‘z ilovasida yopadi — bu yerdan buni qilib bo‘lmaydi.';
+
+  @override
+  String get desktopDebtPaidHint =>
+      'Hozircha mavjud emas: qarz to‘lovini keyinroq belgilash mumkin bo‘ladi.';
+
+  @override
+  String get desktopOnLine => 'Liniyada';
+
+  @override
+  String get desktopFree => 'Bo‘sh';
+
+  @override
+  String get desktopColAddress => 'MANZIL';
+
+  @override
+  String get desktopColBalance => 'BALANS';
+
+  @override
+  String get desktopColLastOrder => 'OXIRGI BUYURTMA';
+
+  @override
+  String get desktopColCapsulesShort => 'KAPSULA';
+
+  @override
+  String desktopBalanceDebt(String amount) {
+    return 'Qarz $amount';
+  }
+
+  @override
+  String desktopBalancePrepaid(String amount) {
+    return 'Avans $amount';
+  }
+
+  @override
+  String get desktopSuccessDone => 'Tayyor';
+
+  @override
+  String get desktopWithCooler => 'Kuler bilan';
+
+  @override
+  String get desktopWithoutCooler => 'Kulersiz';
+
+  @override
+  String get desktopFieldCapsules => 'Kapsulalar';
+
+  @override
+  String get desktopFieldSum => 'Summa';
+
+  @override
+  String get desktopFieldStatus => 'Holat';
+
+  @override
+  String get desktopFieldTime => 'Yopilgan';
+
+  @override
+  String get desktopFieldAddress => 'Manzil';
+
+  @override
+  String get desktopChartTitle => 'Kunlar bo‘yicha tushum';
+
+  @override
+  String get desktopPrepayments => 'Avanslar';
+
+  @override
+  String get desktopNoDebtors => 'Qarzdorlar yo‘q';
+
+  @override
+  String get desktopNoPrepayments => 'Avanslar yo‘q';
+
+  @override
+  String get desktopCapsulesWithCooler => 'Kuleri bor mijozlarda';
+
+  @override
+  String get desktopCapsulesWithoutCooler => 'Qolganlarda';
+
+  @override
+  String get desktopFieldCooler => 'Kuler';
 }

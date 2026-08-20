@@ -239,7 +239,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorGeneric.
   ///
   /// In ru, this message translates to:
-  /// **'Ошибка запроса.'**
+  /// **'Не удалось выполнить действие. Попробуйте ещё раз.'**
   String get errorGeneric;
 
   /// No description provided for @errorNoConnection.
@@ -293,7 +293,7 @@ abstract class AppLocalizations {
   /// No description provided for @fieldPhoneIncomplete.
   ///
   /// In ru, this message translates to:
-  /// **'Номер неполный — нужно {count} цифр после +998'**
+  /// **'Номер неполный — нужно {count, plural, one{{count} цифра} few{{count} цифры} other{{count} цифр}} после +998'**
   String fieldPhoneIncomplete(int count);
 
   /// No description provided for @fieldEmailInvalid.
@@ -317,13 +317,13 @@ abstract class AppLocalizations {
   /// No description provided for @fieldMinLength.
   ///
   /// In ru, this message translates to:
-  /// **'Минимум {count} символов'**
+  /// **'Минимум {count, plural, one{{count} символ} few{{count} символа} other{{count} символов}}'**
   String fieldMinLength(int count);
 
   /// No description provided for @fieldMaxLength.
   ///
   /// In ru, this message translates to:
-  /// **'Не более {count} символов'**
+  /// **'Не более {count, plural, one{{count} символа} few{{count} символов} other{{count} символов}}'**
   String fieldMaxLength(int count);
 
   /// No description provided for @fieldShowPassword.
@@ -337,6 +337,144 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Скрыть пароль'**
   String get fieldHidePassword;
+
+  /// No description provided for @validationGeneric.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте правильность заполнения'**
+  String get validationGeneric;
+
+  /// No description provided for @validationRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заполните поле «{field}»'**
+  String validationRequired(String field);
+
+  /// No description provided for @validationTooShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком короткое значение в поле «{field}»'**
+  String validationTooShort(String field);
+
+  /// No description provided for @validationTooLong.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком длинное значение в поле «{field}»'**
+  String validationTooLong(String field);
+
+  /// No description provided for @validationNotNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'В поле «{field}» нужно число'**
+  String validationNotNumber(String field);
+
+  /// No description provided for @validationOutOfRange.
+  ///
+  /// In ru, this message translates to:
+  /// **'Значение в поле «{field}» вне допустимых границ'**
+  String validationOutOfRange(String field);
+
+  /// No description provided for @validationBadFormat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный формат в поле «{field}»'**
+  String validationBadFormat(String field);
+
+  /// No description provided for @apiFieldFullName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя или название'**
+  String get apiFieldFullName;
+
+  /// No description provided for @apiFieldPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон'**
+  String get apiFieldPhone;
+
+  /// No description provided for @apiFieldAddress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Адрес'**
+  String get apiFieldAddress;
+
+  /// No description provided for @apiFieldComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий'**
+  String get apiFieldComment;
+
+  /// No description provided for @apiFieldPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль'**
+  String get apiFieldPassword;
+
+  /// No description provided for @apiFieldOldPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Текущий пароль'**
+  String get apiFieldOldPassword;
+
+  /// No description provided for @apiFieldNewPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый пароль'**
+  String get apiFieldNewPassword;
+
+  /// No description provided for @apiFieldDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дата'**
+  String get apiFieldDate;
+
+  /// No description provided for @apiFieldDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель'**
+  String get apiFieldDriver;
+
+  /// No description provided for @apiFieldCustomers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказчики'**
+  String get apiFieldCustomers;
+
+  /// No description provided for @apiFieldCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Количество капсул'**
+  String get apiFieldCapsules;
+
+  /// No description provided for @apiFieldAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сумма оплаты'**
+  String get apiFieldAmount;
+
+  /// No description provided for @apiFieldPaymentMethod.
+  ///
+  /// In ru, this message translates to:
+  /// **'Способ оплаты'**
+  String get apiFieldPaymentMethod;
+
+  /// No description provided for @apiFieldBalance.
+  ///
+  /// In ru, this message translates to:
+  /// **'Остаток капсул'**
+  String get apiFieldBalance;
+
+  /// No description provided for @apiFieldPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена капсулы'**
+  String get apiFieldPrice;
+
+  /// No description provided for @apiFieldDeposit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Залог за тару'**
+  String get apiFieldDeposit;
 
   /// No description provided for @phoneCallUnavailable.
   ///
@@ -355,6 +493,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Скопировать номер'**
   String get phoneCopy;
+
+  /// No description provided for @fieldCopy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировать'**
+  String get fieldCopy;
+
+  /// No description provided for @fieldCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировано'**
+  String get fieldCopied;
 
   /// No description provided for @photoTitle.
   ///
@@ -395,7 +545,7 @@ abstract class AppLocalizations {
   /// No description provided for @photoSize.
   ///
   /// In ru, this message translates to:
-  /// **' · {size} КБ'**
+  /// **'{size} КБ'**
   String photoSize(int size);
 
   /// No description provided for @themeSystem.
@@ -479,7 +629,7 @@ abstract class AppLocalizations {
   /// No description provided for @deliveryDelivered.
   ///
   /// In ru, this message translates to:
-  /// **'Доставлен'**
+  /// **'Доставлено'**
   String get deliveryDelivered;
 
   /// No description provided for @deliveryFailed.
@@ -821,7 +971,7 @@ abstract class AppLocalizations {
   /// No description provided for @routeStopsCount.
   ///
   /// In ru, this message translates to:
-  /// **'{count} точек'**
+  /// **'{count, plural, one{{count} точка} few{{count} точки} other{{count} точек}}'**
   String routeStopsCount(int count);
 
   /// No description provided for @routeDoneShort.
@@ -851,7 +1001,7 @@ abstract class AppLocalizations {
   /// No description provided for @stopCapsules.
   ///
   /// In ru, this message translates to:
-  /// **'{count} капсул'**
+  /// **'{count, plural, one{{count} капсула} few{{count} капсулы} other{{count} капсул}}'**
   String stopCapsules(int count);
 
   /// No description provided for @routeFormTitle.
@@ -1133,7 +1283,7 @@ abstract class AppLocalizations {
   /// No description provided for @driverTripsAndToday.
   ///
   /// In ru, this message translates to:
-  /// **'  ·  сегодня '**
+  /// **'сегодня'**
   String get driverTripsAndToday;
 
   /// No description provided for @driverFormEditTitle.
@@ -1175,7 +1325,7 @@ abstract class AppLocalizations {
   /// No description provided for @driverFormPasswordHelper.
   ///
   /// In ru, this message translates to:
-  /// **'Стартовый пароль — водитель сменит его в настройках'**
+  /// **'Передайте пароль водителю — восстановить его потом нельзя'**
   String get driverFormPasswordHelper;
 
   /// No description provided for @driverFormSaveFailed.
@@ -1451,7 +1601,7 @@ abstract class AppLocalizations {
   /// No description provided for @completionCapsulesCaption.
   ///
   /// In ru, this message translates to:
-  /// **'капсул {liters}л'**
+  /// **'капсул {liters} л'**
   String completionCapsulesCaption(int liters);
 
   /// No description provided for @completionBalance.
@@ -1595,7 +1745,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileAccountSection.
   ///
   /// In ru, this message translates to:
-  /// **'УЧЁТНАЯ ЗАПИСЬ'**
+  /// **'АККАУНТ'**
   String get profileAccountSection;
 
   /// No description provided for @settingsAppearance.
@@ -1919,7 +2069,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportsCapsulesCount.
   ///
   /// In ru, this message translates to:
-  /// **'{count} шт'**
+  /// **'{count} шт.'**
   String reportsCapsulesCount(int count);
 
   /// No description provided for @reportsDebtors.
@@ -1945,6 +2095,396 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'{count, plural, one{{count} клиент} few{{count} клиента} other{{count} клиентов}}'**
   String clientsCount(int count);
+
+  /// No description provided for @desktopBrandSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доставка воды'**
+  String get desktopBrandSubtitle;
+
+  /// No description provided for @desktopNavGroup.
+  ///
+  /// In ru, this message translates to:
+  /// **'РАБОТА'**
+  String get desktopNavGroup;
+
+  /// No description provided for @desktopOnLineTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'СЕГОДНЯ НА ЛИНИИ'**
+  String get desktopOnLineTitle;
+
+  /// No description provided for @desktopOnLineOf.
+  ///
+  /// In ru, this message translates to:
+  /// **'из {count, plural, one{{count} водителя} other{{count} водителей}}'**
+  String desktopOnLineOf(int count);
+
+  /// No description provided for @desktopSearchHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск'**
+  String get desktopSearchHint;
+
+  /// No description provided for @desktopNotifications.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомления'**
+  String get desktopNotifications;
+
+  /// No description provided for @desktopAddDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель'**
+  String get desktopAddDriver;
+
+  /// No description provided for @desktopAddCustomer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказчик'**
+  String get desktopAddCustomer;
+
+  /// No description provided for @desktopRoutesSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'{date} · {count} в работе'**
+  String desktopRoutesSubtitle(String date, int count);
+
+  /// No description provided for @desktopDriverStubTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это рабочее место администратора'**
+  String get desktopDriverStubTitle;
+
+  /// No description provided for @desktopDriverStubHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршруты и доставки открываются в мобильном приложении — зайдите с телефона.'**
+  String get desktopDriverStubHint;
+
+  /// No description provided for @driversCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} водитель} few{{count} водителя} other{{count} водителей}}'**
+  String driversCount(int count);
+
+  /// No description provided for @customersCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} заказчик} few{{count} заказчика} other{{count} заказчиков}}'**
+  String customersCount(int count);
+
+  /// No description provided for @filterDelivered.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доставлены'**
+  String get filterDelivered;
+
+  /// No description provided for @desktopColCustomer.
+  ///
+  /// In ru, this message translates to:
+  /// **'ЗАКАЗЧИК'**
+  String get desktopColCustomer;
+
+  /// No description provided for @desktopColDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'ВОДИТЕЛЬ'**
+  String get desktopColDriver;
+
+  /// No description provided for @desktopColCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАПСУЛЫ'**
+  String get desktopColCapsules;
+
+  /// No description provided for @desktopColSum.
+  ///
+  /// In ru, this message translates to:
+  /// **'СУММА'**
+  String get desktopColSum;
+
+  /// No description provided for @desktopColPayment.
+  ///
+  /// In ru, this message translates to:
+  /// **'ОПЛАТА'**
+  String get desktopColPayment;
+
+  /// No description provided for @desktopColStatus.
+  ///
+  /// In ru, this message translates to:
+  /// **'СТАТУС'**
+  String get desktopColStatus;
+
+  /// No description provided for @desktopKpiCollected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Собрано за день'**
+  String get desktopKpiCollected;
+
+  /// No description provided for @desktopKpiDebt.
+  ///
+  /// In ru, this message translates to:
+  /// **'В долг за день'**
+  String get desktopKpiDebt;
+
+  /// No description provided for @desktopKpiCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выдано капсул'**
+  String get desktopKpiCapsules;
+
+  /// No description provided for @desktopKpiPlannedStops.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точек в плане'**
+  String get desktopKpiPlannedStops;
+
+  /// No description provided for @desktopKpiPlannedDrivers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водителей на день'**
+  String get desktopKpiPlannedDrivers;
+
+  /// No description provided for @desktopKpiPlannedCustomers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказчиков в плане'**
+  String get desktopKpiPlannedCustomers;
+
+  /// No description provided for @desktopSummaryDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выполненные доставки'**
+  String get desktopSummaryDone;
+
+  /// No description provided for @desktopSummaryPlanned.
+  ///
+  /// In ru, this message translates to:
+  /// **'Запланировано доставок'**
+  String get desktopSummaryPlanned;
+
+  /// No description provided for @desktopDebtShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'В долг'**
+  String get desktopDebtShort;
+
+  /// No description provided for @desktopDateToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'сегодня'**
+  String get desktopDateToday;
+
+  /// No description provided for @desktopDatePlanned.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count} в плане'**
+  String desktopDatePlanned(int count);
+
+  /// No description provided for @desktopDayEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'На этот день доставок нет'**
+  String get desktopDayEmpty;
+
+  /// No description provided for @desktopDayEmptyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создайте маршрут или выберите другой день'**
+  String get desktopDayEmptyHint;
+
+  /// No description provided for @desktopDebtEstimated.
+  ///
+  /// In ru, this message translates to:
+  /// **'оценка по цене капсулы'**
+  String get desktopDebtEstimated;
+
+  /// No description provided for @routesCountPlural.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} маршрут} few{{count} маршрута} other{{count} маршрутов}}'**
+  String routesCountPlural(int count);
+
+  /// No description provided for @commonClose.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть'**
+  String get commonClose;
+
+  /// No description provided for @desktopDeliveryTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доставка'**
+  String get desktopDeliveryTitle;
+
+  /// No description provided for @desktopFinishRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закончить маршрут'**
+  String get desktopFinishRoute;
+
+  /// No description provided for @desktopMarkDebtPaid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отметить оплату долга'**
+  String get desktopMarkDebtPaid;
+
+  /// No description provided for @desktopFinishedAndPaid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершено и оплачено'**
+  String get desktopFinishedAndPaid;
+
+  /// No description provided for @desktopDriverOnlyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доставку закрывает водитель в своём приложении — отсюда это сделать нельзя.'**
+  String get desktopDriverOnlyHint;
+
+  /// No description provided for @desktopDebtPaidHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока недоступно: отметить оплату долга можно будет позже.'**
+  String get desktopDebtPaidHint;
+
+  /// No description provided for @desktopOnLine.
+  ///
+  /// In ru, this message translates to:
+  /// **'На линии'**
+  String get desktopOnLine;
+
+  /// No description provided for @desktopFree.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свободен'**
+  String get desktopFree;
+
+  /// No description provided for @desktopColAddress.
+  ///
+  /// In ru, this message translates to:
+  /// **'АДРЕС'**
+  String get desktopColAddress;
+
+  /// No description provided for @desktopColBalance.
+  ///
+  /// In ru, this message translates to:
+  /// **'БАЛАНС'**
+  String get desktopColBalance;
+
+  /// No description provided for @desktopColLastOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПОСЛ. ЗАКАЗ'**
+  String get desktopColLastOrder;
+
+  /// No description provided for @desktopColCapsulesShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАПСУЛ'**
+  String get desktopColCapsulesShort;
+
+  /// No description provided for @desktopBalanceDebt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Долг {amount}'**
+  String desktopBalanceDebt(String amount);
+
+  /// No description provided for @desktopBalancePrepaid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аванс {amount}'**
+  String desktopBalancePrepaid(String amount);
+
+  /// No description provided for @desktopSuccessDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Готово'**
+  String get desktopSuccessDone;
+
+  /// No description provided for @desktopWithCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'С кулером'**
+  String get desktopWithCooler;
+
+  /// No description provided for @desktopWithoutCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без кулера'**
+  String get desktopWithoutCooler;
+
+  /// No description provided for @desktopFieldCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Капсулы'**
+  String get desktopFieldCapsules;
+
+  /// No description provided for @desktopFieldSum.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сумма'**
+  String get desktopFieldSum;
+
+  /// No description provided for @desktopFieldStatus.
+  ///
+  /// In ru, this message translates to:
+  /// **'Статус'**
+  String get desktopFieldStatus;
+
+  /// No description provided for @desktopFieldTime.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыта'**
+  String get desktopFieldTime;
+
+  /// No description provided for @desktopFieldAddress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Адрес'**
+  String get desktopFieldAddress;
+
+  /// No description provided for @desktopChartTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выручка по дням'**
+  String get desktopChartTitle;
+
+  /// No description provided for @desktopPrepayments.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предоплаты'**
+  String get desktopPrepayments;
+
+  /// No description provided for @desktopNoDebtors.
+  ///
+  /// In ru, this message translates to:
+  /// **'Должников нет'**
+  String get desktopNoDebtors;
+
+  /// No description provided for @desktopNoPrepayments.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предоплат нет'**
+  String get desktopNoPrepayments;
+
+  /// No description provided for @desktopCapsulesWithCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'У заказчиков с кулером'**
+  String get desktopCapsulesWithCooler;
+
+  /// No description provided for @desktopCapsulesWithoutCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'У остальных'**
+  String get desktopCapsulesWithoutCooler;
+
+  /// No description provided for @desktopFieldCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кулер'**
+  String get desktopFieldCooler;
 }
 
 class _AppLocalizationsDelegate

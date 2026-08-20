@@ -10,6 +10,7 @@ import 'package:crm_millwater/app/theme/theme_cubit.dart';
 import 'package:crm_millwater/data/network/session_storage.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
+import 'package:crm_millwater/features/drivers/presentation/drivers_page.dart';
 import 'package:crm_millwater/features/home/presentation/admin_shell.dart';
 
 void main() {
@@ -87,18 +88,51 @@ void main() {
     await tester.pumpWidget(authedHome());
     await tester.pump(const Duration(milliseconds: 300));
 
-    await tester.tap(find.text('Водители'));
-    await tester.pump(const Duration(milliseconds: 300));
+    // Вкладка строится при первом открытии, а не на старте приложения.
+    // Порядок кадров важен: сначала обычный pump строит вкладку и запускает
+    // её запрос, и только потом сдвигаются часы. Сдвинь их первым — вкладка
+    // построится уже после скачка, и таймер мока не сработает вовсе.
+    Future<void> openTab(String label) async {
+      await tester.tap(find.text(label));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+    }
+
+    await openTab('Водители');
     expect(find.text('Поиск водителя'), findsOneWidget);
     expect(find.text('Азиз Каримов'), findsWidgets);
 
-    await tester.tap(find.text('Заказчики'));
-    await tester.pump(const Duration(milliseconds: 300));
+    await openTab('Заказчики');
     expect(find.text('Поиск заказчика'), findsOneWidget);
 
-    await tester.tap(find.text('Отчёты'));
-    await tester.pump(const Duration(milliseconds: 300));
+    await openTab('Отчёты');
     expect(find.text('Выручка'), findsOneWidget);
     expect(find.text('Доставки'), findsOneWidget);
+  });
+
+  testWidgets('Вкладка не грузится, пока её не открыли',
+      (WidgetTester tester) async {
+    usePhoneSurface(tester);
+    await tester.pumpWidget(authedHome());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Раньше IndexedStack строил все четыре вкладки сразу, и вход админа
+    // поднимал четыре независимые пачки запросов.
+    expect(find.text('Поиск водителя'), findsNothing);
+    expect(find.text('Поиск заказчика'), findsNothing);
+
+    await tester.tap(find.text('Водители'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Поиск водителя'), findsOneWidget);
+
+    // Вернулись на маршруты — соседняя вкладка остаётся построенной, иначе
+    // переход туда-обратно означал бы перезагрузку списка.
+    // `skipOffstage: false` обязателен: IndexedStack держит невидимые вкладки
+    // в дереве, но убирает их со сцены, и обычный поиск их не видит.
+    await tester.tap(find.text('Маршрут'));
+    await tester.pump();
+    expect(find.byType(DriversPage, skipOffstage: false), findsOneWidget);
   });
 }

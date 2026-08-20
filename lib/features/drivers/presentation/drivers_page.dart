@@ -10,6 +10,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
+import '../../../core/widgets/load_more_notifier.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/search_field.dart';
 import '../../../data/repositories/crm_repository.dart';
@@ -57,9 +58,8 @@ class _DriversView extends StatelessWidget {
                     // Под поиском в списке лежат найденные, а не вся команда:
                     // «Команда · 1» на двух набранных буквах — неправда.
                     label: state.query.trim().isEmpty
-                        ? context.l10n.driversHeader(state.drivers.length)
-                        : context.l10n
-                            .driversHeaderFound(state.drivers.length),
+                        ? context.l10n.driversHeader(state.total)
+                        : context.l10n.driversHeaderFound(state.total),
                     title: context.l10n.driversTitle,
                     action: AppButton(
                       label: context.l10n.commonAdd,
@@ -99,7 +99,8 @@ class _DriversView extends StatelessWidget {
                 // всегда — иначе список дёргается на каждую букву в поиске.
                 SizedBox(
                   height: 2,
-                  child: state.status == DriversStatus.loading &&
+                  child:
+                      state.status == DriversStatus.loading &&
                           state.drivers.isNotEmpty
                       ? const LinearProgressIndicator(minHeight: 2)
                       : null,
@@ -178,62 +179,69 @@ class _DriversList extends StatelessWidget {
     }
     return RefreshIndicator(
       onRefresh: () => _refresh(),
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          0,
-          AppSpacing.page,
-          AppSpacing.xl,
-        ),
-        itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-        itemBuilder: (context, i) {
-          final driver = items[i];
-          return DriverCard(
-            driver: driver,
-            onTap: () async {
-              final changed = await Navigator.of(context).push<bool>(
-                OverlayPageRoute(
-                  builder: (_) => DriverDetailPage(driver: driver),
-                ),
-              );
-              if (changed == true) bloc.add(const DriversRequested());
-            },
-            onEdit: () async {
-              final saved = await Navigator.of(context).push<bool>(
-                OverlayPageRoute(
-                  builder: (_) => DriverFormPage(driver: driver),
-                ),
-              );
-              if (saved == true) {
+      child: LoadMoreNotifier(
+        onLoadMore: () => bloc.add(const DriversNextPageRequested()),
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            0,
+            AppSpacing.page,
+            AppSpacing.xl,
+          ),
+          // Лишний элемент в конце — строка догрузки.
+          itemCount: items.length + 1,
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+          itemBuilder: (context, i) {
+            if (i == items.length) {
+              return LoadMoreFooter(loading: state.loadingMore);
+            }
+            final driver = items[i];
+            return DriverCard(
+              driver: driver,
+              onTap: () async {
+                final changed = await Navigator.of(context).push<bool>(
+                  OverlayPageRoute(
+                    builder: (_) => DriverDetailPage(driver: driver),
+                  ),
+                );
+                if (changed == true) bloc.add(const DriversRequested());
+              },
+              onEdit: () async {
+                final saved = await Navigator.of(context).push<bool>(
+                  OverlayPageRoute(
+                    builder: (_) => DriverFormPage(driver: driver),
+                  ),
+                );
+                if (saved == true) {
+                  bloc.add(const DriversRequested());
+                  if (context.mounted) {
+                    showAppSnackBar(context, context.l10n.changesSaved);
+                  }
+                }
+              },
+              onDelete: () async {
+                final confirmed = await showConfirmDialog(
+                  context,
+                  title: context.l10n.driverDeleteTitle,
+                  message: context.l10n.driverDeleteMessage(driver.fullName),
+                );
+                if (!confirmed || !context.mounted) return;
+                final repo = context.read<CrmRepository>();
+                final ok = await runGuarded(
+                  context,
+                  () => repo.deleteDriver(driver.id),
+                  fallback: context.l10n.driverDeleteFailed,
+                );
+                if (!ok) return;
                 bloc.add(const DriversRequested());
                 if (context.mounted) {
-                  showAppSnackBar(context, context.l10n.changesSaved);
+                  showAppSnackBar(context, context.l10n.driverDeleted);
                 }
-              }
-            },
-            onDelete: () async {
-              final confirmed = await showConfirmDialog(
-                context,
-                title: context.l10n.driverDeleteTitle,
-                message: context.l10n.driverDeleteMessage(driver.fullName),
-              );
-              if (!confirmed || !context.mounted) return;
-              final repo = context.read<CrmRepository>();
-              final ok = await runGuarded(
-                context,
-                () => repo.deleteDriver(driver.id),
-                fallback: context.l10n.driverDeleteFailed,
-              );
-              if (!ok) return;
-              bloc.add(const DriversRequested());
-              if (context.mounted) {
-                showAppSnackBar(context, context.l10n.driverDeleted);
-              }
-            },
-          );
-        },
+              },
+            );
+          },
+        ),
       ),
     );
   }

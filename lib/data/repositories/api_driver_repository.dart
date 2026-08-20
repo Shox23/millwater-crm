@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../core/utils/money_parser.dart';
 import '../models/enums.dart';
+import '../models/json.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
 import 'driver_repository.dart';
@@ -19,10 +20,9 @@ class ApiDriverRepository implements DriverRepository {
   @override
   Future<List<RouteListItem>> getMyRoutes() async {
     final res = await _dio.get('/driver/routes');
-    final list = unwrapData(res.data) as List;
-    return list
-        .map((e) => RouteListItem.fromJson((e as Map).cast<String, dynamic>()))
-        .toList();
+    // Маршрут, который не разобрался, пропускается — остальные водитель
+    // должен увидеть. См. `parseList`.
+    return parseList(unwrapData(res.data), RouteListItem.fromJson);
   }
 
   @override

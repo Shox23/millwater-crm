@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/utils/money_parser.dart';
+import 'json.dart';
 
 /// Заказчик. Соответствует CustomerResponse из Water CRM API.
 ///
@@ -80,21 +81,22 @@ class Customer extends Equatable {
     );
   }
 
+  /// Разбор терпим к неожиданным типам — см. `json.dart`. Обязателен только
+  /// `id`: без него запись не открыть, не изменить и не удалить, и `parseList`
+  /// пропустит её, не роняя остальную страницу.
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
-        id: json['id'] as String,
-        name: json['full_name'] as String,
-        phone: json['phone'] as String,
-        address: json['address'] as String,
-        comment: json['comment'] as String?,
-        capsuleBalance: json['bottle_balance'] as int? ?? 0,
+        id: requireString(json['id'], 'id'),
+        name: stringOr(json['full_name']),
+        phone: stringOr(json['phone']),
+        address: stringOr(json['address']),
+        comment: optionalString(json['comment']),
+        capsuleBalance: intOr(json['bottle_balance']),
         prepayment: MoneyParser.toSum(json['prepayment']),
         debt: MoneyParser.toSum(json['debt']),
-        lastOrderDate: json['last_order_date'] == null
-            ? null
-            : DateTime.parse(json['last_order_date'] as String),
-        isActive: json['is_active'] as bool? ?? true,
-        hasCooler: json['has_cooler'] as bool? ?? false,
-        createdAt: DateTime.parse(json['created_at'] as String),
+        lastOrderDate: optionalDate(json['last_order_date']),
+        isActive: boolOr(json['is_active'], true),
+        hasCooler: boolOr(json['has_cooler']),
+        createdAt: dateOr(json['created_at'], epoch),
       );
 
   /// Тело для PATCH /admin/customers/{id} (частичное обновление).

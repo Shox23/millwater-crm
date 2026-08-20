@@ -182,7 +182,7 @@ void main() {
       // Денежного показателя у водителя нет — сводный отчёт ему недоступен.
       expect(find.text('Собрано сегодня'), findsNothing);
       // Карточка маршрута вместо водителя показывает число точек.
-      expect(find.text('3 точек'), findsOneWidget);
+      expect(find.text('3 точки'), findsOneWidget);
     });
 
     testWidgets('без маршрутов объясняет, что делать', (tester) async {
@@ -231,7 +231,7 @@ void main() {
         MockDriverRepository(driverId: 'd1'),
         const MyRoutesPage(),
       );
-      expect(find.text('3 точек'), findsOneWidget);
+      expect(find.text('3 точки'), findsOneWidget);
 
       // Повторный запрос: список остаётся на месте, а «запрос в пути»
       // показывает тонкая полоска. Раньше здесь всё стирал спиннер, и
@@ -244,7 +244,7 @@ void main() {
 
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(refreshBar, findsOneWidget);
-      expect(find.text('3 точек'), findsOneWidget);
+      expect(find.text('3 точки'), findsOneWidget);
 
       await settle(tester);
       expect(refreshBar, findsNothing);
@@ -257,7 +257,7 @@ void main() {
         const MyRoutesPage(),
       );
       // Единственный маршрут d1 — «В пути».
-      expect(find.text('3 точек'), findsOneWidget);
+      expect(find.text('3 точки'), findsOneWidget);
 
       await tester.tap(find.text('Завершены'));
       await settle(tester);

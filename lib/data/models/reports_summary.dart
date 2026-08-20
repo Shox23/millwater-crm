@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/utils/money_parser.dart';
+import 'json.dart';
 import 'customer.dart';
 
 /// Сводка отчёта ровно в том виде, в каком её отдаёт сервер
@@ -29,9 +30,9 @@ class SummaryReport extends Equatable {
   final int totalDebt;
 
   factory SummaryReport.fromJson(Map<String, dynamic> json) => SummaryReport(
-        routesCount: json['routes_count'] as int? ?? 0,
-        completedDeliveries: json['completed_deliveries_count'] as int? ?? 0,
-        failedDeliveries: json['failed_deliveries_count'] as int? ?? 0,
+        routesCount: intOr(json['routes_count']),
+        completedDeliveries: intOr(json['completed_deliveries_count']),
+        failedDeliveries: intOr(json['failed_deliveries_count']),
         totalRevenue: MoneyParser.toSum(json['total_revenue']),
         totalDebt: MoneyParser.toSum(json['total_debt']),
       );

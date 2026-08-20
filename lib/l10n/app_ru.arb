@@ -37,7 +37,7 @@
   },
   "leaveWithoutSavingTitle": "Выйти без сохранения?",
   "leaveWithoutSavingMessage": "Введённые данные будут потеряны.",
-  "errorGeneric": "Ошибка запроса.",
+  "errorGeneric": "Не удалось выполнить действие. Попробуйте ещё раз.",
   "errorNoConnection": "Нет связи с сервером.",
   "errorLoadFailed": "Не удалось загрузить данные",
   "errorCheckConnection": "Проверьте подключение и попробуйте ещё раз",
@@ -53,7 +53,7 @@
   "emptySearchAction": "Сбросить поиск",
   "fieldRequired": "Заполните поле",
   "fieldPhoneEmpty": "Введите номер телефона",
-  "fieldPhoneIncomplete": "Номер неполный — нужно {count} цифр после +998",
+  "fieldPhoneIncomplete": "Номер неполный — нужно {count, plural, one{{count} цифра} few{{count} цифры} other{{count} цифр}} после +998",
   "@fieldPhoneIncomplete": {
     "placeholders": {
       "count": {
@@ -64,7 +64,7 @@
   "fieldEmailInvalid": "Неверный формат почты",
   "fieldEmailEmpty": "Введите электронную почту",
   "fieldPasswordEmpty": "Введите пароль",
-  "fieldMinLength": "Минимум {count} символов",
+  "fieldMinLength": "Минимум {count, plural, one{{count} символ} few{{count} символа} other{{count} символов}}",
   "@fieldMinLength": {
     "placeholders": {
       "count": {
@@ -72,7 +72,7 @@
       }
     }
   },
-  "fieldMaxLength": "Не более {count} символов",
+  "fieldMaxLength": "Не более {count, plural, one{{count} символа} few{{count} символов} other{{count} символов}}",
   "@fieldMaxLength": {
     "placeholders": {
       "count": {
@@ -82,16 +82,59 @@
   },
   "fieldShowPassword": "Показать пароль",
   "fieldHidePassword": "Скрыть пароль",
+  "validationGeneric": "Проверьте правильность заполнения",
+  "validationRequired": "Заполните поле «{field}»",
+  "@validationRequired": {
+    "placeholders": { "field": { "type": "String" } }
+  },
+  "validationTooShort": "Слишком короткое значение в поле «{field}»",
+  "@validationTooShort": {
+    "placeholders": { "field": { "type": "String" } }
+  },
+  "validationTooLong": "Слишком длинное значение в поле «{field}»",
+  "@validationTooLong": {
+    "placeholders": { "field": { "type": "String" } }
+  },
+  "validationNotNumber": "В поле «{field}» нужно число",
+  "@validationNotNumber": {
+    "placeholders": { "field": { "type": "String" } }
+  },
+  "validationOutOfRange": "Значение в поле «{field}» вне допустимых границ",
+  "@validationOutOfRange": {
+    "placeholders": { "field": { "type": "String" } }
+  },
+  "validationBadFormat": "Неверный формат в поле «{field}»",
+  "@validationBadFormat": {
+    "placeholders": { "field": { "type": "String" } }
+  },
+  "apiFieldFullName": "Имя или название",
+  "apiFieldPhone": "Телефон",
+  "apiFieldAddress": "Адрес",
+  "apiFieldComment": "Комментарий",
+  "apiFieldPassword": "Пароль",
+  "apiFieldOldPassword": "Текущий пароль",
+  "apiFieldNewPassword": "Новый пароль",
+  "apiFieldDate": "Дата",
+  "apiFieldDriver": "Водитель",
+  "apiFieldCustomers": "Заказчики",
+  "apiFieldCapsules": "Количество капсул",
+  "apiFieldAmount": "Сумма оплаты",
+  "apiFieldPaymentMethod": "Способ оплаты",
+  "apiFieldBalance": "Остаток капсул",
+  "apiFieldPrice": "Цена капсулы",
+  "apiFieldDeposit": "Залог за тару",
   "phoneCallUnavailable": "Звонок недоступен — номер скопирован",
   "phoneCopied": "Номер скопирован",
   "phoneCopy": "Скопировать номер",
+  "fieldCopy": "Скопировать",
+  "fieldCopied": "Скопировано",
   "photoTitle": "Фото оплаты",
   "photoSubtitle": "Прикрепите чек или фото доставки",
   "photoError": "Не удалось получить фото. Проверьте доступ.",
   "photoRemove": "Убрать фото",
   "photoCamera": "Камера",
   "photoGallery": "Галерея",
-  "photoSize": " · {size} КБ",
+  "photoSize": "{size} КБ",
   "@photoSize": {
     "placeholders": {
       "size": {
@@ -126,7 +169,7 @@
   "roleDriver": "Водитель",
   "deliveryPending": "Новый",
   "deliveryOnWay": "В пути",
-  "deliveryDelivered": "Доставлен",
+  "deliveryDelivered": "Доставлено",
   "deliveryFailed": "Не доставлено",
   "deliveryPaid": "Оплачено",
   "routeCreated": "Создан",
@@ -204,7 +247,7 @@
   "routeStatDone": "ВЫПОЛНЕНО",
   "routeStatCollected": "СОБРАНО",
   "routeStops": "ТОЧКИ МАРШРУТА",
-  "routeStopsCount": "{count} точек",
+  "routeStopsCount": "{count, plural, one{{count} точка} few{{count} точки} other{{count} точек}}",
   "@routeStopsCount": {
     "placeholders": {
       "count": {
@@ -216,7 +259,7 @@
   "routeProgressTitle": "Выполнено доставок",
   "routeCollectedToday": "Собрано сегодня",
   "routeCollected": "Собрано",
-  "stopCapsules": "{count} капсул",
+  "stopCapsules": "{count, plural, one{{count} капсула} few{{count} капсулы} other{{count} капсул}}",
   "@stopCapsules": {
     "placeholders": {
       "count": {
@@ -305,14 +348,14 @@
   "driverTripsTotal": "всего поездок",
   "driverTripsToday": "поездок сегодня",
   "driverCreatedAt": "Дата создания",
-  "driverTripsAndToday": "  ·  сегодня ",
+  "driverTripsAndToday": "сегодня",
   "driverFormEditTitle": "Редактирование водителя",
   "driverFormNewTitle": "Новый водитель",
   "driverFormName": "Имя водителя",
   "driverFormNameHint": "Например, Азиз Каримов",
   "driverFormNameEmpty": "Введите имя водителя",
   "driverFormPassword": "Пароль для входа",
-  "driverFormPasswordHelper": "Стартовый пароль — водитель сменит его в настройках",
+  "driverFormPasswordHelper": "Передайте пароль водителю — восстановить его потом нельзя",
   "driverFormSaveFailed": "Не удалось сохранить водителя.",
   "minSixChars": "Минимум 6 символов",
   "customersTitle": "Заказчики",
@@ -393,7 +436,7 @@
   "completionTitle": "Завершение доставки",
   "completionCoordinates": "КООРДИНАТЫ ТОЧКИ",
   "completionCapsules": "КОЛИЧЕСТВО КАПСУЛ",
-  "completionCapsulesCaption": "капсул {liters}л",
+  "completionCapsulesCaption": "капсул {liters} л",
   "@completionCapsulesCaption": {
     "placeholders": {
       "liters": {
@@ -431,7 +474,7 @@
   "locationUnknown": "Не удалось определить координаты.",
   "profileTitle": "Профиль",
   "profileAccountLabel": "Аккаунт",
-  "profileAccountSection": "УЧЁТНАЯ ЗАПИСЬ",
+  "profileAccountSection": "АККАУНТ",
   "settingsAppearance": "ОФОРМЛЕНИЕ",
   "settingsAccount": "АККАУНТ",
   "settingsSessionActive": "Сессия активна",
@@ -523,7 +566,7 @@
   "reportsDeliveries": "Доставки",
   "reportsDebts": "Долги",
   "reportsCapsules": "Капсулы у клиентов",
-  "reportsCapsulesCount": "{count} шт",
+  "reportsCapsulesCount": "{count} шт.",
   "@reportsCapsulesCount": {
     "placeholders": {
       "count": {
@@ -555,5 +598,129 @@
         "type": "int"
       }
     }
-  }
+  },
+  "desktopBrandSubtitle": "Доставка воды",
+  "desktopNavGroup": "РАБОТА",
+  "desktopOnLineTitle": "СЕГОДНЯ НА ЛИНИИ",
+  "desktopOnLineOf": "из {count, plural, one{{count} водителя} other{{count} водителей}}",
+  "@desktopOnLineOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopSearchHint": "Поиск",
+  "desktopNotifications": "Уведомления",
+  "desktopAddDriver": "Водитель",
+  "desktopAddCustomer": "Заказчик",
+  "desktopRoutesSubtitle": "{date} · {count} в работе",
+  "@desktopRoutesSubtitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopDriverStubTitle": "Это рабочее место администратора",
+  "desktopDriverStubHint": "Маршруты и доставки открываются в мобильном приложении — зайдите с телефона.",
+  "driversCount": "{count, plural, one{{count} водитель} few{{count} водителя} other{{count} водителей}}",
+  "@driversCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customersCount": "{count, plural, one{{count} заказчик} few{{count} заказчика} other{{count} заказчиков}}",
+  "@customersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filterDelivered": "Доставлены",
+  "desktopColCustomer": "ЗАКАЗЧИК",
+  "desktopColDriver": "ВОДИТЕЛЬ",
+  "desktopColCapsules": "КАПСУЛЫ",
+  "desktopColSum": "СУММА",
+  "desktopColPayment": "ОПЛАТА",
+  "desktopColStatus": "СТАТУС",
+  "desktopKpiCollected": "Собрано за день",
+  "desktopKpiDebt": "В долг за день",
+  "desktopKpiCapsules": "Выдано капсул",
+  "desktopKpiPlannedStops": "Точек в плане",
+  "desktopKpiPlannedDrivers": "Водителей на день",
+  "desktopKpiPlannedCustomers": "Заказчиков в плане",
+  "desktopSummaryDone": "Выполненные доставки",
+  "desktopSummaryPlanned": "Запланировано доставок",
+  "desktopDebtShort": "В долг",
+  "desktopDateToday": "сегодня",
+  "desktopDatePlanned": "{count} в плане",
+  "@desktopDatePlanned": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopDayEmpty": "На этот день доставок нет",
+  "desktopDayEmptyHint": "Создайте маршрут или выберите другой день",
+  "desktopDebtEstimated": "оценка по цене капсулы",
+  "routesCountPlural": "{count, plural, one{{count} маршрут} few{{count} маршрута} other{{count} маршрутов}}",
+  "@routesCountPlural": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonClose": "Закрыть",
+  "desktopDeliveryTitle": "Доставка",
+  "desktopFinishRoute": "Закончить маршрут",
+  "desktopMarkDebtPaid": "Отметить оплату долга",
+  "desktopFinishedAndPaid": "Завершено и оплачено",
+  "desktopDriverOnlyHint": "Доставку закрывает водитель в своём приложении — отсюда это сделать нельзя.",
+  "desktopDebtPaidHint": "Пока недоступно: отметить оплату долга можно будет позже.",
+  "desktopOnLine": "На линии",
+  "desktopFree": "Свободен",
+  "desktopColAddress": "АДРЕС",
+  "desktopColBalance": "БАЛАНС",
+  "desktopColLastOrder": "ПОСЛ. ЗАКАЗ",
+  "desktopColCapsulesShort": "КАПСУЛ",
+  "desktopBalanceDebt": "Долг {amount}",
+  "@desktopBalanceDebt": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopBalancePrepaid": "Аванс {amount}",
+  "@desktopBalancePrepaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopSuccessDone": "Готово",
+  "desktopWithCooler": "С кулером",
+  "desktopWithoutCooler": "Без кулера",
+  "desktopFieldCapsules": "Капсулы",
+  "desktopFieldSum": "Сумма",
+  "desktopFieldStatus": "Статус",
+  "desktopFieldTime": "Закрыта",
+  "desktopFieldAddress": "Адрес",
+  "desktopChartTitle": "Выручка по дням",
+  "desktopPrepayments": "Предоплаты",
+  "desktopNoDebtors": "Должников нет",
+  "desktopNoPrepayments": "Предоплат нет",
+  "desktopCapsulesWithCooler": "У заказчиков с кулером",
+  "desktopCapsulesWithoutCooler": "У остальных",
+  "desktopFieldCooler": "Кулер"
 }

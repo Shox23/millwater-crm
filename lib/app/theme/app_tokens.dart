@@ -27,6 +27,13 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.warnBg,
     required this.cardShadow,
     required this.isDark,
+    required this.sidebar,
+    required this.overlay,
+    required this.primarySoft,
+    required this.primaryLine,
+    required this.hoverShadow,
+    required this.drawerShadow,
+    required this.modalShadow,
   });
 
   // Поверхности и текст
@@ -39,11 +46,24 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color text2;
   final Color text3;
 
+  /// Фон боковой панели. Отличается от [surface] только в тёмной теме —
+  /// на светлой сайдбар и карточки одинаково белые.
+  final Color sidebar;
+
+  /// Затемнение под drawer и модалками.
+  final Color overlay;
+
   // Акценты
   final Color primary;
 
   /// Акцент, затемнённый на 18% — для градиентов и нажатых состояний.
   final Color primary2;
+
+  /// Акцент под текстом и иконками: подложка активного пункта, плиток, чипов.
+  final Color primarySoft;
+
+  /// Акцент для теней и обводок акцентных элементов.
+  final Color primaryLine;
 
   /// Вторичный «водный» акцент: вода, капсулы.
   final Color aqua;
@@ -57,6 +77,14 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color warnBg;
 
   final List<BoxShadow> cardShadow;
+
+  /// Подъём карточки под курсором. Мышь есть только на десктопе, поэтому
+  /// на мобильных экранах тень не используется.
+  final List<BoxShadow> hoverShadow;
+
+  final List<BoxShadow> drawerShadow;
+  final List<BoxShadow> modalShadow;
+
   final bool isDark;
 
   /// Мягкая подложка под цвет статуса (10–15% прозрачности).
@@ -98,6 +126,34 @@ class AppTokens extends ThemeExtension<AppTokens> {
       ),
     ],
     isDark: false,
+    // На светлой теме сайдбар и карточки одинаково белые.
+    sidebar: Color(0xFFFFFFFF),
+    overlay: Color(0x590F2A43),
+    primarySoft: Color(0x1A2A6FDB),
+    primaryLine: Color(0x662A6FDB),
+    hoverShadow: [
+      BoxShadow(
+        color: Color(0x241F446E),
+        blurRadius: 40,
+        offset: Offset(0, 16),
+      ),
+    ],
+    drawerShadow: [
+      BoxShadow(
+        color: Color(0x4D0F2A43),
+        blurRadius: 60,
+        spreadRadius: -20,
+        offset: Offset(-24, 0),
+      ),
+    ],
+    modalShadow: [
+      BoxShadow(
+        color: Color(0x800F2A43),
+        blurRadius: 90,
+        spreadRadius: -30,
+        offset: Offset(0, 40),
+      ),
+    ],
   );
 
   static const dark = AppTokens(
@@ -126,6 +182,61 @@ class AppTokens extends ThemeExtension<AppTokens> {
       ),
     ],
     isDark: true,
+    sidebar: Color(0xFF0D1926),
+    overlay: Color(0x9E04090E),
+    primarySoft: Color(0x382A6FDB),
+    primaryLine: Color(0x802A6FDB),
+    // На тёмном фоне синеватая тень не читается — все три от чёрного.
+    hoverShadow: [
+      BoxShadow(
+        color: Color(0x73000000),
+        blurRadius: 40,
+        offset: Offset(0, 16),
+      ),
+    ],
+    drawerShadow: [
+      BoxShadow(
+        color: Color(0x99000000),
+        blurRadius: 60,
+        spreadRadius: -20,
+        offset: Offset(-24, 0),
+      ),
+    ],
+    modalShadow: [
+      BoxShadow(
+        color: Color(0xB3000000),
+        blurRadius: 90,
+        spreadRadius: -30,
+        offset: Offset(0, 40),
+      ),
+    ],
+  );
+
+  /// Набор для десктопа: те же поверхности, но акценты тёмной темы ярче.
+  ///
+  /// Отдельный набор, а не правка [dark], потому что мобильная версия
+  /// согласована и остаётся как есть. Подключается только под десктопной
+  /// оболочкой — см. `DesktopTheme`.
+  static final lightDesktop = light;
+
+  /// На тёмном десктопе статусные цвета мобильной палитры глохнут: экран
+  /// большой, а пилюли мелкие. Значения из десктопной спеки.
+  static final darkDesktop = dark.copyWith(
+    aqua: const Color(0xFF3DD0E6),
+    success: const Color(0xFF43D08F),
+    successBg: const Color(0x2643D08F),
+    danger: const Color(0xFFFF787B),
+    dangerBg: const Color(0x26FF787B),
+    warn: const Color(0xFFF0A742),
+    warnBg: const Color(0x29F0A742),
+    // Карточек на экране десятки — тяжёлая мобильная тень их бы залила.
+    cardShadow: const [
+      BoxShadow(
+        color: Color(0x59000000),
+        blurRadius: 14,
+        offset: Offset(0, 4),
+      ),
+    ],
   );
 
   @override
@@ -149,6 +260,13 @@ class AppTokens extends ThemeExtension<AppTokens> {
     Color? warnBg,
     List<BoxShadow>? cardShadow,
     bool? isDark,
+    Color? sidebar,
+    Color? overlay,
+    Color? primarySoft,
+    Color? primaryLine,
+    List<BoxShadow>? hoverShadow,
+    List<BoxShadow>? drawerShadow,
+    List<BoxShadow>? modalShadow,
   }) {
     return AppTokens(
       bg: bg ?? this.bg,
@@ -170,6 +288,13 @@ class AppTokens extends ThemeExtension<AppTokens> {
       warnBg: warnBg ?? this.warnBg,
       cardShadow: cardShadow ?? this.cardShadow,
       isDark: isDark ?? this.isDark,
+      sidebar: sidebar ?? this.sidebar,
+      overlay: overlay ?? this.overlay,
+      primarySoft: primarySoft ?? this.primarySoft,
+      primaryLine: primaryLine ?? this.primaryLine,
+      hoverShadow: hoverShadow ?? this.hoverShadow,
+      drawerShadow: drawerShadow ?? this.drawerShadow,
+      modalShadow: modalShadow ?? this.modalShadow,
     );
   }
 
@@ -196,6 +321,13 @@ class AppTokens extends ThemeExtension<AppTokens> {
       warnBg: Color.lerp(warnBg, other.warnBg, t)!,
       cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, t)!,
       isDark: t < 0.5 ? isDark : other.isDark,
+      sidebar: Color.lerp(sidebar, other.sidebar, t)!,
+      overlay: Color.lerp(overlay, other.overlay, t)!,
+      primarySoft: Color.lerp(primarySoft, other.primarySoft, t)!,
+      primaryLine: Color.lerp(primaryLine, other.primaryLine, t)!,
+      hoverShadow: BoxShadow.lerpList(hoverShadow, other.hoverShadow, t)!,
+      drawerShadow: BoxShadow.lerpList(drawerShadow, other.drawerShadow, t)!,
+      modalShadow: BoxShadow.lerpList(modalShadow, other.modalShadow, t)!,
     );
   }
 

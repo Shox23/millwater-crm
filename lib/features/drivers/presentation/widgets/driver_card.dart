@@ -59,7 +59,12 @@ class DriverCard extends StatelessWidget {
                     children: [
                       TextSpan(
                           text: context.l10n.tripsCount(driver.tripCount)),
+                      // Разделитель принадлежит вёрстке, а не переводу:
+                      // раньше эти пробелы стояли внутри строки локали, и
+                      // первый же переводчик, не видящий экрана, стёр бы их.
+                      const TextSpan(text: '  ·  '),
                       TextSpan(text: context.l10n.driverTripsAndToday),
+                      const TextSpan(text: ' '),
                       TextSpan(
                         text: '${driver.todayTripCount}',
                         style: TextStyle(

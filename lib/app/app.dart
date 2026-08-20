@@ -15,9 +15,12 @@ import '../data/repositories/driver_repository.dart';
 import '../data/repositories/notifications_repository.dart';
 import '../features/auth/bloc/auth_bloc.dart';
 import '../features/auth/presentation/login_page.dart';
+import '../features/desktop/presentation/desktop_shell.dart';
+import '../features/desktop/presentation/driver_desktop_stub.dart';
 import '../features/driver/presentation/driver_shell.dart';
 import '../features/home/presentation/admin_shell.dart';
 import 'locale_cubit.dart';
+import 'responsive.dart';
 import 'settings/settings_storage.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_cubit.dart';
@@ -140,9 +143,29 @@ class _CrmAppState extends State<CrmApp> {
     if (state.status == AuthStatus.restoring) return const _RestoringPage();
     if (!state.isAuthenticated) return const LoginPage();
 
-    return switch (state.role!) {
-      UserRole.admin => const AdminShell(),
-      UserRole.driver => const DriverShell(),
+    return _RoleRoot(role: state.role!);
+  }
+}
+
+/// Оболочка по роли и ширине окна.
+///
+/// Ширину читает отдельный виджет, а не `_CrmAppState`: `MediaQuery` должен
+/// браться из-под `MaterialApp`, иначе на смену размера окна дерево не
+/// перестроится.
+class _RoleRoot extends StatelessWidget {
+  const _RoleRoot({required this.role});
+
+  final UserRole role;
+
+  @override
+  Widget build(BuildContext context) {
+    final wide = context.isDesktopWidth;
+
+    return switch (role) {
+      // Десктоп — рабочее место администратора; водителю на широком экране
+      // показываем, где его инструменты, а не растянутые карточки.
+      UserRole.admin => wide ? const DesktopShell() : const AdminShell(),
+      UserRole.driver => wide ? const DriverDesktopStub() : const DriverShell(),
     };
   }
 }

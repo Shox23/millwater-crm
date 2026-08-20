@@ -82,7 +82,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get leaveWithoutSavingMessage => 'Введённые данные будут потеряны.';
 
   @override
-  String get errorGeneric => 'Ошибка запроса.';
+  String get errorGeneric =>
+      'Не удалось выполнить действие. Попробуйте ещё раз.';
 
   @override
   String get errorNoConnection => 'Нет связи с сервером.';
@@ -113,7 +114,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String fieldPhoneIncomplete(int count) {
-    return 'Номер неполный — нужно $count цифр после +998';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count цифр',
+      few: '$count цифры',
+      one: '$count цифра',
+    );
+    return 'Номер неполный — нужно $_temp0 после +998';
   }
 
   @override
@@ -127,12 +135,26 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String fieldMinLength(int count) {
-    return 'Минимум $count символов';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count символов',
+      few: '$count символа',
+      one: '$count символ',
+    );
+    return 'Минимум $_temp0';
   }
 
   @override
   String fieldMaxLength(int count) {
-    return 'Не более $count символов';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count символов',
+      few: '$count символов',
+      one: '$count символа',
+    );
+    return 'Не более $_temp0';
   }
 
   @override
@@ -142,6 +164,87 @@ class AppLocalizationsRu extends AppLocalizations {
   String get fieldHidePassword => 'Скрыть пароль';
 
   @override
+  String get validationGeneric => 'Проверьте правильность заполнения';
+
+  @override
+  String validationRequired(String field) {
+    return 'Заполните поле «$field»';
+  }
+
+  @override
+  String validationTooShort(String field) {
+    return 'Слишком короткое значение в поле «$field»';
+  }
+
+  @override
+  String validationTooLong(String field) {
+    return 'Слишком длинное значение в поле «$field»';
+  }
+
+  @override
+  String validationNotNumber(String field) {
+    return 'В поле «$field» нужно число';
+  }
+
+  @override
+  String validationOutOfRange(String field) {
+    return 'Значение в поле «$field» вне допустимых границ';
+  }
+
+  @override
+  String validationBadFormat(String field) {
+    return 'Неверный формат в поле «$field»';
+  }
+
+  @override
+  String get apiFieldFullName => 'Имя или название';
+
+  @override
+  String get apiFieldPhone => 'Телефон';
+
+  @override
+  String get apiFieldAddress => 'Адрес';
+
+  @override
+  String get apiFieldComment => 'Комментарий';
+
+  @override
+  String get apiFieldPassword => 'Пароль';
+
+  @override
+  String get apiFieldOldPassword => 'Текущий пароль';
+
+  @override
+  String get apiFieldNewPassword => 'Новый пароль';
+
+  @override
+  String get apiFieldDate => 'Дата';
+
+  @override
+  String get apiFieldDriver => 'Водитель';
+
+  @override
+  String get apiFieldCustomers => 'Заказчики';
+
+  @override
+  String get apiFieldCapsules => 'Количество капсул';
+
+  @override
+  String get apiFieldAmount => 'Сумма оплаты';
+
+  @override
+  String get apiFieldPaymentMethod => 'Способ оплаты';
+
+  @override
+  String get apiFieldBalance => 'Остаток капсул';
+
+  @override
+  String get apiFieldPrice => 'Цена капсулы';
+
+  @override
+  String get apiFieldDeposit => 'Залог за тару';
+
+  @override
   String get phoneCallUnavailable => 'Звонок недоступен — номер скопирован';
 
   @override
@@ -149,6 +252,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get phoneCopy => 'Скопировать номер';
+
+  @override
+  String get fieldCopy => 'Скопировать';
+
+  @override
+  String get fieldCopied => 'Скопировано';
 
   @override
   String get photoTitle => 'Фото оплаты';
@@ -170,7 +279,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String photoSize(int size) {
-    return ' · $size КБ';
+    return '$size КБ';
   }
 
   @override
@@ -217,7 +326,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deliveryOnWay => 'В пути';
 
   @override
-  String get deliveryDelivered => 'Доставлен';
+  String get deliveryDelivered => 'Доставлено';
 
   @override
   String get deliveryFailed => 'Не доставлено';
@@ -395,7 +504,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String routeStopsCount(int count) {
-    return '$count точек';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count точек',
+      few: '$count точки',
+      one: '$count точка',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -412,7 +528,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String stopCapsules(int count) {
-    return '$count капсул';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count капсул',
+      few: '$count капсулы',
+      one: '$count капсула',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -568,7 +691,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get driverCreatedAt => 'Дата создания';
 
   @override
-  String get driverTripsAndToday => '  ·  сегодня ';
+  String get driverTripsAndToday => 'сегодня';
 
   @override
   String get driverFormEditTitle => 'Редактирование водителя';
@@ -590,7 +713,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get driverFormPasswordHelper =>
-      'Стартовый пароль — водитель сменит его в настройках';
+      'Передайте пароль водителю — восстановить его потом нельзя';
 
   @override
   String get driverFormSaveFailed => 'Не удалось сохранить водителя.';
@@ -741,7 +864,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String completionCapsulesCaption(int liters) {
-    return 'капсул $litersл';
+    return 'капсул $liters л';
   }
 
   @override
@@ -821,7 +944,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileAccountLabel => 'Аккаунт';
 
   @override
-  String get profileAccountSection => 'УЧЁТНАЯ ЗАПИСЬ';
+  String get profileAccountSection => 'АККАУНТ';
 
   @override
   String get settingsAppearance => 'ОФОРМЛЕНИЕ';
@@ -995,7 +1118,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String reportsCapsulesCount(int count) {
-    return '$count шт';
+    return '$count шт.';
   }
 
   @override
@@ -1036,4 +1159,245 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get desktopBrandSubtitle => 'Доставка воды';
+
+  @override
+  String get desktopNavGroup => 'РАБОТА';
+
+  @override
+  String get desktopOnLineTitle => 'СЕГОДНЯ НА ЛИНИИ';
+
+  @override
+  String desktopOnLineOf(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count водителей',
+      one: '$count водителя',
+    );
+    return 'из $_temp0';
+  }
+
+  @override
+  String get desktopSearchHint => 'Поиск';
+
+  @override
+  String get desktopNotifications => 'Уведомления';
+
+  @override
+  String get desktopAddDriver => 'Водитель';
+
+  @override
+  String get desktopAddCustomer => 'Заказчик';
+
+  @override
+  String desktopRoutesSubtitle(String date, int count) {
+    return '$date · $count в работе';
+  }
+
+  @override
+  String get desktopDriverStubTitle => 'Это рабочее место администратора';
+
+  @override
+  String get desktopDriverStubHint =>
+      'Маршруты и доставки открываются в мобильном приложении — зайдите с телефона.';
+
+  @override
+  String driversCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count водителей',
+      few: '$count водителя',
+      one: '$count водитель',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String customersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count заказчиков',
+      few: '$count заказчика',
+      one: '$count заказчик',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get filterDelivered => 'Доставлены';
+
+  @override
+  String get desktopColCustomer => 'ЗАКАЗЧИК';
+
+  @override
+  String get desktopColDriver => 'ВОДИТЕЛЬ';
+
+  @override
+  String get desktopColCapsules => 'КАПСУЛЫ';
+
+  @override
+  String get desktopColSum => 'СУММА';
+
+  @override
+  String get desktopColPayment => 'ОПЛАТА';
+
+  @override
+  String get desktopColStatus => 'СТАТУС';
+
+  @override
+  String get desktopKpiCollected => 'Собрано за день';
+
+  @override
+  String get desktopKpiDebt => 'В долг за день';
+
+  @override
+  String get desktopKpiCapsules => 'Выдано капсул';
+
+  @override
+  String get desktopKpiPlannedStops => 'Точек в плане';
+
+  @override
+  String get desktopKpiPlannedDrivers => 'Водителей на день';
+
+  @override
+  String get desktopKpiPlannedCustomers => 'Заказчиков в плане';
+
+  @override
+  String get desktopSummaryDone => 'Выполненные доставки';
+
+  @override
+  String get desktopSummaryPlanned => 'Запланировано доставок';
+
+  @override
+  String get desktopDebtShort => 'В долг';
+
+  @override
+  String get desktopDateToday => 'сегодня';
+
+  @override
+  String desktopDatePlanned(int count) {
+    return '$count в плане';
+  }
+
+  @override
+  String get desktopDayEmpty => 'На этот день доставок нет';
+
+  @override
+  String get desktopDayEmptyHint => 'Создайте маршрут или выберите другой день';
+
+  @override
+  String get desktopDebtEstimated => 'оценка по цене капсулы';
+
+  @override
+  String routesCountPlural(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count маршрутов',
+      few: '$count маршрута',
+      one: '$count маршрут',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commonClose => 'Закрыть';
+
+  @override
+  String get desktopDeliveryTitle => 'Доставка';
+
+  @override
+  String get desktopFinishRoute => 'Закончить маршрут';
+
+  @override
+  String get desktopMarkDebtPaid => 'Отметить оплату долга';
+
+  @override
+  String get desktopFinishedAndPaid => 'Завершено и оплачено';
+
+  @override
+  String get desktopDriverOnlyHint =>
+      'Доставку закрывает водитель в своём приложении — отсюда это сделать нельзя.';
+
+  @override
+  String get desktopDebtPaidHint =>
+      'Пока недоступно: отметить оплату долга можно будет позже.';
+
+  @override
+  String get desktopOnLine => 'На линии';
+
+  @override
+  String get desktopFree => 'Свободен';
+
+  @override
+  String get desktopColAddress => 'АДРЕС';
+
+  @override
+  String get desktopColBalance => 'БАЛАНС';
+
+  @override
+  String get desktopColLastOrder => 'ПОСЛ. ЗАКАЗ';
+
+  @override
+  String get desktopColCapsulesShort => 'КАПСУЛ';
+
+  @override
+  String desktopBalanceDebt(String amount) {
+    return 'Долг $amount';
+  }
+
+  @override
+  String desktopBalancePrepaid(String amount) {
+    return 'Аванс $amount';
+  }
+
+  @override
+  String get desktopSuccessDone => 'Готово';
+
+  @override
+  String get desktopWithCooler => 'С кулером';
+
+  @override
+  String get desktopWithoutCooler => 'Без кулера';
+
+  @override
+  String get desktopFieldCapsules => 'Капсулы';
+
+  @override
+  String get desktopFieldSum => 'Сумма';
+
+  @override
+  String get desktopFieldStatus => 'Статус';
+
+  @override
+  String get desktopFieldTime => 'Закрыта';
+
+  @override
+  String get desktopFieldAddress => 'Адрес';
+
+  @override
+  String get desktopChartTitle => 'Выручка по дням';
+
+  @override
+  String get desktopPrepayments => 'Предоплаты';
+
+  @override
+  String get desktopNoDebtors => 'Должников нет';
+
+  @override
+  String get desktopNoPrepayments => 'Предоплат нет';
+
+  @override
+  String get desktopCapsulesWithCooler => 'У заказчиков с кулером';
+
+  @override
+  String get desktopCapsulesWithoutCooler => 'У остальных';
+
+  @override
+  String get desktopFieldCooler => 'Кулер';
 }

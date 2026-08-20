@@ -52,14 +52,20 @@ android {
             signingConfig = signingConfigs.getByName(
                 if (hasReleaseKeystore) "release" else "debug"
             )
-            // R8 выключен намеренно. Правила в proguard-rules.pro уже лежат,
-            // но включать минификацию имеет смысл только после того, как
-            // release-сборка проверена на устройстве: ошибки R8 проявляются
-            // не при компиляции, а в рантайме и только в release.
-            // Включение: заменить обе строки ниже на true и прогнать
-            // `flutter build apk --release`, затем пройти вход и доставку.
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8 включён: без него APK крупнее, а Kotlin/Java-часть плагинов
+            // уходит в релиз неминифицированной.
+            //
+            // ВАЖНО. Ошибки R8 проявляются не при компиляции, а в рантайме и
+            // только в release-сборке — тесты и отладка их не поймают. После
+            // каждого изменения зависимостей релиз надо ставить на устройство
+            // и проходить вход и завершение доставки: это два места, где
+            // рефлексия реальна (Tink в хранилище токенов, multipart с фото).
+            //
+            // Правила лежат в proguard-rules.pro. Плагины, которым нужны свои
+            // keep'ы, приносят их сами через consumerProguardFiles —
+            // так делает, например, sentry_flutter.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

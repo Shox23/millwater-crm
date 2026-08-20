@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../l10n/l10n.dart';
+import 'validation_errors.dart';
 
 /// Разбор ответов Water CRM API.
 ///
@@ -27,24 +28,21 @@ Map<String, dynamic> asMap(dynamic body) {
   return (data as Map).cast<String, dynamic>();
 }
 
-/// Текст из поля `detail` FastAPI; `null` — разобрать не вышло.
+/// Текст, написанный сервером, — если он написан для пользователя.
 ///
-/// Список валидационных ошибок склеивается в одну строку: показывать
-/// водителю только первую из трёх причин — значит гонять его по кругу.
-String? _detailMessage(dynamic detail) {
-  if (detail is String && detail.isNotEmpty) return detail;
+/// Признак — кириллица. Английский текст сервер пишет для разработчика:
+/// `msg` у Pydantic всегда английский («Input should be a valid integer»),
+/// и до водителя ему доходить незачем — он его не прочтёт. Русский же
+/// `detail` бэкенд пишет осознанно («Телефон уже занят»), и заменять его
+/// общей фразой значило бы потерять смысл.
+///
+/// Костыль ровно до тех пор, пока в API не появятся коды ошибок: тогда
+/// текст будет собираться по коду, а не угадываться по алфавиту.
+final _cyrillic = RegExp(r'[А-Яа-яЁё]');
 
-  if (detail is List) {
-    final messages = detail
-        .whereType<Map>()
-        .map((item) => item['msg'])
-        .whereType<String>()
-        .where((msg) => msg.isNotEmpty)
-        .toList();
-    if (messages.isNotEmpty) return messages.join('. ');
-  }
-
-  return null;
+String? _serverWrittenMessage(Object? detail) {
+  if (detail is! String || detail.isEmpty) return null;
+  return _cyrillic.hasMatch(detail) ? detail : null;
 }
 
 /// Достаёт человекочитаемое сообщение об ошибке из ответа API.
@@ -55,16 +53,25 @@ String apiErrorMessage(
 }) {
   final data = e.response?.data;
   if (data is Map) {
-    // Конверт бизнес-ошибки: `{ error: { code, message } }`.
+    final detail = data['detail'];
+
+    // `{ detail: [{ loc, msg, type }] }` — единственная ошибка, описанная в
+    // схеме. Текст собирается заново по `type` и `loc`; английский `msg`
+    // наружу не идёт, он уходит в лог и в отчёт об ошибке.
+    final validation = validationErrorMessage(l10n, detail);
+    if (validation != null) return validation;
+
+    // `{ detail: "текст" }` — так бэкенд отвечает на бизнес-отказы.
+    final written = _serverWrittenMessage(detail);
+    if (written != null) return written;
+
+    // Конверта `{ error: { code, message } }` в схеме нет вовсе. Ветка
+    // оставлена на случай, если он всё-таки где-то отвечает, но и здесь
+    // наружу идёт только текст, написанный для пользователя.
     if (data['error'] is Map) {
-      final message = (data['error'] as Map)['message'] as String?;
-      if (message != null && message.isNotEmpty) return message;
+      final message = _serverWrittenMessage((data['error'] as Map)['message']);
+      if (message != null) return message;
     }
-    // FastAPI: `{ detail: "текст" }` либо `{ detail: [{ loc, msg, type }] }`.
-    // Только этот вид и описан в схеме, а раньше он не разбирался — и
-    // отлуп валидации доходил до пользователя безликим «Ошибка запроса».
-    final detail = _detailMessage(data['detail']);
-    if (detail != null) return detail;
   }
   switch (e.type) {
     case DioExceptionType.connectionTimeout:

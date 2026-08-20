@@ -2,13 +2,16 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
+import '../../core/observability/observability.dart';
 import '../../core/utils/money_parser.dart';
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
+import '../models/json.dart';
 import '../models/price_settings.dart';
 import '../models/report_export.dart';
 import '../models/reports_summary.dart';
+import '../models/result_page.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
 import 'crm_repository.dart';
@@ -50,18 +53,61 @@ class ApiCrmRepository implements CrmRepository {
   ) {
     final data = unwrapData(res.data);
     final paginated = data is Map<String, dynamic>;
-    final list = paginated ? data['items'] as List : data as List;
+    final list = paginated ? data['items'] : data;
     return (
-      items: list
-          .map((e) => fromJson((e as Map).cast<String, dynamic>()))
-          .toList(),
-      pages: paginated ? (data['pages'] as int? ?? 1) : 1,
+      // Запись, которую не удалось разобрать, пропускается. Раньше одно поле
+      // неожиданного типа роняло разбор всей страницы, и вместо девяноста
+      // девяти нормальных заказчиков пользователь видел общую ошибку.
+      items: parseList(
+        list,
+        fromJson,
+        onSkipped: (count) => _reportSkipped(count, res.requestOptions.path),
+      ),
+      pages: paginated ? intOr(data['pages'], 1) : 1,
+    );
+  }
+
+  /// Молча терять записи нельзя: пропуск виден только по жалобе, а причина —
+  /// расхождение ответа со схемой — сама не всплывёт.
+  static void _reportSkipped(int count, String path) {
+    Observability.breadcrumb(
+      category: 'parse',
+      message: 'пропущено записей при разборе: $count',
+      data: {'path': path, 'skipped': count},
     );
   }
 
   /// Разбирает непагинированный список.
   List<T> _items<T>(Response res, T Function(Map<String, dynamic>) fromJson) =>
       _page(res, fromJson).items;
+
+  /// Забирает одну страницу списка.
+  ///
+  /// На этом же запросе стоит и полная выборка [_all] — разбор ответа у них
+  /// общий, различается только то, останавливаться ли после первой страницы.
+  Future<ResultPage<T>> _pageOf<T>(
+    String path,
+    T Function(Map<String, dynamic>) fromJson, {
+    required int page,
+    Map<String, dynamic> query = const {},
+  }) async {
+    final res = await _dio.get(path, queryParameters: {
+      ...query,
+      'page': page,
+      'page_size': _pageSize,
+    });
+    final data = unwrapData(res.data);
+    final (items: items, pages: pages) = _page(res, fromJson);
+
+    return ResultPage(
+      items: items,
+      page: page,
+      // Пустая страница обрывает обход даже там, где сервер обещает ещё:
+      // иначе список догружал бы пустоту до упора.
+      hasMore: items.isNotEmpty && page < pages,
+      total: data is Map<String, dynamic> ? data['total'] as int? ?? items.length : items.length,
+    );
+  }
 
   /// Забирает список целиком, обходя страницы.
   ///
@@ -138,6 +184,18 @@ class ApiCrmRepository implements CrmRepository {
       );
 
   @override
+  Future<ResultPage<Driver>> getDriversPage({int page = 1, String? search}) =>
+      _pageOf(
+        '/admin/drivers',
+        Driver.fromJson,
+        page: page,
+        query: {
+          if (search != null && search.trim().isNotEmpty)
+            'search': search.trim(),
+        },
+      );
+
+  @override
   Future<Driver?> getDriver(String id) async {
     final res = await _dio.get('/admin/drivers/$id');
     return Driver.fromJson(asMap(res.data));
@@ -182,6 +240,23 @@ class ApiCrmRepository implements CrmRepository {
   Future<List<Customer>> getCustomers({String? search, bool? hasDebt}) => _all(
         '/admin/customers',
         Customer.fromJson,
+        query: {
+          if (search != null && search.trim().isNotEmpty)
+            'search': search.trim(),
+          'has_debt': ?hasDebt,
+        },
+      );
+
+  @override
+  Future<ResultPage<Customer>> getCustomersPage({
+    int page = 1,
+    String? search,
+    bool? hasDebt,
+  }) =>
+      _pageOf(
+        '/admin/customers',
+        Customer.fromJson,
+        page: page,
         query: {
           if (search != null && search.trim().isNotEmpty)
             'search': search.trim(),

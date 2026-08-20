@@ -18,3 +18,10 @@ class CustomersSearchChanged extends CustomersEvent {
   @override
   List<Object?> get props => [query];
 }
+
+/// Дочитать следующую страницу в конец списка.
+///
+/// Приходит из обработчика прокрутки, когда список подошёл к концу.
+class CustomersNextPageRequested extends CustomersEvent {
+  const CustomersNextPageRequested();
+}

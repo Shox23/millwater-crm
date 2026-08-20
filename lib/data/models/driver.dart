@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'json.dart';
 
 /// Водитель. Соответствует DriverResponse из Water CRM API.
 ///
@@ -46,17 +47,16 @@ class Driver extends Equatable {
     );
   }
 
+  /// Разбор терпим к неожиданным типам — см. `json.dart`.
   factory Driver.fromJson(Map<String, dynamic> json) => Driver(
-        id: json['id'] as String,
-        userId: json['user_id'] as String?,
-        fullName: json['full_name'] as String,
-        phone: json['phone'] as String,
-        tripCount: json['trip_count'] as int? ?? 0,
-        todayTripCount: json['today_trip_count'] as int? ?? 0,
-        createdAt: DateTime.parse(json['created_at'] as String),
-        updatedAt: json['updated_at'] == null
-            ? null
-            : DateTime.parse(json['updated_at'] as String),
+        id: requireString(json['id'], 'id'),
+        userId: optionalString(json['user_id']),
+        fullName: stringOr(json['full_name']),
+        phone: stringOr(json['phone']),
+        tripCount: intOr(json['trip_count']),
+        todayTripCount: intOr(json['today_trip_count']),
+        createdAt: dateOr(json['created_at'], epoch),
+        updatedAt: optionalDate(json['updated_at']),
       );
 
   /// Тело для PATCH /admin/drivers/{id} (частичное обновление).

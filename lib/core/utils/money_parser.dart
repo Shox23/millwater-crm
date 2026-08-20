@@ -3,13 +3,39 @@
 /// Сервер отдаёт суммы строками, иногда с копейками: "20000.00", "0", "1500.5".
 abstract class MoneyParser {
   /// Строка/число → целые сумы (копейки отбрасываются округлением).
+  ///
+  /// Ничего не бросает. Раньше бросал: `num.round()` на бесконечности или NaN
+  /// даёт `UnsupportedError`, а бесконечность получается из любой строки
+  /// вроде "1e400" — то есть из ответа сервера. Одно такое поле роняло разбор
+  /// всей страницы.
+  ///
+  /// Слишком большие значения обрезаются до [maxSum], а не превращаются в
+  /// мусор: `9223372036854775807` в графе «Долг» выглядит как настоящая
+  /// сумма, и по ней примут решение.
   static int toSum(dynamic value) {
     if (value == null) return 0;
-    if (value is int) return value;
-    if (value is num) return value.round();
-    final parsed = num.tryParse(value.toString().trim());
-    return parsed?.round() ?? 0;
+    if (value is int) return _clamp(value);
+
+    final parsed = value is num ? value : num.tryParse(value.toString().trim());
+    if (parsed == null || parsed.isNaN) return 0;
+
+    // Бесконечность — это переполнение при разборе очень большого числа
+    // ("1e400"), то есть тот же случай, что и 120-значная строка ниже.
+    // Обрабатывать их по-разному значило бы, что одно и то же по смыслу
+    // значение даёт то ноль, то потолок.
+    if (parsed >= maxSum) return maxSum;
+    if (parsed <= -maxSum) return -maxSum;
+    return parsed.round();
   }
+
+  /// Потолок суммы — триллион сумов.
+  ///
+  /// Заведомо выше любого оборота доставки воды и заведомо ниже границы,
+  /// за которой числа перестают быть числами.
+  static const int maxSum = 1000000000000;
+
+  static int _clamp(int value) =>
+      value > maxSum ? maxSum : (value < -maxSum ? -maxSum : value);
 
   /// Сумма → строка для отправки на сервер.
   static String toApi(int value) => value.toString();

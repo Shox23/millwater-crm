@@ -26,6 +26,9 @@ abstract class AppRadius {
   /// corner
   static const double lg = 18;
 
+  /// corner * 1.35 — крупные поверхности десктопа: модалки, drawer.
+  static const double xl = 24;
+
   static const double pill = 999;
 
   /// Радиус аватарки-инициалов (скруглённый квадрат, не круг).
