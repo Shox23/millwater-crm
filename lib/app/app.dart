@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../l10n/l10n.dart';
+import '../core/pricing/capsule_price.dart';
 import '../data/models/user_role.dart';
 import '../data/network/dio_client.dart';
 import '../data/network/session_storage.dart';
@@ -177,6 +178,11 @@ class _RoleRoot extends StatelessWidget {
 /// потоком уведомлений: админский поток несёт события по всем водителям, и
 /// в водительское поддерево он не попадает. До входа не предоставляется
 /// ничего.
+///
+/// Исключение — [CapsulePrice]: он нужен обеим ролям и даётся обеим. Это не
+/// щель в разграничении, а его же следствие: узкий интерфейс на одно чтение
+/// цены вместо целого админского репозитория. Что ответит сервер водителю,
+/// решает сервер — источник переживает отказ молча.
 class _RoleScopedRepositories extends StatelessWidget {
   const _RoleScopedRepositories({
     required this.dio,
@@ -207,6 +213,17 @@ class _RoleScopedRepositories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scoped = _scoped(context);
+    // До входа цена никому не нужна: экранов, которые считают по ней, ещё нет.
+    if (role == null) return scoped;
+
+    return RepositoryProvider<CapsulePrice>(
+      create: (_) => ApiCapsulePrice(dio),
+      child: scoped,
+    );
+  }
+
+  Widget _scoped(BuildContext context) {
     return switch (role) {
       null => child,
       UserRole.admin => RepositoryProvider<CrmRepository>(

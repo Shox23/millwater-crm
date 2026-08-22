@@ -24,13 +24,14 @@ class DeliveryRow extends Equatable {
   final RouteDetail route;
   final RouteStop stop;
 
-  /// Ожидаемая оплата за точку — капсулы × цена сборки.
+  /// Ожидаемая оплата за точку — капсулы × [capsulePrice].
   ///
-  /// Считаем тем же способом, что и водительский экран завершения доставки:
-  /// цену капсулы отдаёт только админский прайс, и в приложении она живёт в
-  /// [ProductConfig.capsulePrice]. Нужна для «В долг за день»: сервер хранит
-  /// принятую сумму, но не ту, которую должны были принять.
-  int get expectedAmount => (stop.deliveredCapsules ?? 0) * ProductConfig.capsulePrice;
+  /// Нужна для «В долг за день»: сервер хранит принятую сумму, но не ту,
+  /// которую должны были принять. Цена приходит параметром, а не берётся из
+  /// сборки: этот экран открыт админом, а ему прайс доступен — считать по
+  /// зашитому числу значило бы врать ровно с того дня, как цену поменяли.
+  int expectedAmount(int capsulePrice) =>
+      (stop.deliveredCapsules ?? 0) * capsulePrice;
 
   /// Доставлено, но денег не принято, — значит ушло в долг.
   ///
@@ -63,6 +64,7 @@ class DayDeliveriesState extends Equatable {
     this.filter = DeliveryFilter.all,
     this.query = '',
     this.dayMeta = const {},
+    this.capsulePrice = ProductConfig.capsulePrice,
   });
 
   /// Пять дней ленты: два назад, сегодня, два вперёд.
@@ -88,6 +90,12 @@ class DayDeliveriesState extends Equatable {
 
   /// Счётчики по дням ленты — подписи на табах соседних дат.
   final Map<DateTime, DayMeta> dayMeta;
+
+  /// Цена капсулы, по которой оценивается долг за день.
+  ///
+  /// До первого ответа прайса — значение сборки: показатель должен быть на
+  /// экране сразу, а не после сетевого запроса.
+  final int capsulePrice;
 
   /// День ещё не наступил: доставок не было и быть не могло.
   bool get isFuture => date.isAfter(dayOnly(DateTime.now()));
@@ -131,7 +139,7 @@ class DayDeliveriesState extends Equatable {
   /// Ушло в долг за день. Оценка: см. [DeliveryRow.expectedAmount].
   int get debt => rows
       .where((r) => r.isDebt)
-      .fold<int>(0, (sum, r) => sum + r.expectedAmount);
+      .fold<int>(0, (sum, r) => sum + r.expectedAmount(capsulePrice));
 
   int get capsules =>
       rows.fold<int>(0, (sum, r) => sum + (r.stop.deliveredCapsules ?? 0));
@@ -152,6 +160,7 @@ class DayDeliveriesState extends Equatable {
     DeliveryFilter? filter,
     String? query,
     Map<DateTime, DayMeta>? dayMeta,
+    int? capsulePrice,
   }) {
     return DayDeliveriesState(
       date: date ?? this.date,
@@ -161,10 +170,11 @@ class DayDeliveriesState extends Equatable {
       filter: filter ?? this.filter,
       query: query ?? this.query,
       dayMeta: dayMeta ?? this.dayMeta,
+      capsulePrice: capsulePrice ?? this.capsulePrice,
     );
   }
 
   @override
   List<Object?> get props =>
-      [date, status, rows, routesCount, filter, query, dayMeta];
+      [date, status, rows, routesCount, filter, query, dayMeta, capsulePrice];
 }

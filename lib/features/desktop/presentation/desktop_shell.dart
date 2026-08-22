@@ -8,6 +8,7 @@ import '../../../l10n/l10n.dart';
 
 import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/pricing/capsule_price.dart';
 import '../../../core/utils/day.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/driver.dart';
@@ -57,6 +58,7 @@ class DesktopShell extends StatelessWidget {
             create: (context) => DayDeliveriesBloc(
               repository,
               notifications: context.notificationEvents,
+              price: context.read<CapsulePrice>(),
             )..add(const DayDeliveriesRequested()),
           ),
           BlocProvider(

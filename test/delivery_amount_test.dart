@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:crm_millwater/app/theme/app_theme.dart';
+import 'package:crm_millwater/core/pricing/capsule_price.dart';
 import 'package:crm_millwater/core/product_config.dart';
 import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/data/models/enums.dart';
@@ -51,12 +54,26 @@ class _RecordingDriverRepository extends MockDriverRepository {
   }
 }
 
+/// Отдаёт цену тогда, когда её отдадут, — как медленная сеть.
+///
+/// Нужен, чтобы проверить сам момент подмены: до ответа сервера экран считает
+/// по значению сборки, после — по прайсу.
+class _DeferredCapsulePrice implements CapsulePrice {
+  final _completer = Completer<int>();
+
+  void send(int price) => _completer.complete(price);
+
+  @override
+  Future<int> value() => _completer.future;
+}
+
 void main() {
   final price = ProductConfig.capsulePrice;
 
   Future<_RecordingDriverRepository> pumpPage(
     WidgetTester tester, {
     RouteStop? stop,
+    CapsulePrice? price,
   }) async {
     tester.view.physicalSize = const Size(1290, 2796);
     tester.view.devicePixelRatio = 3;
@@ -72,7 +89,10 @@ void main() {
             supportedLocales: AppLocales.supported,
             locale: AppLocales.ru,
           theme: AppTheme.light(),
-          home: DeliveryCompletionPage(stop: stop ?? _stop()),
+          home: DeliveryCompletionPage(
+            stop: stop ?? _stop(),
+            price: price ?? const BuildCapsulePrice(),
+          ),
         ),
       ),
     );
@@ -248,6 +268,68 @@ void main() {
       await addCapsule(tester);
 
       expect(find.textContaining('заменит прежний остаток'), findsOneWidget);
+    });
+  });
+
+  group('Живая цена с сервера', () {
+    /// Отдаёт цену и даёт экрану перестроиться.
+    Future<void> sendPrice(
+      WidgetTester tester,
+      _DeferredCapsulePrice source,
+      int value,
+    ) async {
+      source.send(value);
+      await tester.pump();
+    }
+
+    testWidgets('прайс сервера заменяет значение сборки', (tester) async {
+      final source = _DeferredCapsulePrice();
+      await pumpPage(tester, price: source);
+
+      // Экран открылся раньше ответа: ждать сеть у двери заказчика нечего.
+      expect(amountText(tester), '$price');
+
+      await sendPrice(tester, source, 25000);
+
+      expect(amountText(tester), '25000');
+      expect(find.textContaining('По прайсу: 1 ×'), findsOneWidget);
+    });
+
+    testWidgets('дальше сумма идёт за количеством по живой цене',
+        (tester) async {
+      final source = _DeferredCapsulePrice();
+      await pumpPage(tester, price: source);
+      await sendPrice(tester, source, 25000);
+
+      await addCapsule(tester);
+
+      expect(amountText(tester), '50000');
+    });
+
+    testWidgets('введённую вручную сумму не перебивает', (tester) async {
+      final source = _DeferredCapsulePrice();
+      await pumpPage(tester, price: source);
+
+      await tester.enterText(find.byType(TextField), '5000');
+      await tester.pump();
+      await sendPrice(tester, source, 25000);
+
+      // Частичная оплата остаётся цифрой водителя: ответ сервера не должен
+      // менять её за его спиной — деньги он уже принял.
+      expect(amountText(tester), '5000');
+    });
+
+    testWidgets('ранее проведённую сумму не перебивает', (tester) async {
+      final source = _DeferredCapsulePrice();
+      await pumpPage(
+        tester,
+        stop: _stop(capsules: 4, amount: 55000),
+        price: source,
+      );
+
+      await sendPrice(tester, source, 25000);
+
+      expect(amountText(tester), '55000');
     });
   });
 }

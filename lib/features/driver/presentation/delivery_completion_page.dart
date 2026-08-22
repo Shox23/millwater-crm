@@ -11,6 +11,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/forms/submit_state.dart';
 import '../../../core/location/device_location.dart';
+import '../../../core/pricing/capsule_price.dart';
 import '../../../core/product_config.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/money_formatter.dart';
@@ -34,9 +35,15 @@ class DeliveryCompletionPage extends StatefulWidget {
     this.location = ProductConfig.captureDeliveryCoordinates
         ? const DeviceLocationService()
         : null,
+    this.price = const BuildCapsulePrice(),
   });
 
   final RouteStop stop;
+
+  /// Откуда берётся цена капсулы. По умолчанию — значение сборки: экран
+  /// открывается и без сети, а `my_route_detail_page` передаёт сюда источник,
+  /// который сперва спрашивает прайс у сервера.
+  final CapsulePrice price;
 
   /// null — координаты не снимаются и разрешение не запрашивается.
   /// В тестах сюда передаётся подменённый сервис.
@@ -85,10 +92,29 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     final amount = widget.stop.paymentAmount ?? _capsules * _capsulePrice;
     _amountLocked = widget.stop.paymentAmount != null;
     _amountController = TextEditingController(text: '$amount');
+    _loadPrice();
   }
 
-  /// Цена капсулы. Живёт в сборке: водителю `/admin/prices/current` закрыт.
-  int get _capsulePrice => ProductConfig.capsulePrice;
+  /// Цена капсулы, по которой считается сумма.
+  ///
+  /// Начинается со значения сборки и заменяется живым прайсом, если сервер
+  /// его отдал, — см. [_loadPrice]. Ждать ответа экран не может: водитель
+  /// стоит у двери, и пустое поле суммы ему дороже точной цены.
+  int _capsulePrice = ProductConfig.capsulePrice;
+
+  /// Спрашивает живую цену и пересчитывает сумму под неё.
+  ///
+  /// Пересчёт только пока сумму не назначили вручную: [_amountLocked] стоит и
+  /// у доставки, которую уже проводили, — затирать введённое число ответом
+  /// сервера значило бы менять принятую оплату за спиной водителя.
+  Future<void> _loadPrice() async {
+    final price = await widget.price.value();
+    if (!mounted || price == _capsulePrice) return;
+    setState(() {
+      _capsulePrice = price;
+      if (!_amountLocked) _amountController.text = '$_calculatedAmount';
+    });
+  }
 
   /// Сколько должно получиться по прайсу: капсулы × цена.
   int get _calculatedAmount => _capsules * _capsulePrice;

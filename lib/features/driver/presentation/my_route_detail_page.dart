@@ -11,6 +11,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/pricing/capsule_price.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/detail_scaffold.dart';
@@ -92,8 +93,13 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
   }
 
   Future<void> _openCompletion(RouteStop stop) async {
+    // Источник цены берём здесь, а не в builder'е роута: он один на все точки
+    // маршрута, и найденный однажды прайс переживает переход к следующей.
+    final price = context.read<CapsulePrice>();
     final done = await Navigator.of(context).push<bool>(
-      OverlayPageRoute(builder: (_) => DeliveryCompletionPage(stop: stop)),
+      OverlayPageRoute(
+        builder: (_) => DeliveryCompletionPage(stop: stop, price: price),
+      ),
     );
     if (done == true) {
       _changed = true;

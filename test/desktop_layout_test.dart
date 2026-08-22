@@ -11,6 +11,7 @@ import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/data/models/user_role.dart';
 import 'package:crm_millwater/data/network/session_storage.dart';
+import 'package:crm_millwater/core/pricing/capsule_price.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
@@ -222,8 +223,15 @@ void main() {
     Future<void> pumpShell(WidgetTester tester) async {
       useDesktopSurface(tester);
       await tester.pumpWidget(
-        RepositoryProvider<CrmRepository>.value(
-          value: repo,
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<CrmRepository>.value(value: repo),
+            // Оболочка передаёт источник цены блоку дня — в дереве приложения
+            // его кладёт `app.dart`. Здесь берём цену из сборки: сети нет.
+            RepositoryProvider<CapsulePrice>.value(
+              value: const BuildCapsulePrice(),
+            ),
+          ],
           child: BlocProvider(
             create: (_) => ThemeCubit(storage: InMemorySettingsStorage()),
             child: MaterialApp(

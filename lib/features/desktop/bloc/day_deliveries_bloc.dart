@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/pricing/capsule_price.dart';
 import '../../../core/product_config.dart';
 import '../../../core/utils/day.dart';
 import '../../../core/utils/throttle.dart';
@@ -29,7 +30,9 @@ class DayDeliveriesBloc extends Bloc<DayDeliveriesEvent, DayDeliveriesState> {
   DayDeliveriesBloc(
     this._repository, {
     Stream<NotificationEvent>? notifications,
-  }) : super(DayDeliveriesState(date: dayOnly(DateTime.now()))) {
+    CapsulePrice? price,
+  })  : _price = price ?? const BuildCapsulePrice(),
+        super(DayDeliveriesState(date: dayOnly(DateTime.now()))) {
     on<DayDeliveriesRequested>(_onRequested);
     on<DayDeliveriesDateChanged>(_onDateChanged);
     on<DayDeliveriesFilterChanged>(_onFilterChanged);
@@ -47,6 +50,11 @@ class DayDeliveriesBloc extends Bloc<DayDeliveriesEvent, DayDeliveriesState> {
   }
 
   final CrmRepository _repository;
+
+  /// Цена капсулы для оценки долга. Свой кэш и свой откат на значение сборки
+  /// живут внутри источника — см. [CapsulePrice].
+  final CapsulePrice _price;
+
   StreamSubscription<NotificationEvent>? _notifications;
   final _reload = Throttle(kNotificationReloadWindow);
 
@@ -69,10 +77,13 @@ class DayDeliveriesBloc extends Bloc<DayDeliveriesEvent, DayDeliveriesState> {
       // на табах стоят счётчики соседних дней, и пять отдельных запросов
       // ради них — расточительство.
       final window = DayDeliveriesState.dateWindow();
-      final all = await _repository.getRoutes(
-        dateFrom: window.first,
-        dateTo: window.last,
-      );
+      // Цена идёт рядом со списком, а не отдельным шагом: запросы независимы,
+      // а долг за день без неё не посчитать. Источник цены не бросает и своим
+      // отказом загрузку дня не рушит.
+      final (all, capsulePrice) = await (
+        _repository.getRoutes(dateFrom: window.first, dateTo: window.last),
+        _price.value(),
+      ).wait;
       // Пока список был в пути, могли переключить день.
       if (state.date != day) return;
 
@@ -94,6 +105,7 @@ class DayDeliveriesBloc extends Bloc<DayDeliveriesEvent, DayDeliveriesState> {
         rows: rows,
         routesCount: ofDay.length,
         dayMeta: _metaByDay(all),
+        capsulePrice: capsulePrice,
       ));
     } catch (_) {
       if (state.date != day) return;

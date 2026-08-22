@@ -2,6 +2,7 @@ import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/data/mock/mock_store.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
+import 'package:crm_millwater/core/pricing/capsule_price.dart';
 import 'package:crm_millwater/data/repositories/driver_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
@@ -45,8 +46,16 @@ void main() {
   ) async {
     useLargeSurface(tester);
     await tester.pumpWidget(
-      RepositoryProvider<DriverRepository>.value(
-        value: repo,
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<DriverRepository>.value(value: repo),
+          // Карточка маршрута передаёт источник цены экрану завершения —
+          // в дереве приложения его кладёт `app.dart`. Здесь сети нет,
+          // поэтому цена берётся из сборки.
+          RepositoryProvider<CapsulePrice>.value(
+            value: const BuildCapsulePrice(),
+          ),
+        ],
         child: MaterialApp(
             // Строки интерфейса берутся из локали: тесты идут на русской.
             localizationsDelegates: AppLocalizations.localizationsDelegates,
