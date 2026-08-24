@@ -59,6 +59,10 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// У заказчика стоит кулер — влияет на то, как водитель обслуживает точку.
   late bool _hasCooler;
 
+  /// Заказчик в работе. Только для правки: нового сервер и так заводит
+  /// активным, отдельного поля в `CreateCustomer` нет.
+  late bool _isActive;
+
   /// Один ключ на весь экран: повтор после обрыва связи не должен завести
   /// второго заказчика. При редактировании не нужен — PATCH идемпотентен.
   final String _idempotencyKey = newIdempotencyKey('customer');
@@ -87,6 +91,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
     _hasCooler = customer?.hasCooler ?? false;
+    _isActive = customer?.isActive ?? true;
   }
 
   @override
@@ -113,7 +118,8 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
             UzPhone.normalize(customer?.phone ?? '') ||
         _address.text.trim() != (customer?.address ?? '') ||
         _comment.text.trim() != (customer?.comment ?? '') ||
-        _hasCooler != (customer?.hasCooler ?? false);
+        _hasCooler != (customer?.hasCooler ?? false) ||
+        _isActive != (customer?.isActive ?? true);
   }
 
   Future<void> _submit() async {
@@ -162,6 +168,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
               address: _address.text.trim(),
               comment: _commentOrNull,
               hasCooler: _hasCooler,
+              isActive: _isActive,
             ))
           : repo.addCustomer(
               name: _name.text.trim(),
@@ -200,7 +207,10 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      // Не `false`: наглухо запрещённый pop гасит краевой жест «назад» на
+      // iOS (`PageRoute.popGestureEnabled`). Пока форму не трогали, уходить
+      // не жалко — и жест работает; тронутую перехватываем и переспрашиваем.
+      canPop: !_dirty,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _leave();
       },
@@ -279,6 +289,39 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                   ],
                 ),
               ),
+              // Только в правке: у нового заказчика выключать нечего, да и
+              // `CreateCustomer` такого поля не принимает.
+              if (widget.isEdit)
+                AppCard(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 2,
+                          children: [
+                            Text(
+                              context.l10n.customerFormIsActive,
+                              style: AppTypography.bodyStrong
+                                  .copyWith(color: context.tokens.text),
+                            ),
+                            Text(
+                              context.l10n.customerFormIsActiveHint,
+                              style: AppTypography.secondary
+                                  .copyWith(color: context.tokens.text2),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: _isActive,
+                        onChanged: submitting
+                            ? null
+                            : (value) => setState(() => _isActive = value),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

@@ -44,7 +44,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   RouteDetail? _route;
   bool _loading = true;
   bool _loadFailed = false;
-  bool _changed = false;
   StreamSubscription<NotificationEvent>? _notifications;
 
   @override
@@ -111,7 +110,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       fallback: context.l10n.routeCancelFailed,
     );
     if (!ok || !mounted) return;
-    _changed = true;
     showAppSnackBar(context, context.l10n.routeCancelled2);
     await _load();
   }
@@ -126,7 +124,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       OverlayPageRoute<bool>(builder: (_) => RouteFormPage(route: route)),
     );
     if (saved != true || !mounted) return;
-    _changed = true;
     await _load();
   }
 
@@ -143,63 +140,57 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     final t = context.tokens;
     final route = _route;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) Navigator.of(context).pop(_changed);
-      },
-      child: DetailScaffold(
-        title: context.l10n.routeCardTitle,
-        body: _loading
-            ? const Padding(
-                padding: EdgeInsets.only(top: 80),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            : _loadFailed
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 60),
-                    child: ErrorRetryView(
-                      onRetry: _load,
-                      message: context.l10n.routeLoadFailed,
+    return DetailScaffold(
+      title: context.l10n.routeCardTitle,
+      body: _loading
+          ? const Padding(
+              padding: EdgeInsets.only(top: 80),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : _loadFailed
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 60),
+                  child: ErrorRetryView(
+                    onRetry: _load,
+                    message: context.l10n.routeLoadFailed,
+                  ),
+                )
+              : route == null
+                  ? Center(
+                      child: Text(context.l10n.routeNotFound,
+                          style: AppTypography.secondary
+                              .copyWith(color: t.text2)),
+                    )
+                  : _RouteBody(route: route, onStopTap: _openStop),
+      // Панель целиком исчезает, когда с маршрутом уже нечего делать:
+      // у завершённого и отменённого не осталось ни правок, ни отмены.
+      bottomBar: _loadFailed ||
+              route == null ||
+              !(route.status.canCancel || route.status.isEditable)
+          ? null
+          : BottomActionBar(
+              child: Row(
+                spacing: AppSpacing.md,
+                children: [
+                  if (route.status.canCancel)
+                    Expanded(
+                      child: AppButton(
+                        label: context.l10n.routeCancelAction,
+                        variant: AppButtonVariant.secondary,
+                        onPressed: _cancelRoute,
+                      ),
                     ),
-                  )
-                : route == null
-                    ? Center(
-                        child: Text(context.l10n.routeNotFound,
-                            style: AppTypography.secondary
-                                .copyWith(color: t.text2)),
-                      )
-                    : _RouteBody(route: route, onStopTap: _openStop),
-        // Панель целиком исчезает, когда с маршрутом уже нечего делать:
-        // у завершённого и отменённого не осталось ни правок, ни отмены.
-        bottomBar: _loadFailed ||
-                route == null ||
-                !(route.status.canCancel || route.status.isEditable)
-            ? null
-            : BottomActionBar(
-                child: Row(
-                  spacing: AppSpacing.md,
-                  children: [
-                    if (route.status.canCancel)
-                      Expanded(
-                        child: AppButton(
-                          label: context.l10n.routeCancelAction,
-                          variant: AppButtonVariant.secondary,
-                          onPressed: _cancelRoute,
-                        ),
+                  // Завершённый маршрут править нечего — кнопки нет вовсе.
+                  if (route.status.isEditable)
+                    Expanded(
+                      child: AppButton(
+                        label: context.l10n.commonEdit,
+                        onPressed: () => _editRoute(route),
                       ),
-                    // Завершённый маршрут править нечего — кнопки нет вовсе.
-                    if (route.status.isEditable)
-                      Expanded(
-                        child: AppButton(
-                          label: context.l10n.commonEdit,
-                          onPressed: () => _editRoute(route),
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-      ),
+            ),
     );
   }
 }

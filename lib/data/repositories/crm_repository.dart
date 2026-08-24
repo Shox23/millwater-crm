@@ -66,13 +66,20 @@ abstract class CrmRepository {
   /// отчётов: должников и остаток капсул сводка не отдаёт, и они выводятся
   /// из справочника (см. `ReportsSummary.from`). Для списка, который
   /// листают, есть [getCustomersPage].
-  Future<List<Customer>> getCustomers({String? search, bool? hasDebt});
+  Future<List<Customer>> getCustomers({
+    String? search,
+    bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
+  });
 
   /// Одна страница списка заказчиков, считая с первой.
   Future<ResultPage<Customer>> getCustomersPage({
     int page = 1,
     String? search,
     bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
   });
   Future<Customer?> getCustomer(String id);
   /// [idempotencyKey] — см. [addDriver].

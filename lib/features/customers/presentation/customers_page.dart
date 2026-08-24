@@ -10,9 +10,12 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
+import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/load_more_notifier.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/search_field.dart';
+import '../../../core/widgets/segmented_toggle.dart';
+import '../../../data/models/enums.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../bloc/customers_bloc.dart';
 import 'customer_detail_page.dart';
@@ -74,8 +77,43 @@ class _CustomersView extends StatelessWidget {
                     horizontal: AppSpacing.page,
                   ),
                   child: SearchField(
-                    hint: context.l10n.customerSearch,
+                    hint: state.searchMode.hint(context.l10n),
                     onChanged: (q) => bloc.add(CustomersSearchChanged(q)),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // Поле поиска одно, а ищет по-разному: имя и телефон ищет
+                // сервер, адрес — мы сами по полной выборке, потому что
+                // такого параметра в API пока нет. Режим показан явно, иначе
+                // непонятно, почему запрос находит то одно, то другое.
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.page,
+                  ),
+                  child: SegmentedToggle<CustomerSearchMode>(
+                    value: state.searchMode,
+                    onChanged: (mode) =>
+                        bloc.add(CustomersSearchModeChanged(mode)),
+                    options: [
+                      for (final mode in CustomerSearchMode.values)
+                        SegmentOption(
+                          value: mode,
+                          label: mode.label(context.l10n),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // Отбирает сервер, а не список на экране: иначе «С долгом»
+                // показывал бы должников только из загруженных страниц.
+                FilterChips(
+                  labels: [
+                    for (final f in CustomerFilter.values)
+                      f.label(context.l10n),
+                  ],
+                  selectedIndex: CustomerFilter.values.indexOf(state.filter),
+                  onSelected: (i) => bloc.add(
+                    CustomersFilterChanged(CustomerFilter.values[i]),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -149,6 +187,17 @@ class _CustomersList extends StatelessWidget {
     }
     final items = state.visible;
     if (items.isEmpty) {
+      if (state.isEmptyFilter) {
+        // Очищать нечего — сбрасывать надо чип, а не поиск.
+        return EmptyStateView(
+          icon: Icons.storefront_outlined,
+          title: context.l10n.filterEmptyTitle,
+          hint: context.l10n.filterEmptyHint,
+          actionLabel: context.l10n.filterAll,
+          onAction: () =>
+              bloc.add(const CustomersFilterChanged(CustomerFilter.all)),
+        );
+      }
       return state.isEmptySearch
           ? EmptyStateView.noSearchResults(
               l10n: context.l10n,

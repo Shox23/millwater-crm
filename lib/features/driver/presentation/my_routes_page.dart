@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../l10n/l10n.dart';
 
+import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../core/navigation/overlay_route.dart';
 import '../../../core/widgets/empty_state_view.dart';
@@ -25,7 +26,10 @@ class MyRoutesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => MyRoutesBloc(context.read<DriverRepository>())
+      create: (context) => MyRoutesBloc(
+        context.read<DriverRepository>(),
+        notifications: context.notificationEvents,
+      )
         ..add(const MyRoutesRequested()),
       child: const _MyRoutesView(),
     );
@@ -191,12 +195,14 @@ class _MyRoutesList extends StatelessWidget {
           return RouteCard(
             route: route,
             onTap: () async {
-              final changed = await Navigator.of(context).push<bool>(
-                OverlayPageRoute(
+              await Navigator.of(context).push<void>(
+                OverlayPageRoute<void>(
                   builder: (_) => MyRouteDetailPage(routeId: route.id),
                 ),
               );
-              if (changed == true) bloc.add(const MyRoutesRequested());
+              // Перечитываем всегда — см. тот же приём в админском списке
+              // маршрутов: возврат флага стоил бы краевого жеста на iOS.
+              bloc.add(const MyRoutesRequested());
             },
           );
         },

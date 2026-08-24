@@ -16,6 +16,7 @@ import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_notifications_repository.dart';
 import 'package:crm_millwater/data/repositories/notifications_repository.dart';
+import 'package:crm_millwater/features/driver/bloc/my_routes_bloc.dart';
 import 'package:crm_millwater/features/driver/presentation/my_route_detail_page.dart';
 import 'package:crm_millwater/features/reports/bloc/reports_bloc.dart';
 import 'package:crm_millwater/features/routes/bloc/routes_bloc.dart';
@@ -245,6 +246,34 @@ void main() {
 
       expect(repo.routeListCalls, 1);
     });
+
+    test('список водителя перечитывается сам', () async {
+      final driverRepo = _CountingDriverRepository();
+      final bloc = MyRoutesBloc(driverRepo, notifications: notifications.events)
+        ..add(const MyRoutesRequested());
+      addTearDown(bloc.close);
+      await bloc.stream.firstWhere((s) => s.status == MyRoutesStatus.ready);
+      expect(driverRepo.listCalls, 1);
+
+      // Прогресс на карточках устаревал, пока водитель не зайдёт внутрь
+      // маршрута: подписан был только детальный экран.
+      notifications.emitRouteEvent('r-1');
+      await bloc.stream.firstWhere((s) => s.status == MyRoutesStatus.ready);
+
+      expect(driverRepo.listCalls, 2);
+    });
+
+    test('без потока список водителя работает как раньше', () async {
+      final driverRepo = _CountingDriverRepository();
+      final bloc = MyRoutesBloc(driverRepo)..add(const MyRoutesRequested());
+      addTearDown(bloc.close);
+      await bloc.stream.firstWhere((s) => s.status == MyRoutesStatus.ready);
+
+      notifications.emitRouteEvent('r-1');
+      await pumpEventQueue();
+
+      expect(driverRepo.listCalls, 1);
+    });
   });
 
   group('Реакция карточки маршрута', () {
@@ -421,6 +450,13 @@ class _CountingDriverRepository extends MockDriverRepository {
   _CountingDriverRepository({super.store});
 
   int routeCalls = 0;
+  int listCalls = 0;
+
+  @override
+  Future<List<RouteListItem>> getMyRoutes() {
+    listCalls++;
+    return super.getMyRoutes();
+  }
 
   @override
   Future<RouteDetail?> getMyRoute(String id) {

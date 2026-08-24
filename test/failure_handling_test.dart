@@ -86,8 +86,18 @@ class _FailingRepository extends MockCrmRepository {
   }
 
   @override
-  Future<List<Customer>> getCustomers({String? search, bool? hasDebt}) =>
-      _read(() => super.getCustomers(search: search, hasDebt: hasDebt));
+  Future<List<Customer>> getCustomers({
+    String? search,
+    bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
+  }) =>
+      _read(() => super.getCustomers(
+        search: search,
+        hasDebt: hasDebt,
+        hasCooler: hasCooler,
+        isActive: isActive,
+      ));
 
   @override
   Future<SummaryReport> getSummaryReport({
@@ -243,11 +253,21 @@ class _FlakyRepository extends MockCrmRepository {
   bool _failed = false;
 
   @override
-  Future<List<Customer>> getCustomers({String? search, bool? hasDebt}) {
+  Future<List<Customer>> getCustomers({
+    String? search,
+    bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
+  }) {
     if (!_failed) {
       _failed = true;
       return Future.error(Exception('нет сети'));
     }
-    return super.getCustomers(search: search, hasDebt: hasDebt);
+    return super.getCustomers(
+        search: search,
+        hasDebt: hasDebt,
+        hasCooler: hasCooler,
+        isActive: isActive,
+      );
   }
 }

@@ -93,7 +93,8 @@ enum RouteFilter {
   all,
   inProgress,
   completed,
-  created;
+  created,
+  cancelled;
 
   /// Подпись чипа на языке интерфейса.
   String label(AppLocalizations l10n) => switch (this) {
@@ -101,6 +102,7 @@ enum RouteFilter {
         RouteFilter.inProgress => l10n.filterInProgress,
         RouteFilter.completed => l10n.filterCompleted,
         RouteFilter.created => l10n.filterNew,
+        RouteFilter.cancelled => l10n.filterCancelled,
       };
 
   /// Статус, которому соответствует фильтр. `null` у «Все».
@@ -109,6 +111,62 @@ enum RouteFilter {
         RouteFilter.inProgress => RouteStatus.inProgress,
         RouteFilter.completed => RouteStatus.completed,
         RouteFilter.created => RouteStatus.created,
+        RouteFilter.cancelled => RouteStatus.cancelled,
+      };
+}
+
+/// Фильтр списка заказчиков (чипы на экране).
+///
+/// Взаимоисключающий, как и у маршрутов: чипы в приложении — переключатель,
+/// а не набор галочек. Соответствие параметрам API держится здесь, чтобы
+/// блок не собирал их у себя и однажды не разошёлся с подписью чипа.
+enum CustomerFilter {
+  all,
+  withDebt,
+  withCooler,
+  inactive;
+
+  /// Подпись чипа на языке интерфейса.
+  String label(AppLocalizations l10n) => switch (this) {
+        CustomerFilter.all => l10n.filterAll,
+        CustomerFilter.withDebt => l10n.filterWithDebt,
+        CustomerFilter.withCooler => l10n.filterWithCooler,
+        CustomerFilter.inactive => l10n.filterInactive,
+      };
+
+  /// `null` — параметр не отправляем вовсе, сервер отдаёт и тех, и других.
+  bool? get hasDebt => this == CustomerFilter.withDebt ? true : null;
+
+  bool? get hasCooler => this == CustomerFilter.withCooler ? true : null;
+
+  /// Единственный, кто спрашивает про `false`: пустое значение сервер понял
+  /// бы как «активные».
+  bool? get isActive => this == CustomerFilter.inactive ? false : null;
+}
+
+/// По какому полю ищем заказчика.
+///
+/// Два режима, а не одно поле на всё: сервер ищет сам, а по адресу — пока
+/// нет. Смешивать серверную выдачу с досчитанной здесь значило бы показывать
+/// список, про который непонятно, полон он или нет.
+enum CustomerSearchMode {
+  /// Ищет сервер: имя, телефон и что он там ещё умеет.
+  nameOrPhone,
+
+  /// Ищем сами по полной выборке — параметра `address` в API нет.
+  /// Когда он появится, этот режим схлопывается в обычный запрос.
+  address;
+
+  /// Подпись переключателя на языке интерфейса.
+  String label(AppLocalizations l10n) => switch (this) {
+        CustomerSearchMode.nameOrPhone => l10n.customerSearchModeName,
+        CustomerSearchMode.address => l10n.customerSearchModeAddress,
+      };
+
+  /// Подсказка в поле поиска.
+  String hint(AppLocalizations l10n) => switch (this) {
+        CustomerSearchMode.nameOrPhone => l10n.customerSearch,
+        CustomerSearchMode.address => l10n.customerSearchAddress,
       };
 }
 

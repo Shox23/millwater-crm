@@ -25,10 +25,20 @@ class _CountingRepository extends MockCrmRepository {
   final List<String?> searches = [];
 
   @override
-  Future<List<Customer>> getCustomers({String? search, bool? hasDebt}) async {
+  Future<List<Customer>> getCustomers({
+    String? search,
+    bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
+  }) async {
     searches.add(search);
     if (empty) return [];
-    return super.getCustomers(search: search, hasDebt: hasDebt);
+    return super.getCustomers(
+        search: search,
+        hasDebt: hasDebt,
+        hasCooler: hasCooler,
+        isActive: isActive,
+      );
   }
 }
 

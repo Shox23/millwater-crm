@@ -359,6 +359,46 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filterNew => 'Новые';
 
   @override
+  String get filterCancelled => 'Отменённые';
+
+  @override
+  String get filterFailed => 'Не доставлены';
+
+  @override
+  String get filterWithDebt => 'С долгом';
+
+  @override
+  String get filterWithCooler => 'С кулером';
+
+  @override
+  String get filterInactive => 'Неактивные';
+
+  @override
+  String get sessionDiagTitle => 'Последний обрыв сессии';
+
+  @override
+  String get sessionDiagNever => 'Обрывов не было';
+
+  @override
+  String get sessionDiagCopied => 'Скопировано';
+
+  @override
+  String get sessionEndRefreshFailed => 'Не удалось обновить токен';
+
+  @override
+  String get sessionEndRestoreRejected => 'Сервер отклонил сохранённую сессию';
+
+  @override
+  String get sessionEndSignedOut => 'Выход по кнопке';
+
+  @override
+  String get customerFormIsActive => 'Активен';
+
+  @override
+  String get customerFormIsActiveHint =>
+      'Неактивных не предлагают при сборке маршрута';
+
+  @override
   String get paymentCash => 'Наличные';
 
   @override
@@ -580,6 +620,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get customerSearch => 'Поиск заказчика';
+
+  @override
+  String get customerSearchAddress => 'Улица, массив, дом';
+
+  @override
+  String get customerSearchModeName => 'Имя и телефон';
+
+  @override
+  String get customerSearchModeAddress => 'Адрес';
 
   @override
   String get stopTitle => 'Точка маршрута';

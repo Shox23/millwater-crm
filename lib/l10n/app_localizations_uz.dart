@@ -352,6 +352,46 @@ class AppLocalizationsUz extends AppLocalizations {
   String get filterNew => 'Yangi';
 
   @override
+  String get filterCancelled => 'Bekor qilinganlar';
+
+  @override
+  String get filterFailed => 'Yetkazilmaganlar';
+
+  @override
+  String get filterWithDebt => 'Qarzdor';
+
+  @override
+  String get filterWithCooler => 'Kuleri bor';
+
+  @override
+  String get filterInactive => 'Nofaol';
+
+  @override
+  String get sessionDiagTitle => 'Sessiyaning oxirgi uzilishi';
+
+  @override
+  String get sessionDiagNever => 'Uzilishlar bo‘lmagan';
+
+  @override
+  String get sessionDiagCopied => 'Nusxalandi';
+
+  @override
+  String get sessionEndRefreshFailed => 'Tokenni yangilab bo‘lmadi';
+
+  @override
+  String get sessionEndRestoreRejected => 'Server saqlangan sessiyani rad etdi';
+
+  @override
+  String get sessionEndSignedOut => 'Tugma orqali chiqish';
+
+  @override
+  String get customerFormIsActive => 'Faol';
+
+  @override
+  String get customerFormIsActiveHint =>
+      'Nofaollar marshrut tuzishda taklif qilinmaydi';
+
+  @override
   String get paymentCash => 'Naqd';
 
   @override
@@ -569,6 +609,15 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get customerSearch => 'Mijozni qidirish';
+
+  @override
+  String get customerSearchAddress => 'Ko‘cha, massiv, uy';
+
+  @override
+  String get customerSearchModeName => 'Ism va telefon';
+
+  @override
+  String get customerSearchModeAddress => 'Manzil';
 
   @override
   String get stopTitle => 'Marshrut nuqtasi';

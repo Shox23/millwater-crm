@@ -7,6 +7,8 @@ class CustomersState extends Equatable {
     this.status = CustomersStatus.initial,
     this.customers = const [],
     this.query = '',
+    this.filter = CustomerFilter.all,
+    this.searchMode = CustomerSearchMode.nameOrPhone,
     this.page = 1,
     this.hasMore = false,
     this.total = 0,
@@ -16,6 +18,12 @@ class CustomersState extends Equatable {
   final CustomersStatus status;
   final List<Customer> customers;
   final String query;
+
+  /// Активный чип отбора. Фильтрует сервер — см. [CustomerFilter].
+  final CustomerFilter filter;
+
+  /// По какому полю идёт поиск — см. [CustomerSearchMode].
+  final CustomerSearchMode searchMode;
 
   /// Номер последней загруженной страницы.
   final int page;
@@ -35,17 +43,31 @@ class CustomersState extends Equatable {
   /// спиннером во весь экран.
   final bool loadingMore;
 
-  /// Отфильтрованный список. Поиск выполняет сервер, здесь ничего не режем:
-  /// локальный фильтр поверх серверного прятал бы часть найденного.
+  /// Список к показу. Резать здесь нечего: и серверный поиск, и поиск по
+  /// адресу уже отдали готовую выдачу — см. `CustomersBloc`.
   List<Customer> get visible => customers;
+
+  /// Ищем по адресу, и запрос непустой: список собран из полной выборки, а
+  /// не со страницы сервера. Догружать в этом режиме нечего.
+  bool get isAddressSearch =>
+      searchMode == CustomerSearchMode.address && query.trim().isNotEmpty;
 
   /// Список пуст из-за поиска, а не потому что база пустая.
   bool get isEmptySearch => customers.isEmpty && query.trim().isNotEmpty;
+
+  /// Список пуст из-за чипа отбора: подсказка «очистить поиск» здесь не к
+  /// месту — очищать нечего, сбрасывать надо фильтр.
+  bool get isEmptyFilter =>
+      customers.isEmpty &&
+      query.trim().isEmpty &&
+      filter != CustomerFilter.all;
 
   CustomersState copyWith({
     CustomersStatus? status,
     List<Customer>? customers,
     String? query,
+    CustomerFilter? filter,
+    CustomerSearchMode? searchMode,
     int? page,
     bool? hasMore,
     int? total,
@@ -55,6 +77,8 @@ class CustomersState extends Equatable {
       status: status ?? this.status,
       customers: customers ?? this.customers,
       query: query ?? this.query,
+      filter: filter ?? this.filter,
+      searchMode: searchMode ?? this.searchMode,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       total: total ?? this.total,
@@ -63,6 +87,15 @@ class CustomersState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [status, customers, query, page, hasMore, total, loadingMore];
+  List<Object?> get props => [
+        status,
+        customers,
+        query,
+        filter,
+        searchMode,
+        page,
+        hasMore,
+        total,
+        loadingMore,
+      ];
 }

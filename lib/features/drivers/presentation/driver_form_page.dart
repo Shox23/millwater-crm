@@ -193,7 +193,10 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      // Не `false`: наглухо запрещённый pop гасит краевой жест «назад» на
+      // iOS (`PageRoute.popGestureEnabled`). Пока форму не трогали, уходить
+      // не жалко — и жест работает; тронутую перехватываем и переспрашиваем.
+      canPop: !_dirty,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _leave();
       },

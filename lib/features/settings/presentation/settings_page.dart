@@ -16,6 +16,7 @@ import '../../../core/widgets/section_block.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../prices/presentation/prices_page.dart';
 import 'widgets/change_password_tile.dart';
+import 'widgets/session_diagnostics_tile.dart';
 import 'widgets/language_selector_card.dart';
 import 'widgets/theme_selector_card.dart';
 
@@ -96,6 +97,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 const ChangePasswordTile(),
+                const SessionDiagnosticsTile(),
               ],
             ),
           ),

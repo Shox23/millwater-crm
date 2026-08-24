@@ -692,6 +692,84 @@ abstract class AppLocalizations {
   /// **'Новые'**
   String get filterNew;
 
+  /// No description provided for @filterCancelled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменённые'**
+  String get filterCancelled;
+
+  /// No description provided for @filterFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не доставлены'**
+  String get filterFailed;
+
+  /// No description provided for @filterWithDebt.
+  ///
+  /// In ru, this message translates to:
+  /// **'С долгом'**
+  String get filterWithDebt;
+
+  /// No description provided for @filterWithCooler.
+  ///
+  /// In ru, this message translates to:
+  /// **'С кулером'**
+  String get filterWithCooler;
+
+  /// No description provided for @filterInactive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неактивные'**
+  String get filterInactive;
+
+  /// No description provided for @sessionDiagTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Последний обрыв сессии'**
+  String get sessionDiagTitle;
+
+  /// No description provided for @sessionDiagNever.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обрывов не было'**
+  String get sessionDiagNever;
+
+  /// No description provided for @sessionDiagCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировано'**
+  String get sessionDiagCopied;
+
+  /// No description provided for @sessionEndRefreshFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось обновить токен'**
+  String get sessionEndRefreshFailed;
+
+  /// No description provided for @sessionEndRestoreRejected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сервер отклонил сохранённую сессию'**
+  String get sessionEndRestoreRejected;
+
+  /// No description provided for @sessionEndSignedOut.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выход по кнопке'**
+  String get sessionEndSignedOut;
+
+  /// No description provided for @customerFormIsActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активен'**
+  String get customerFormIsActive;
+
+  /// No description provided for @customerFormIsActiveHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неактивных не предлагают при сборке маршрута'**
+  String get customerFormIsActiveHint;
+
   /// No description provided for @paymentCash.
   ///
   /// In ru, this message translates to:
@@ -1081,6 +1159,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Поиск заказчика'**
   String get customerSearch;
+
+  /// No description provided for @customerSearchAddress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Улица, массив, дом'**
+  String get customerSearchAddress;
+
+  /// No description provided for @customerSearchModeName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя и телефон'**
+  String get customerSearchModeName;
+
+  /// No description provided for @customerSearchModeAddress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Адрес'**
+  String get customerSearchModeAddress;
 
   /// No description provided for @stopTitle.
   ///

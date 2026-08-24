@@ -40,7 +40,6 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
   RouteDetail? _route;
   bool _loading = true;
   bool _loadFailed = false;
-  bool _changed = false;
   StreamSubscription<NotificationEvent>? _notifications;
 
   @override
@@ -102,7 +101,6 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
       ),
     );
     if (done == true) {
-      _changed = true;
       await _load();
     }
   }
@@ -115,7 +113,6 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
       fallback: context.l10n.myRouteStatusFailed,
     );
     if (!ok || !mounted) return;
-    _changed = true;
     showAppSnackBar(context, context.l10n.myRouteStatusChanged(status.label(context.l10n)));
     await _load();
   }
@@ -125,38 +122,32 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
     final t = context.tokens;
     final route = _route;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) Navigator.of(context).pop(_changed);
-      },
-      child: DetailScaffold(
-        title: context.l10n.myRouteTitle,
-        body: _loading
-            ? const Padding(
-                padding: EdgeInsets.only(top: 80),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            : _loadFailed
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 60),
-                    child: ErrorRetryView(
-                      onRetry: _load,
-                      message: context.l10n.routeLoadFailed,
+    return DetailScaffold(
+      title: context.l10n.myRouteTitle,
+      body: _loading
+          ? const Padding(
+              padding: EdgeInsets.only(top: 80),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : _loadFailed
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 60),
+                  child: ErrorRetryView(
+                    onRetry: _load,
+                    message: context.l10n.routeLoadFailed,
+                  ),
+                )
+              : route == null
+                  ? Center(
+                      child: Text(context.l10n.routeNotFound,
+                          style: AppTypography.secondary
+                              .copyWith(color: t.text2)),
+                    )
+                  : _Body(
+                      route: route,
+                      onComplete: _openCompletion,
+                      onStatus: _setStatus,
                     ),
-                  )
-                : route == null
-                    ? Center(
-                        child: Text(context.l10n.routeNotFound,
-                            style: AppTypography.secondary
-                                .copyWith(color: t.text2)),
-                      )
-                    : _Body(
-                        route: route,
-                        onComplete: _openCompletion,
-                        onStatus: _setStatus,
-                      ),
-      ),
     );
   }
 }

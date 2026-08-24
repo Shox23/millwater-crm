@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../core/observability/session_log.dart';
 import '../../core/utils/uz_phone.dart';
 import '../models/user_role.dart';
 import '../network/api_envelope.dart';
@@ -80,11 +81,20 @@ class AuthRepository {
     } on DioException catch (e) {
       if (_isUnreachable(e)) return _store.role;
       // Сервер ответил (401 после неудачного refresh и прочее) — сессии нет.
+      _store.noteSessionEnd(
+        SessionEndReason.restoreRejected,
+        path: '/auth/me',
+        statusCode: e.response?.statusCode,
+      );
       await _store.clear();
       return null;
     } catch (_) {
       // Неожиданное (например, сменившийся формат ответа) — безопаснее
       // попросить войти заново, чем работать с непонятной сессией.
+      _store.noteSessionEnd(
+        SessionEndReason.restoreRejected,
+        path: '/auth/me',
+      );
       await _store.clear();
       return null;
     }
@@ -122,7 +132,12 @@ class AuthRepository {
     });
   }
 
-  Future<void> logout() => _store.clear();
+  /// Выход по кнопке. Записывается наравне с обрывами — иначе в журнале не
+  /// отличить «вышел сам» от «выкинуло».
+  Future<void> logout() {
+    _store.noteSessionEnd(SessionEndReason.signedOut);
+    return _store.clear();
+  }
 }
 
 /// Ответ `GET /auth/me`.

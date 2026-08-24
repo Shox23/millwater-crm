@@ -183,7 +183,12 @@ class MockCrmRepository implements CrmRepository {
 
   // ---- Заказчики ----
   @override
-  Future<List<Customer>> getCustomers({String? search, bool? hasDebt}) async {
+  Future<List<Customer>> getCustomers({
+    String? search,
+    bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
+  }) async {
     await _tick();
     var result = _customers.toList();
     if (search != null && search.trim().isNotEmpty) {
@@ -194,6 +199,12 @@ class MockCrmRepository implements CrmRepository {
     if (hasDebt == true) {
       result = result.where((c) => c.debt > 0).toList();
     }
+    if (hasCooler != null) {
+      result = result.where((c) => c.hasCooler == hasCooler).toList();
+    }
+    if (isActive != null) {
+      result = result.where((c) => c.isActive == isActive).toList();
+    }
     return result;
   }
 
@@ -202,8 +213,15 @@ class MockCrmRepository implements CrmRepository {
     int page = 1,
     String? search,
     bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
   }) async {
-    final all = await getCustomers(search: search, hasDebt: hasDebt);
+    final all = await getCustomers(
+      search: search,
+      hasDebt: hasDebt,
+      hasCooler: hasCooler,
+      isActive: isActive,
+    );
     return _slice(all, page);
   }
 

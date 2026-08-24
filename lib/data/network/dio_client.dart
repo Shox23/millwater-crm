@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../core/observability/session_log.dart';
 import '../models/user_role.dart';
 import 'api_config.dart';
 import 'api_envelope.dart';
@@ -12,14 +15,18 @@ import 'session_storage.dart';
 /// В памяти держим потому, что интерсептор подставляет токен синхронно;
 /// [SessionStorage] нужен, чтобы сессия пережила перезапуск приложения.
 class AuthTokenStore {
-  AuthTokenStore([SessionStorage? storage])
-      : _storage = storage ?? const SecureSessionStorage();
+  AuthTokenStore([SessionStorage? storage, SessionLog? log])
+      : _storage = storage ?? const SecureSessionStorage(),
+        _log = log ?? const NoSessionLog();
 
   static const _kAccess = 'access_token';
   static const _kRefresh = 'refresh_token';
   static const _kRole = 'role';
 
   final SessionStorage _storage;
+
+  /// Куда записывается причина обрыва — см. [SessionLog].
+  final SessionLog _log;
 
   String? accessToken;
   String? refreshToken;
@@ -60,6 +67,26 @@ class AuthTokenStore {
     await _storage.write(_kRefresh, refresh);
     final current = this.role;
     if (current != null) await _storage.write(_kRole, current.wire);
+  }
+
+  /// Отмечает, чем закончилась сессия. Вызывается перед [clear]: после него
+  /// уже не разобрать, ушёл пользователь сам или его вернули на вход.
+  ///
+  /// Запись идёт в стороне и не ожидается. Это диагностика, и стоять из-за
+  /// неё на пути выхода нельзя: хранилище может отвечать медленно, а в
+  /// тестах платформенного канала нет вовсе — ожидание здесь подвешивало
+  /// возврат на экран входа целиком.
+  void noteSessionEnd(
+    SessionEndReason reason, {
+    String? path,
+    int? statusCode,
+  }) {
+    unawaited(_log.record(SessionEnd(
+      at: DateTime.now(),
+      reason: reason,
+      path: path,
+      statusCode: statusCode,
+    )));
   }
 
   Future<void> clear() async {
@@ -115,7 +142,15 @@ class TokenRefresher {
         refresh: data['refresh_token'] as String,
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      // Именно этот путь возвращает пользователя на вход, пока он ничего не
+      // делал: записываем обстоятельства, чтобы следующий такой случай
+      // разбирался по фактам, а не по пересказу.
+      _store.noteSessionEnd(
+        SessionEndReason.refreshFailed,
+        path: '/auth/refresh',
+        statusCode: e is DioException ? e.response?.statusCode : null,
+      );
       await _store.clear();
       _store.onSessionExpired?.call();
       return false;

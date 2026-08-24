@@ -264,12 +264,15 @@ class _RoutesSliver extends StatelessWidget {
           return RouteCard(
             route: route,
             onTap: () async {
-              final changed = await Navigator.of(context).push<bool>(
-                OverlayPageRoute(
+              await Navigator.of(context).push<void>(
+                OverlayPageRoute<void>(
                   builder: (_) => RouteDetailPage(routeId: route.id),
                 ),
               );
-              if (changed == true) bloc.add(const RoutesRequested());
+              // Перечитываем всегда, а не по флагу из карточки: чтобы вернуть
+              // флаг, ей пришлось бы запрещать pop, а запрещённый pop гасит
+              // краевой жест «назад» на iOS. Лишний запрос дешевле жеста.
+              bloc.add(const RoutesRequested());
             },
           );
         },

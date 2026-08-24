@@ -15,6 +15,7 @@ import '../../../core/widgets/section_block.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../settings/presentation/widgets/change_password_tile.dart';
+import '../../settings/presentation/widgets/session_diagnostics_tile.dart';
 import '../../settings/presentation/widgets/language_selector_card.dart';
 import '../../settings/presentation/widgets/theme_selector_card.dart';
 
@@ -116,6 +117,7 @@ class _DriverProfilePageState extends State<DriverProfilePage> {
                     ),
                   ),
                   const ChangePasswordTile(),
+                  const SessionDiagnosticsTile(),
                 ],
               ),
             ),

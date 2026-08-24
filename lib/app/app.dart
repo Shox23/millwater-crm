@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../l10n/l10n.dart';
+import '../core/observability/session_log.dart';
 import '../core/pricing/capsule_price.dart';
 import '../data/models/user_role.dart';
 import '../data/network/dio_client.dart';
@@ -33,6 +34,7 @@ class CrmApp extends StatefulWidget {
     this.dio,
     this.settings = const AppSettings(),
     this.settingsStorage,
+    this.sessionLog,
   });
 
   /// Тема и язык, прочитанные `main` до первого кадра.
@@ -44,6 +46,9 @@ class CrmApp extends StatefulWidget {
   /// Подменяется в тестах: боевое хранилище ходит в платформенный канал.
   final SessionStorage? sessionStorage;
 
+  /// Куда пишется причина обрыва сессии. В тестах подменяется на память.
+  final SessionLog? sessionLog;
+
   /// Подменяется в тестах, чтобы проверить разводку по ролям без сети.
   final Dio? dio;
 
@@ -52,6 +57,7 @@ class CrmApp extends StatefulWidget {
 }
 
 class _CrmAppState extends State<CrmApp> {
+  late final SessionLog _sessionLog;
   late final AuthTokenStore _tokenStore;
   late final Dio _dio;
   late final AuthRepository _authRepository;
@@ -59,15 +65,22 @@ class _CrmAppState extends State<CrmApp> {
   @override
   void initState() {
     super.initState();
-    _tokenStore = AuthTokenStore(widget.sessionStorage);
+    _sessionLog = widget.sessionLog ?? const PrefsSessionLog();
+    _tokenStore = AuthTokenStore(widget.sessionStorage, _sessionLog);
     _dio = widget.dio ?? buildDio(_tokenStore);
     _authRepository = AuthRepository(_dio, _tokenStore);
   }
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider.value(
-      value: _authRepository,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: _authRepository),
+        // Журнал обрывов нужен экранам настроек обеих ролей, а лежит он выше
+        // MaterialApp — как и всё, до чего дотягиваются экраны из
+        // Navigator.push.
+        RepositoryProvider<SessionLog>.value(value: _sessionLog),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(

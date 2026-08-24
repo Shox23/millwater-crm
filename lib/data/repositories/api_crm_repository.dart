@@ -237,31 +237,58 @@ class ApiCrmRepository implements CrmRepository {
 
   // ---- Заказчики ----
   @override
-  Future<List<Customer>> getCustomers({String? search, bool? hasDebt}) => _all(
+  Future<List<Customer>> getCustomers({
+    String? search,
+    bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
+  }) =>
+      _all(
         '/admin/customers',
         Customer.fromJson,
-        query: {
-          if (search != null && search.trim().isNotEmpty)
-            'search': search.trim(),
-          'has_debt': ?hasDebt,
-        },
+        query: _customerQuery(
+          search: search,
+          hasDebt: hasDebt,
+          hasCooler: hasCooler,
+          isActive: isActive,
+        ),
       );
+
+  /// Параметры отбора заказчиков — одни и те же у полной выборки и страницы.
+  ///
+  /// Незаданный фильтр не отправляется вовсе: `has_cooler=false` и «неважно»
+  /// — разные вопросы, и пустое значение сервер разобрал бы как первый.
+  Map<String, dynamic> _customerQuery({
+    String? search,
+    bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
+  }) =>
+      {
+        if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+        'has_debt': ?hasDebt,
+        'has_cooler': ?hasCooler,
+        'is_active': ?isActive,
+      };
 
   @override
   Future<ResultPage<Customer>> getCustomersPage({
     int page = 1,
     String? search,
     bool? hasDebt,
+    bool? hasCooler,
+    bool? isActive,
   }) =>
       _pageOf(
         '/admin/customers',
         Customer.fromJson,
         page: page,
-        query: {
-          if (search != null && search.trim().isNotEmpty)
-            'search': search.trim(),
-          'has_debt': ?hasDebt,
-        },
+        query: _customerQuery(
+          search: search,
+          hasDebt: hasDebt,
+          hasCooler: hasCooler,
+          isActive: isActive,
+        ),
       );
 
   @override
