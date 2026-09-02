@@ -56,9 +56,11 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
 
   final _capsule = TextEditingController();
   final _deposit = TextEditingController();
+  final _fine = TextEditingController();
 
   final _capsuleFocus = FocusNode();
   final _depositFocus = FocusNode();
+  final _fineFocus = FocusNode();
 
   PriceSettings? _current;
 
@@ -92,8 +94,10 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
   void dispose() {
     _capsule.dispose();
     _deposit.dispose();
+    _fine.dispose();
     _capsuleFocus.dispose();
     _depositFocus.dispose();
+    _fineFocus.dispose();
     super.dispose();
   }
 
@@ -113,6 +117,7 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
         _past = history.where((p) => p.id != prices.id).toList();
         _capsule.text = '${prices.capsulePrice}';
         _deposit.text = '${prices.depositPrice}';
+        _fine.text = '${prices.damagedBottleFine}';
         _loading = false;
       });
     } catch (_) {
@@ -142,6 +147,7 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
   List<(FocusNode, String?)> get _checks => [
         (_capsuleFocus, _capsuleRule(_capsule.text)),
         (_depositFocus, _priceRule(_deposit.text)),
+        (_fineFocus, _priceRule(_fine.text)),
       ];
 
   /// Ноль за капсулу — почти наверняка опечатка: воду раздают не бесплатно.
@@ -158,12 +164,14 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
 
   int get _capsuleValue => int.tryParse(_capsule.text.trim()) ?? 0;
   int get _depositValue => int.tryParse(_deposit.text.trim()) ?? 0;
+  int get _fineValue => int.tryParse(_fine.text.trim()) ?? 0;
 
   /// Введённое отличается от действующего прайса — есть что сохранять.
   bool get _changed =>
       _current == null ||
       _capsuleValue != _current!.capsulePrice ||
-      _depositValue != _current!.depositPrice;
+      _depositValue != _current!.depositPrice ||
+      _fineValue != _current!.damagedBottleFine;
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
@@ -181,10 +189,12 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
     final confirmed = await showConfirmDialog(
       context,
       title: context.l10n.pricesConfirmTitle,
-      message: context.l10n.pricesConfirmMessage(
+      message: '${context.l10n.pricesConfirmMessage(
         MoneyFormatter.sum(context.l10n, _capsuleValue),
         MoneyFormatter.sum(context.l10n, _depositValue),
-      ),
+      )} ${context.l10n.pricesConfirmFine(
+        MoneyFormatter.sum(context.l10n, _fineValue),
+      )}',
       confirmLabel: context.l10n.pricesConfirmAction,
       // Не разрушительное действие: старый прайс остаётся в истории сервера.
       destructive: false,
@@ -195,9 +205,13 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
     final l10n = context.l10n;
 
     final saved = await submit(
+      // Все три значения уходят вместе, хотя сервер принимает и подмножество:
+      // на экране они показаны сразу все, и «отправлю только изменённое»
+      // значило бы гадать, что админ считал изменением.
       () => repo.setPrices(
         capsulePrice: _capsuleValue,
         depositPrice: _depositValue,
+        damagedBottleFine: _fineValue,
         idempotencyKey: _idempotencyKey,
       ),
       message: (e) => e is DioException
@@ -267,6 +281,21 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                               helper: context.l10n.pricesDepositHelper,
                               controller: _deposit,
                               focusNode: _depositFocus,
+                              validator: _priceRule,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              maxLength: 10,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (_) => _fineFocus.requestFocus(),
+                            ),
+                            LabeledTextField(
+                              label: context.l10n.pricesDamagedFine,
+                              hint: '40000',
+                              helper: context.l10n.pricesDamagedFineHelper,
+                              controller: _fine,
+                              focusNode: _fineFocus,
                               validator: _priceRule,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
@@ -350,6 +379,12 @@ class _CurrentPriceCard extends StatelessWidget {
             icon: Icons.inventory_2_outlined,
             label: context.l10n.pricesDeposit,
             value: MoneyFormatter.sum(context.l10n, prices.depositPrice),
+          ),
+          const Divider(),
+          _Row(
+            icon: Icons.report_gmailerrorred_outlined,
+            label: context.l10n.pricesDamagedFineRow,
+            value: MoneyFormatter.sum(context.l10n, prices.damagedBottleFine),
           ),
           Text(
             context.l10n.pricesEffectiveFrom(
@@ -435,6 +470,16 @@ class _HistoryRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              // У прайсов, заведённых до появления штрафа, он нулевой —
+              // показывать строку «штраф 0» в истории незачем.
+              if (prices.damagedBottleFine > 0)
+                Text(
+                  context.l10n.pricesFineRow(
+                      MoneyFormatter.sum(context.l10n, prices.damagedBottleFine)),
+                  style: AppTypography.secondary.copyWith(color: t.text2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
             ],
           ),
         ),

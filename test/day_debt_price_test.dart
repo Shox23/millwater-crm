@@ -37,7 +37,7 @@ RouteStop _stop({
 class _OneDebtDayRepository extends MockCrmRepository {
   static final today = dayOnly(DateTime.now());
 
-  static final _route = RouteDetail(
+  static final route = RouteDetail(
     id: 'r-1',
     date: today,
     status: RouteStatus.completed,
@@ -61,18 +61,18 @@ class _OneDebtDayRepository extends MockCrmRepository {
   }) async =>
       [
         RouteListItem(
-          id: _route.id,
-          date: _route.date,
-          status: _route.status,
-          completedCount: _route.completedCount,
-          totalCustomers: _route.totalCustomers,
-          driverId: _route.driverId,
-          driverFullName: _route.driverFullName,
+          id: route.id,
+          date: route.date,
+          status: route.status,
+          completedCount: route.completedCount,
+          totalCustomers: route.totalCustomers,
+          driverId: route.driverId,
+          driverFullName: route.driverFullName,
         ),
       ];
 
   @override
-  Future<RouteDetail?> getRoute(String id) async => _route;
+  Future<RouteDetail?> getRoute(String id) async => route;
 }
 
 void main() {
@@ -120,5 +120,35 @@ void main() {
     final state = await loadDay(bloc);
 
     expect(state.capsulePrice, ProductConfig.capsulePrice);
+  });
+
+  test('«в долг» читается из способа оплаты, а не из нулевой суммы', () {
+    // Нулевая сумма сама по себе долга не означает: закрыть точку с нулём
+    // можно и по другой причине, а способ оплаты сервер отдаёт прямо.
+    final cash = DeliveryRow(
+      route: _OneDebtDayRepository.route,
+      stop: _stop(id: 'cash', capsules: 0, paid: 0)
+          .copyWith(paymentMethod: PaymentMethod.cash),
+    );
+    final debt = DeliveryRow(
+      route: _OneDebtDayRepository.route,
+      stop: _stop(id: 'debt', capsules: 3, paid: 0)
+          .copyWith(paymentMethod: PaymentMethod.debt),
+    );
+
+    expect(cash.isDebt, isFalse);
+    expect(debt.isDebt, isTrue);
+  });
+
+  test('точка старого клиента без способа оплаты по-прежнему угадывается', () {
+    // Такие точки закрыты сборкой, которая способа не присылала: без отката
+    // они выпали бы из «в долг за день» задним числом.
+    final legacy = DeliveryRow(
+      route: _OneDebtDayRepository.route,
+      stop: _stop(id: 'legacy', capsules: 3, paid: 0),
+    );
+
+    expect(legacy.stop.paymentMethod, isNull);
+    expect(legacy.isDebt, isTrue);
   });
 }

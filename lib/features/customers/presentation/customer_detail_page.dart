@@ -10,6 +10,7 @@ import '../../../app/theme/app_typography.dart';
 import '../../../core/navigation/overlay_route.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/confirm_dialog.dart';
@@ -101,17 +102,38 @@ class CustomerDetailPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                // Кулер отмечаем только когда он есть: строка «кулера нет» у
-                // большинства заказчиков была бы шумом.
+                // Кулеры отмечаем только когда они есть: строка «кулера нет»
+                // у большинства заказчиков была бы шумом. Число, а не факт:
+                // у офиса их бывает несколько, и на вывозе это важно.
                 if (customer.hasCooler)
                   Row(
                     spacing: 4,
                     children: [
                       Icon(Icons.water_drop_outlined,
                           size: 16, color: t.primary),
-                      Text(context.l10n.customerHasCooler,
+                      Text(context.l10n.coolersCount(customer.coolerCount),
                           style: AppTypography.secondary
                               .copyWith(color: t.primary)),
+                    ],
+                  ),
+                // Индивидуальная цена — то, из-за чего расчёт у этого
+                // заказчика отличается от прайса. Не показать её значит
+                // оставить расхождение необъяснённым.
+                if (customer.hasIndividualPrice)
+                  Row(
+                    spacing: 4,
+                    children: [
+                      Icon(Icons.sell_outlined, size: 16, color: t.primary),
+                      Text(
+                        context.l10n.customerCustomPrice(
+                          MoneyFormatter.sum(
+                            context.l10n,
+                            customer.customWaterPrice!,
+                          ),
+                        ),
+                        style: AppTypography.secondary
+                            .copyWith(color: t.primary),
+                      ),
                     ],
                   ),
               ],

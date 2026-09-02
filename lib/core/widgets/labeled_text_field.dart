@@ -24,6 +24,7 @@ class LabeledTextField extends StatefulWidget {
     required this.label,
     this.hint,
     this.helper,
+    this.helperMaxLines,
     this.controller,
     this.onChanged,
     this.keyboardType,
@@ -44,6 +45,11 @@ class LabeledTextField extends StatefulWidget {
 
   /// Пояснение под полем — видно, пока нет ошибки.
   final String? helper;
+
+  /// Сколько строк отводится подсказке. По умолчанию одна, как у Material:
+  /// длинная подсказка тогда обрезается многоточием. Ставить больше нужно
+  /// там, где подсказка объясняет смысл поля и обязана дочитываться.
+  final int? helperMaxLines;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final TextInputType? keyboardType;
@@ -103,6 +109,7 @@ class _LabeledTextFieldState extends State<LabeledTextField> {
           decoration: InputDecoration(
             hintText: widget.hint,
             helperText: widget.helper,
+            helperMaxLines: widget.helperMaxLines,
             counterText: '',
             suffixIcon: _suffix(t),
           ),

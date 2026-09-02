@@ -13,6 +13,7 @@ class PriceSettings extends Equatable {
     required this.id,
     required this.capsulePrice,
     required this.depositPrice,
+    this.damagedBottleFine = 0,
     required this.createdAt,
   });
 
@@ -24,15 +25,23 @@ class PriceSettings extends Equatable {
   /// Серверное `deposit_price` — залог за тару, сум.
   final int depositPrice;
 
+  /// Серверное `damaged_bottle_fine` — штраф за повреждённую капсулу, сум.
+  ///
+  /// Ноль по умолчанию честен дважды: у прайсов, заведённых до релиза, штрафа
+  /// не было, и старый стенд поля не отдаёт вовсе.
+  final int damagedBottleFine;
+
   final DateTime createdAt;
 
   factory PriceSettings.fromJson(Map<String, dynamic> json) => PriceSettings(
         id: requireString(json['id'], 'id'),
         capsulePrice: MoneyParser.toSum(json['water_price']),
         depositPrice: MoneyParser.toSum(json['deposit_price']),
+        damagedBottleFine: MoneyParser.toSum(json['damaged_bottle_fine']),
         createdAt: dateOr(json['created_at'], epoch),
       );
 
   @override
-  List<Object?> get props => [id, capsulePrice, depositPrice, createdAt];
+  List<Object?> get props =>
+      [id, capsulePrice, depositPrice, damagedBottleFine, createdAt];
 }

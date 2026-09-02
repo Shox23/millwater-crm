@@ -49,7 +49,10 @@ class _FailingRepository extends MockCrmRepository {
     required String phone,
     required String address,
     String? comment,
-    bool hasCooler = false,
+    int coolerCount = 0,
+    int debt = 0,
+    int prepayment = 0,
+    int? customWaterPrice,
     String? idempotencyKey,
   }) async {
     if (onWrite != null) _throwWrite();
@@ -58,7 +61,10 @@ class _FailingRepository extends MockCrmRepository {
       phone: phone,
       address: address,
       comment: comment,
-      hasCooler: hasCooler,
+      coolerCount: coolerCount,
+      debt: debt,
+      prepayment: prepayment,
+      customWaterPrice: customWaterPrice,
       idempotencyKey: idempotencyKey,
     );
   }
@@ -89,13 +95,11 @@ class _FailingRepository extends MockCrmRepository {
   Future<List<Customer>> getCustomers({
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) =>
       _read(() => super.getCustomers(
         search: search,
         hasDebt: hasDebt,
-        hasCooler: hasCooler,
         isActive: isActive,
       ));
 
@@ -256,7 +260,6 @@ class _FlakyRepository extends MockCrmRepository {
   Future<List<Customer>> getCustomers({
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) {
     if (!_failed) {
@@ -266,7 +269,6 @@ class _FlakyRepository extends MockCrmRepository {
     return super.getCustomers(
         search: search,
         hasDebt: hasDebt,
-        hasCooler: hasCooler,
         isActive: isActive,
       );
   }

@@ -8,7 +8,6 @@ class CustomersState extends Equatable {
     this.customers = const [],
     this.query = '',
     this.filter = CustomerFilter.all,
-    this.searchMode = CustomerSearchMode.nameOrPhone,
     this.page = 1,
     this.hasMore = false,
     this.total = 0,
@@ -19,11 +18,9 @@ class CustomersState extends Equatable {
   final List<Customer> customers;
   final String query;
 
-  /// Активный чип отбора. Фильтрует сервер — см. [CustomerFilter].
+  /// Активный чип отбора. Отбирает сервер, кроме кулеров — см.
+  /// [CustomerFilter.filtersCoolerLocally].
   final CustomerFilter filter;
-
-  /// По какому полю идёт поиск — см. [CustomerSearchMode].
-  final CustomerSearchMode searchMode;
 
   /// Номер последней загруженной страницы.
   final int page;
@@ -43,14 +40,9 @@ class CustomersState extends Equatable {
   /// спиннером во весь экран.
   final bool loadingMore;
 
-  /// Список к показу. Резать здесь нечего: и серверный поиск, и поиск по
-  /// адресу уже отдали готовую выдачу — см. `CustomersBloc`.
+  /// Список к показу. Резать здесь нечего: выдачу уже собрал `CustomersBloc`
+  /// — серверным поиском и, для чипа «С кулером», клиентским отбором.
   List<Customer> get visible => customers;
-
-  /// Ищем по адресу, и запрос непустой: список собран из полной выборки, а
-  /// не со страницы сервера. Догружать в этом режиме нечего.
-  bool get isAddressSearch =>
-      searchMode == CustomerSearchMode.address && query.trim().isNotEmpty;
 
   /// Список пуст из-за поиска, а не потому что база пустая.
   bool get isEmptySearch => customers.isEmpty && query.trim().isNotEmpty;
@@ -67,7 +59,6 @@ class CustomersState extends Equatable {
     List<Customer>? customers,
     String? query,
     CustomerFilter? filter,
-    CustomerSearchMode? searchMode,
     int? page,
     bool? hasMore,
     int? total,
@@ -78,7 +69,6 @@ class CustomersState extends Equatable {
       customers: customers ?? this.customers,
       query: query ?? this.query,
       filter: filter ?? this.filter,
-      searchMode: searchMode ?? this.searchMode,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       total: total ?? this.total,
@@ -92,7 +82,6 @@ class CustomersState extends Equatable {
         customers,
         query,
         filter,
-        searchMode,
         page,
         hasMore,
         total,

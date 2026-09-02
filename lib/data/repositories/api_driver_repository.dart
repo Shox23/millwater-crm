@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import '../../core/utils/money_parser.dart';
 import '../models/enums.dart';
 import '../models/json.dart';
+import '../models/order.dart';
+import '../models/result_page.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
 import 'driver_repository.dart';
@@ -17,6 +19,10 @@ class ApiDriverRepository implements DriverRepository {
 
   final Dio _dio;
 
+  /// Размер страницы у списка заказов — единственного пагинированного ответа
+  /// водительской части. Потолок сервера — сотня.
+  static const int _pageSize = 100;
+
   @override
   Future<List<RouteListItem>> getMyRoutes() async {
     final res = await _dio.get('/driver/routes');
@@ -29,6 +35,57 @@ class ApiDriverRepository implements DriverRepository {
   Future<RouteDetail?> getMyRoute(String id) async {
     final res = await _dio.get('/driver/routes/$id');
     return RouteDetail.fromJson(asMap(res.data));
+  }
+
+  @override
+  Future<ResultPage<Order>> getMyOrders({
+    int page = 1,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? customerId,
+    String? routeId,
+    DeliveryStatus? status,
+    OrderPurpose? purpose,
+    PaymentMethod? paymentMethod,
+    String? search,
+  }) async {
+    final res = await _dio.get('/driver/orders', queryParameters: {
+      ...orderFilterQuery(
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        customerId: customerId,
+        routeId: routeId,
+        status: status,
+        purpose: purpose,
+        paymentMethod: paymentMethod,
+        search: search,
+      ),
+      'page': page,
+      'page_size': _pageSize,
+    });
+
+    final data = unwrapData(res.data);
+    final paginated = data is Map<String, dynamic>;
+    final items = parseList(
+      paginated ? data['items'] : data,
+      Order.fromJson,
+    );
+    final pages = paginated ? intOr(data['pages'], 1) : 1;
+
+    return ResultPage(
+      items: items,
+      page: page,
+      // Пустая страница обрывает обход даже там, где сервер обещает ещё, —
+      // иначе список догружал бы пустоту до упора.
+      hasMore: items.isNotEmpty && page < pages,
+      total: paginated ? intOr(data['total'], items.length) : items.length,
+    );
+  }
+
+  @override
+  Future<Order?> getMyOrder(String id) async {
+    final res = await _dio.get('/driver/orders/$id');
+    return Order.fromJson(asMap(res.data));
   }
 
   @override

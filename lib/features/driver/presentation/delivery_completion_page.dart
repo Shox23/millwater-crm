@@ -130,15 +130,43 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     });
   }
 
+  /// Оплата в долг: денег не приняли, вся стоимость уходит заказчику.
+  bool get _isDebt => _method == PaymentMethod.debt;
+
+  /// Сколько начислится заказчику в долг.
+  ///
+  /// Это стоимость заказа целиком: при способе «в долг» принято ноль.
+  int get _debtAmount => _calculatedAmount;
+
+  /// Сумма, введённая до перехода в долг, — чтобы вернуть её при возврате.
+  int? _amountBeforeDebt;
+
   /// Смена способа оплаты.
   ///
   /// Уход с карты стирает уже прикреплённый снимок: тайл исчезает с экрана, и
   /// оставшееся фото ушло бы на сервер незаметно для водителя — приложенным к
   /// оплате, которая его не предполагает.
+  ///
+  /// Долг обнуляет сумму принудительно. Правило серверное: при
+  /// `payment_method = debt` он требует ровно ноль и иначе отвечает 422 с
+  /// английским текстом, который до водителя не доходит — тот видел общее
+  /// «Не удалось». Раньше клиент подставлял «капсулы × цена» при любом
+  /// способе и упирался в этот отказ на каждой доставке в долг.
   void _onMethodChanged(PaymentMethod method) {
     setState(() {
+      final wasDebt = _isDebt;
       _method = method;
       if (!method.needsPhoto) _photo = null;
+
+      if (method == PaymentMethod.debt) {
+        _amountBeforeDebt = _amountOrNull;
+        _amountController.text = '0';
+      } else if (wasDebt) {
+        // Возвращаем то, что было до долга: правленную водителем сумму —
+        // как есть, иначе расчёт по прайсу.
+        _amountController.text = '${_amountBeforeDebt ?? _calculatedAmount}';
+        _amountBeforeDebt = null;
+      }
     });
   }
 
@@ -307,6 +335,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                       child: TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
+                        // В долг сумму не правят: сервер примет только ноль.
+                        readOnly: _isDebt,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
@@ -333,6 +363,14 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 if (_amountOrNull == null)
                   Text(context.l10n.completionAmountRequired,
                       style: AppTypography.secondary.copyWith(color: t.danger))
+                else if (_isDebt)
+                  // Ноль в поле — это не «привезли бесплатно»: стоимость
+                  // целиком уходит заказчику в долг, и водитель должен
+                  // видеть, сколько именно ему записали.
+                  Text(
+                    context.l10n.completionDebtHint,
+                    style: AppTypography.secondary.copyWith(color: t.text2),
+                  )
                 else
                   _AmountHint(
                     capsules: _capsules,
@@ -375,6 +413,20 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                         .copyWith(fontSize: 18, color: t.text)),
               ],
             ),
+            // Отдельной строкой, а не вместо итога: принято ноль и начислено
+            // N — это два разных числа, и подменять одно другим нельзя.
+            if (_isDebt)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(context.l10n.completionDebtLine,
+                      style:
+                          AppTypography.secondary.copyWith(color: t.text2)),
+                  Text(MoneyFormatter.sum(context.l10n, _debtAmount),
+                      style: AppTypography.money
+                          .copyWith(fontSize: 18, color: t.danger)),
+                ],
+              ),
             AppButton(
               label: submitting ? context.l10n.commonSaving : context.l10n.completionSubmit,
               // Пустое поле суммы отправлять нельзя: на сервер ушёл бы ноль,

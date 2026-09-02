@@ -7,6 +7,7 @@ import '../models/result_page.dart';
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
+import '../models/order.dart';
 import '../models/price_settings.dart';
 import '../models/report_export.dart';
 import '../models/reports_summary.dart';
@@ -86,6 +87,7 @@ class MockCrmRepository implements CrmRepository {
   Future<PriceSettings> setPrices({
     required int capsulePrice,
     required int depositPrice,
+    required int damagedBottleFine,
     String? idempotencyKey,
   }) async {
     await _tick();
@@ -96,6 +98,7 @@ class MockCrmRepository implements CrmRepository {
       id: store.nextId('price'),
       capsulePrice: capsulePrice,
       depositPrice: depositPrice,
+      damagedBottleFine: damagedBottleFine,
       createdAt: DateTime.now(),
     );
     _prices.insert(0, created);
@@ -186,7 +189,6 @@ class MockCrmRepository implements CrmRepository {
   Future<List<Customer>> getCustomers({
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) async {
     await _tick();
@@ -199,9 +201,9 @@ class MockCrmRepository implements CrmRepository {
     if (hasDebt == true) {
       result = result.where((c) => c.debt > 0).toList();
     }
-    if (hasCooler != null) {
-      result = result.where((c) => c.hasCooler == hasCooler).toList();
-    }
+    // Отбора по кулеру здесь нет намеренно: сервер его больше не делает, и
+    // мок, который умеет больше живого API, спрятал бы клиентский фильтр от
+    // тестов — а он теперь единственный.
     if (isActive != null) {
       result = result.where((c) => c.isActive == isActive).toList();
     }
@@ -213,13 +215,11 @@ class MockCrmRepository implements CrmRepository {
     int page = 1,
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) async {
     final all = await getCustomers(
       search: search,
       hasDebt: hasDebt,
-      hasCooler: hasCooler,
       isActive: isActive,
     );
     return _slice(all, page);
@@ -237,12 +237,22 @@ class MockCrmRepository implements CrmRepository {
     required String phone,
     required String address,
     String? comment,
-    bool hasCooler = false,
+    int coolerCount = 0,
+    int debt = 0,
+    int prepayment = 0,
+    int? customWaterPrice,
     String? idempotencyKey,
   }) async {
     await _tick();
     final replayed = _replay<Customer>(idempotencyKey);
     if (replayed != null) return replayed;
+
+    // Тот же отказ, что и у сервера (422 BOTH_BALANCES_SET): форма не должна
+    // уметь собрать состояние, которое живой API отвергнет, а мок — это
+    // единственное место, где такую форму проверяют тесты.
+    if (debt > 0 && prepayment > 0) {
+      throw StateError('BOTH_BALANCES_SET');
+    }
 
     final customer = Customer(
       id: store.nextId('c'),
@@ -250,7 +260,10 @@ class MockCrmRepository implements CrmRepository {
       phone: phone,
       address: address,
       comment: comment,
-      hasCooler: hasCooler,
+      coolerCount: coolerCount,
+      debt: debt,
+      prepayment: prepayment,
+      customWaterPrice: customWaterPrice,
       createdAt: DateTime.now(),
     );
     _customers.add(customer);
@@ -258,11 +271,26 @@ class MockCrmRepository implements CrmRepository {
   }
 
   @override
-  Future<Customer> updateCustomer(Customer customer) async {
+  Future<Customer> updateCustomer(
+    Customer customer, {
+    bool balanceChanged = false,
+  }) async {
     await _tick();
+    if (balanceChanged && customer.debt > 0 && customer.prepayment > 0) {
+      throw StateError('BOTH_BALANCES_SET');
+    }
     final i = _customers.indexWhere((c) => c.id == customer.id);
-    if (i != -1) _customers[i] = customer;
-    return customer;
+    if (i == -1) return customer;
+
+    // Баланс без явного признака не трогаем — ровно как сервер, который
+    // непереданные поля оставляет прежними. Иначе форма правки названия
+    // откатывала бы оплату, принятую водителем, пока она была открыта.
+    final stored = _customers[i];
+    final saved = balanceChanged
+        ? customer
+        : customer.copyWith(debt: stored.debt, prepayment: stored.prepayment);
+    _customers[i] = saved;
+    return saved;
   }
 
   @override
@@ -329,6 +357,7 @@ class MockCrmRepository implements CrmRepository {
     required String driverId,
     required DateTime date,
     required List<String> customerIds,
+    OrderPurpose purpose = OrderPurpose.delivery19l,
     String? idempotencyKey,
   }) async {
     await _tick();
@@ -409,6 +438,7 @@ class MockCrmRepository implements CrmRepository {
   Future<void> addRouteCustomer({
     required String routeId,
     required String customerId,
+    OrderPurpose purpose = OrderPurpose.delivery19l,
   }) async {
     await _tick();
     final customer = _customers.where((c) => c.id == customerId).firstOrNull;
@@ -443,6 +473,104 @@ class MockCrmRepository implements CrmRepository {
         r,
         stops: r.stops.where((s) => s.customerId != customerId).toList(),
       ),
+    );
+  }
+
+  // ---- Заказы ----
+  @override
+  Future<ResultPage<Order>> getOrdersPage({
+    int page = 1,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? customerId,
+    String? driverId,
+    String? routeId,
+    DeliveryStatus? status,
+    OrderPurpose? purpose,
+    PaymentMethod? paymentMethod,
+    String? search,
+  }) async {
+    await _tick();
+    final all = store.orders(
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+      customerId: customerId,
+      driverId: driverId,
+      routeId: routeId,
+      status: status,
+      purpose: purpose,
+      paymentMethod: paymentMethod,
+      search: search,
+    );
+    return _slice(all, page);
+  }
+
+  @override
+  Future<Order?> getOrder(String id) async {
+    await _tick();
+    return store.orders().where((o) => o.id == id).firstOrNull;
+  }
+
+  @override
+  Future<void> moveOrderToRoute({
+    required String orderId,
+    required String targetRouteId,
+  }) async {
+    await _tick();
+    store.moveStop(stopId: orderId, targetRouteId: targetRouteId);
+  }
+
+  @override
+  Future<void> moveOrderToDate({
+    required String orderId,
+    required DateTime date,
+    String? driverId,
+  }) async {
+    await _tick();
+    // Как сервер: маршрут этой даты у этого водителя, а не найдя — новый и
+    // без водителя.
+    final existing = _routes
+        .where((r) =>
+            r.date == dayOnly(date) &&
+            (driverId == null ? r.driverId == null : r.driverId == driverId))
+        .firstOrNull;
+
+    final target = existing ??
+        store.copyRoute(
+          RouteDetail(
+            id: store.nextId('r'),
+            date: dayOnly(date),
+            status: RouteStatus.created,
+            completedCount: 0,
+            totalCustomers: 0,
+            stops: const [],
+          ),
+        );
+    if (existing == null) _routes.add(target);
+
+    store.moveStop(stopId: orderId, targetRouteId: target.id);
+  }
+
+  @override
+  Future<void> updateOrderPayment({
+    required String orderId,
+    required int amount,
+    required PaymentMethod method,
+    String? note,
+    String? photoPath,
+  }) async {
+    await _tick();
+    final stop = _routes
+        .expand((r) => r.stops)
+        .where((s) => s.id == orderId)
+        .firstOrNull;
+    if (stop == null) return;
+    // Как сервер: у незакрытого заказа править нечего (409).
+    if (!stop.isCompleted) throw StateError('ORDER_NOT_COMPLETED');
+
+    store.updateStop(
+      orderId,
+      (s) => s.copyWith(paymentAmount: amount, paymentMethod: method),
     );
   }
 

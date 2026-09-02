@@ -36,9 +36,14 @@ class _RecordingRepository extends MockCrmRepository {
   Future<void> addRouteCustomer({
     required String routeId,
     required String customerId,
+    OrderPurpose purpose = OrderPurpose.delivery19l,
   }) {
     calls.add('add:$customerId');
-    return super.addRouteCustomer(routeId: routeId, customerId: customerId);
+    return super.addRouteCustomer(
+      routeId: routeId,
+      customerId: customerId,
+      purpose: purpose,
+    );
   }
 
   @override

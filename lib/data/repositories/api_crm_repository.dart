@@ -8,6 +8,7 @@ import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
 import '../models/json.dart';
+import '../models/order.dart';
 import '../models/price_settings.dart';
 import '../models/report_export.dart';
 import '../models/reports_summary.dart';
@@ -159,6 +160,7 @@ class ApiCrmRepository implements CrmRepository {
   Future<PriceSettings> setPrices({
     required int capsulePrice,
     required int depositPrice,
+    required int damagedBottleFine,
     String? idempotencyKey,
   }) async {
     final res = await _dio.post(
@@ -166,6 +168,7 @@ class ApiCrmRepository implements CrmRepository {
       data: {
         'water_price': MoneyParser.toApi(capsulePrice),
         'deposit_price': MoneyParser.toApi(depositPrice),
+        'damaged_bottle_fine': MoneyParser.toApi(damagedBottleFine),
       },
       options: _idempotent(idempotencyKey),
     );
@@ -240,7 +243,6 @@ class ApiCrmRepository implements CrmRepository {
   Future<List<Customer>> getCustomers({
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) =>
       _all(
@@ -249,25 +251,26 @@ class ApiCrmRepository implements CrmRepository {
         query: _customerQuery(
           search: search,
           hasDebt: hasDebt,
-          hasCooler: hasCooler,
           isActive: isActive,
         ),
       );
 
   /// Параметры отбора заказчиков — одни и те же у полной выборки и страницы.
   ///
-  /// Незаданный фильтр не отправляется вовсе: `has_cooler=false` и «неважно»
-  /// — разные вопросы, и пустое значение сервер разобрал бы как первый.
+  /// Незаданный фильтр не отправляется вовсе: `has_debt=false` и «неважно» —
+  /// разные вопросы, и пустое значение сервер разобрал бы как первый.
+  ///
+  /// Отбора по кулеру здесь нет: параметр `has_cooler` сервер убрал, а
+  /// неизвестный query-параметр он молча игнорирует — то есть отправлять его
+  /// было бы хуже, чем не отправлять, фильтр «работал» бы наощупь.
   Map<String, dynamic> _customerQuery({
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) =>
       {
         if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
         'has_debt': ?hasDebt,
-        'has_cooler': ?hasCooler,
         'is_active': ?isActive,
       };
 
@@ -276,7 +279,6 @@ class ApiCrmRepository implements CrmRepository {
     int page = 1,
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) =>
       _pageOf(
@@ -286,7 +288,6 @@ class ApiCrmRepository implements CrmRepository {
         query: _customerQuery(
           search: search,
           hasDebt: hasDebt,
-          hasCooler: hasCooler,
           isActive: isActive,
         ),
       );
@@ -303,7 +304,10 @@ class ApiCrmRepository implements CrmRepository {
     required String phone,
     required String address,
     String? comment,
-    bool hasCooler = false,
+    int coolerCount = 0,
+    int debt = 0,
+    int prepayment = 0,
+    int? customWaterPrice,
     String? idempotencyKey,
   }) async {
     final res = await _dio.post(
@@ -313,7 +317,13 @@ class ApiCrmRepository implements CrmRepository {
         'phone': phone,
         'address': address,
         'comment': ?comment,
-        'has_cooler': hasCooler,
+        'cooler_count': coolerCount,
+        'debt': MoneyParser.toApi(debt),
+        'prepayment': MoneyParser.toApi(prepayment),
+        // Ключ отправляем всегда: `null` — это «по общему прайсу», и пропуск
+        // поля значил бы то же самое, но сервер о намерении не узнал бы.
+        'custom_water_price':
+            customWaterPrice == null ? null : MoneyParser.toApi(customWaterPrice),
       },
       options: _idempotent(idempotencyKey),
     );
@@ -321,10 +331,13 @@ class ApiCrmRepository implements CrmRepository {
   }
 
   @override
-  Future<Customer> updateCustomer(Customer customer) async {
+  Future<Customer> updateCustomer(
+    Customer customer, {
+    bool balanceChanged = false,
+  }) async {
     final res = await _dio.patch(
       '/admin/customers/${customer.id}',
-      data: customer.toUpdateJson(),
+      data: customer.toUpdateJson(includeBalance: balanceChanged),
     );
     return Customer.fromJson(asMap(res.data));
   }
@@ -362,6 +375,7 @@ class ApiCrmRepository implements CrmRepository {
     required String driverId,
     required DateTime date,
     required List<String> customerIds,
+    OrderPurpose purpose = OrderPurpose.delivery19l,
     String? idempotencyKey,
   }) async {
     final res = await _dio.post(
@@ -369,7 +383,13 @@ class ApiCrmRepository implements CrmRepository {
       data: {
         'driver_id': driverId,
         'date': _formatDate(date),
-        'customer_ids': customerIds,
+        // Прежний `customer_ids` сервер не отвергает, а тихо отбрасывает
+        // (`extra: ignore`), и маршрут создавался пустым — без ошибки, без
+        // признака в интерфейсе, заметно только по жалобе водителя.
+        'customer_orders': [
+          for (final id in customerIds)
+            {'customer_id': id, 'order_purpose': purpose.toJson()},
+        ],
       },
       options: _idempotent(idempotencyKey),
     );
@@ -405,8 +425,17 @@ class ApiCrmRepository implements CrmRepository {
   Future<void> addRouteCustomer({
     required String routeId,
     required String customerId,
+    OrderPurpose purpose = OrderPurpose.delivery19l,
   }) =>
-      _dio.post('/admin/routes/$routeId/customers/$customerId');
+      // Заказчик остаётся и в пути — ради старых сборок, — но сервер читает
+      // его из тела вместе с целью заказа.
+      _dio.post(
+        '/admin/routes/$routeId/customers/$customerId',
+        data: {
+          'customer_id': customerId,
+          'order_purpose': purpose.toJson(),
+        },
+      );
 
   @override
   Future<void> removeRouteCustomer({
@@ -414,6 +443,94 @@ class ApiCrmRepository implements CrmRepository {
     required String customerId,
   }) =>
       _dio.delete('/admin/routes/$routeId/customers/$customerId');
+
+  // ---- Заказы ----
+  @override
+  Future<ResultPage<Order>> getOrdersPage({
+    int page = 1,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? customerId,
+    String? driverId,
+    String? routeId,
+    DeliveryStatus? status,
+    OrderPurpose? purpose,
+    PaymentMethod? paymentMethod,
+    String? search,
+  }) =>
+      _pageOf(
+        '/admin/orders',
+        Order.fromJson,
+        page: page,
+        query: orderFilterQuery(
+          dateFrom: dateFrom,
+          dateTo: dateTo,
+          customerId: customerId,
+          driverId: driverId,
+          routeId: routeId,
+          status: status,
+          purpose: purpose,
+          paymentMethod: paymentMethod,
+          search: search,
+        ),
+      );
+
+  @override
+  Future<Order?> getOrder(String id) async {
+    final res = await _dio.get('/admin/orders/$id');
+    return Order.fromJson(asMap(res.data));
+  }
+
+  @override
+  Future<void> moveOrderToRoute({
+    required String orderId,
+    required String targetRouteId,
+  }) =>
+      // Ровно один из вариантов: сервер отвергает тело, где заданы и маршрут,
+      // и дата, — и тело, где не задано ничего.
+      _dio.post(
+        '/admin/orders/$orderId/move',
+        data: {'target_route_id': targetRouteId},
+      );
+
+  @override
+  Future<void> moveOrderToDate({
+    required String orderId,
+    required DateTime date,
+    String? driverId,
+  }) =>
+      _dio.post(
+        '/admin/orders/$orderId/move',
+        data: {
+          'order_date': _formatDate(date),
+          // Водитель осмыслен только в этом варианте: с ним сервер ищет
+          // маршрут этого водителя, без него — маршрут вообще без водителя.
+          'driver_id': ?driverId,
+        },
+      );
+
+  @override
+  Future<void> updateOrderPayment({
+    required String orderId,
+    required int amount,
+    required PaymentMethod method,
+    String? note,
+    String? photoPath,
+  }) async {
+    final form = FormData.fromMap({
+      'amount': MoneyParser.toApi(amount),
+      'payment_method': method.toJson(),
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      if (photoPath != null)
+        'payment_photo': await MultipartFile.fromFile(photoPath),
+    });
+
+    await _dio.patch(
+      '/admin/orders/$orderId/payment',
+      data: form,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+  }
 
   // ---- Отчёты ----
   @override

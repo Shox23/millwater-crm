@@ -65,7 +65,7 @@ class _BuildRouteSectionState extends State<BuildRouteSection> {
   RouteData get _route => RouteData(
         points: [
           for (final stop in widget.stops)
-            RoutePoint(
+            RoutePoint.fromCustomer(
               address: stop.customerAddress,
               latitude: stop.customerLatitude,
               longitude: stop.customerLongitude,

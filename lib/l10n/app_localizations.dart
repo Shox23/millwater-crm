@@ -2581,6 +2581,558 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Кулер'**
   String get desktopFieldCooler;
+
+  /// No description provided for @orderPurposeDelivery.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доставка 19 л'**
+  String get orderPurposeDelivery;
+
+  /// No description provided for @orderPurposePickup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вывоз'**
+  String get orderPurposePickup;
+
+  /// No description provided for @orderPurposeBulk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опт 5/10 л'**
+  String get orderPurposeBulk;
+
+  /// No description provided for @coolersCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} кулер} few{{count} кулера} other{{count} кулеров}}'**
+  String coolersCount(int count);
+
+  /// No description provided for @customerCustomPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Своя цена: {price}'**
+  String customerCustomPrice(String price);
+
+  /// No description provided for @customerFormCoolers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кулеров у заказчика'**
+  String get customerFormCoolers;
+
+  /// No description provided for @customerFormCoolersHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'К кулеру капсулу ставят, без него воду переливают'**
+  String get customerFormCoolersHint;
+
+  /// No description provided for @customerFormBalance.
+  ///
+  /// In ru, this message translates to:
+  /// **'Стартовый баланс'**
+  String get customerFormBalance;
+
+  /// No description provided for @customerFormBalanceNone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет'**
+  String get customerFormBalanceNone;
+
+  /// No description provided for @customerFormBalanceDebt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Долг'**
+  String get customerFormBalanceDebt;
+
+  /// No description provided for @customerFormBalancePrepayment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предоплата'**
+  String get customerFormBalancePrepayment;
+
+  /// No description provided for @customerFormBalanceAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сумма'**
+  String get customerFormBalanceAmount;
+
+  /// No description provided for @customerFormBalanceEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите сумму'**
+  String get customerFormBalanceEmpty;
+
+  /// No description provided for @customerFormBalanceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Долг и предоплата одновременно невозможны'**
+  String get customerFormBalanceHint;
+
+  /// No description provided for @customerFormPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена капсулы'**
+  String get customerFormPrice;
+
+  /// No description provided for @customerFormPriceDefault.
+  ///
+  /// In ru, this message translates to:
+  /// **'По прайсу'**
+  String get customerFormPriceDefault;
+
+  /// No description provided for @customerFormPriceCustom.
+  ///
+  /// In ru, this message translates to:
+  /// **'Своя'**
+  String get customerFormPriceCustom;
+
+  /// No description provided for @customerFormPriceValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена для заказчика'**
+  String get customerFormPriceValue;
+
+  /// No description provided for @customerFormPriceEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите цену'**
+  String get customerFormPriceEmpty;
+
+  /// No description provided for @customerFormPriceHelper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Общая цена: {price}'**
+  String customerFormPriceHelper(String price);
+
+  /// No description provided for @pricesDamagedFine.
+  ///
+  /// In ru, this message translates to:
+  /// **'Штраф за брак'**
+  String get pricesDamagedFine;
+
+  /// No description provided for @pricesDamagedFineHelper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сум за одну повреждённую капсулу'**
+  String get pricesDamagedFineHelper;
+
+  /// No description provided for @pricesDamagedFineRow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Штраф за капсулу'**
+  String get pricesDamagedFineRow;
+
+  /// No description provided for @completionDebtLine.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уйдёт в долг'**
+  String get completionDebtLine;
+
+  /// No description provided for @completionDebtHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'В долг деньги не принимают — сумма начисляется заказчику'**
+  String get completionDebtHint;
+
+  /// No description provided for @errorBothBalances.
+  ///
+  /// In ru, this message translates to:
+  /// **'У заказчика не может быть долга и предоплаты одновременно'**
+  String get errorBothBalances;
+
+  /// No description provided for @errorOrderCompleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказ уже закрыт'**
+  String get errorOrderCompleted;
+
+  /// No description provided for @errorOrderNotCompleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказ ещё не закрыт'**
+  String get errorOrderNotCompleted;
+
+  /// No description provided for @errorRouteNotInProgress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут не в работе'**
+  String get errorRouteNotInProgress;
+
+  /// No description provided for @errorBulkPriceRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите цену для опта'**
+  String get errorBulkPriceRequired;
+
+  /// No description provided for @errorInvalidDamagedCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повреждённых больше, чем привезли и забрали'**
+  String get errorInvalidDamagedCount;
+
+  /// No description provided for @errorCustomerPhoneExists.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот телефон уже записан за другим заказчиком'**
+  String get errorCustomerPhoneExists;
+
+  /// No description provided for @errorPhoneExists.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот телефон уже занят'**
+  String get errorPhoneExists;
+
+  /// No description provided for @errorDriverBusy.
+  ///
+  /// In ru, this message translates to:
+  /// **'У водителя уже есть маршрут на эту дату'**
+  String get errorDriverBusy;
+
+  /// No description provided for @errorRouteStarted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут уже начат'**
+  String get errorRouteStarted;
+
+  /// No description provided for @errorRouteCompleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут уже завершён'**
+  String get errorRouteCompleted;
+
+  /// No description provided for @errorAccessDenied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет доступа'**
+  String get errorAccessDenied;
+
+  /// No description provided for @errorNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Запись не найдена'**
+  String get errorNotFound;
+
+  /// No description provided for @ordersTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказы'**
+  String get ordersTitle;
+
+  /// No description provided for @ordersTileHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все заказы за всё время'**
+  String get ordersTileHint;
+
+  /// No description provided for @ordersSearch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказчик, телефон, адрес'**
+  String get ordersSearch;
+
+  /// No description provided for @ordersEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказов пока нет'**
+  String get ordersEmpty;
+
+  /// No description provided for @ordersLoadFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить заказы'**
+  String get ordersLoadFailed;
+
+  /// No description provided for @ordersCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} заказ} few{{count} заказа} other{{count} заказов}}'**
+  String ordersCount(int count);
+
+  /// No description provided for @orderNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказ №{number}'**
+  String orderNumber(int number);
+
+  /// No description provided for @orderNoDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель не назначен'**
+  String get orderNoDriver;
+
+  /// No description provided for @orderSectionComposition.
+  ///
+  /// In ru, this message translates to:
+  /// **'СОСТАВ'**
+  String get orderSectionComposition;
+
+  /// No description provided for @orderSectionMoney.
+  ///
+  /// In ru, this message translates to:
+  /// **'РАСЧЁТ'**
+  String get orderSectionMoney;
+
+  /// No description provided for @orderSectionRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'МАРШРУТ'**
+  String get orderSectionRoute;
+
+  /// No description provided for @orderDelivered.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доставлено'**
+  String get orderDelivered;
+
+  /// No description provided for @orderReturned.
+  ///
+  /// In ru, this message translates to:
+  /// **'Забрано пустых'**
+  String get orderReturned;
+
+  /// No description provided for @orderDamaged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повреждено'**
+  String get orderDamaged;
+
+  /// No description provided for @orderBalanceAfter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Остаток у заказчика'**
+  String get orderBalanceAfter;
+
+  /// No description provided for @orderAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сумма заказа'**
+  String get orderAmount;
+
+  /// No description provided for @orderPriceApplied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена капсулы в заказе'**
+  String get orderPriceApplied;
+
+  /// No description provided for @orderFineApplied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Штраф за повреждённую'**
+  String get orderFineApplied;
+
+  /// No description provided for @orderPaymentMethod.
+  ///
+  /// In ru, this message translates to:
+  /// **'Способ оплаты'**
+  String get orderPaymentMethod;
+
+  /// No description provided for @orderCompletedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыт'**
+  String get orderCompletedAt;
+
+  /// No description provided for @orderCreatedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создан'**
+  String get orderCreatedAt;
+
+  /// No description provided for @orderNotCompleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ещё не закрыт'**
+  String get orderNotCompleted;
+
+  /// No description provided for @orderOpenFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть заказ'**
+  String get orderOpenFailed;
+
+  /// No description provided for @driverOrdersTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои заказы'**
+  String get driverOrdersTitle;
+
+  /// No description provided for @driverOrdersTileHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'История заказов за всё время'**
+  String get driverOrdersTileHint;
+
+  /// No description provided for @pricesFineRow.
+  ///
+  /// In ru, this message translates to:
+  /// **'штраф {amount}'**
+  String pricesFineRow(String amount);
+
+  /// No description provided for @pricesConfirmFine.
+  ///
+  /// In ru, this message translates to:
+  /// **'Штраф за повреждённую капсулу — {fine}.'**
+  String pricesConfirmFine(String fine);
+
+  /// No description provided for @orderMoveTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перенести заказ'**
+  String get orderMoveTitle;
+
+  /// No description provided for @orderMoveDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дата'**
+  String get orderMoveDate;
+
+  /// No description provided for @orderMoveRoutes.
+  ///
+  /// In ru, this message translates to:
+  /// **'МАРШРУТ НА ЭТУ ДАТУ'**
+  String get orderMoveRoutes;
+
+  /// No description provided for @orderMoveNewRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый маршрут'**
+  String get orderMoveNewRoute;
+
+  /// No description provided for @orderMoveNewRouteHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сервер заведёт маршрут на выбранную дату'**
+  String get orderMoveNewRouteHint;
+
+  /// No description provided for @orderMoveNoDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'У нового маршрута не будет водителя — назначьте его на экране маршрутов'**
+  String get orderMoveNoDriver;
+
+  /// No description provided for @orderMoveNoRoutes.
+  ///
+  /// In ru, this message translates to:
+  /// **'На эту дату маршрутов пока нет'**
+  String get orderMoveNoRoutes;
+
+  /// No description provided for @orderMoveRoutesFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить маршруты'**
+  String get orderMoveRoutesFailed;
+
+  /// No description provided for @orderMoveAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перенести'**
+  String get orderMoveAction;
+
+  /// No description provided for @orderMoveFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось перенести заказ.'**
+  String get orderMoveFailed;
+
+  /// No description provided for @orderMoved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказ перенесён'**
+  String get orderMoved;
+
+  /// No description provided for @orderRouteStops.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} точка} few{{count} точки} other{{count} точек}} · {driver}'**
+  String orderRouteStops(int count, String driver);
+
+  /// No description provided for @orderNoDriverShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'без водителя'**
+  String get orderNoDriverShort;
+
+  /// No description provided for @orderPaymentTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменение оплаты'**
+  String get orderPaymentTitle;
+
+  /// No description provided for @orderPaymentAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Итоговая сумма заказа'**
+  String get orderPaymentAmount;
+
+  /// No description provided for @orderPaymentAmountHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не доплата, а вся сумма заказа: разницу сервер посчитает сам'**
+  String get orderPaymentAmountHint;
+
+  /// No description provided for @orderPaymentAmountEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите сумму'**
+  String get orderPaymentAmountEmpty;
+
+  /// No description provided for @orderPaymentWasBecomes.
+  ///
+  /// In ru, this message translates to:
+  /// **'Было {before} → станет {after}'**
+  String orderPaymentWasBecomes(String before, String after);
+
+  /// No description provided for @orderPaymentNote.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий'**
+  String get orderPaymentNote;
+
+  /// No description provided for @orderPaymentNoteHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Зачем правите — останется в истории платежей'**
+  String get orderPaymentNoteHint;
+
+  /// No description provided for @orderPaymentBalanceNow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Баланс заказчика сейчас'**
+  String get orderPaymentBalanceNow;
+
+  /// No description provided for @orderPaymentBalanceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разницу сервер запишет заказчику в долг или предоплату'**
+  String get orderPaymentBalanceHint;
+
+  /// No description provided for @orderPaymentSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оплата изменена'**
+  String get orderPaymentSaved;
+
+  /// No description provided for @orderPaymentFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось изменить оплату.'**
+  String get orderPaymentFailed;
+
+  /// No description provided for @orderActionMove.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перенести'**
+  String get orderActionMove;
+
+  /// No description provided for @orderActionPayment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить оплату'**
+  String get orderActionPayment;
+
+  /// No description provided for @errorDateInPast.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дата не может быть в прошлом'**
+  String get errorDateInPast;
 }
 
 class _AppLocalizationsDelegate

@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
 
 import '../../customers/presentation/customers_page.dart';
+import '../../orders/presentation/admin_orders_page.dart';
 import '../../drivers/presentation/drivers_page.dart';
 import '../../reports/presentation/reports_page.dart';
 import '../../routes/presentation/routes_page.dart';
 import 'widgets/app_bottom_nav.dart';
 
-/// Корневая оболочка администратора: 4 вкладки с общей нижней навигацией.
+/// Корневая оболочка администратора: 5 вкладок с общей нижней навигацией.
 ///
 /// `CrmRepository` в дерево кладёт `app.dart` — и только в этой ветке,
 /// поэтому водительская часть до админского API не дотягивается.
@@ -22,8 +23,15 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
 
+  /// Заказы стоят второй вкладкой, а не кнопкой в шапке маршрутов.
+  ///
+  /// В шапке для них места нет: там уже настройки и «Создать», и третья
+  /// кнопка сжимала подпись с заголовком так, что шапка вырастала втрое, а
+  /// список маршрутов уезжал за нижний край экрана. Пятый таб при этом
+  /// раскладывается ровно: пункты делят ширину поровну.
   final _pages = const [
     RoutesPage(),
+    AdminOrdersPage(),
     DriversPage(),
     CustomersPage(),
     ReportsPage(),
@@ -48,6 +56,8 @@ class _AdminShellState extends State<AdminShell> {
     final items = [
       BottomNavItemData(
           icon: Icons.route_outlined, label: context.l10n.navRoute),
+      BottomNavItemData(
+          icon: Icons.receipt_long_outlined, label: context.l10n.ordersTitle),
       BottomNavItemData(
           icon: Icons.local_shipping_outlined, label: context.l10n.navDrivers),
       BottomNavItemData(

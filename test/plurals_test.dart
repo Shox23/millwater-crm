@@ -61,6 +61,27 @@ void main() {
     });
   });
 
+  group('Кулеры и заказы', () {
+    test('кулеры склоняются: их считают штуками, а не отмечают галочкой', () {
+      expect(ru.coolersCount(1), '1 кулер');
+      expect(ru.coolersCount(2), '2 кулера');
+      expect(ru.coolersCount(5), '5 кулеров');
+      expect(ru.coolersCount(21), '21 кулер');
+    });
+
+    test('заказы склоняются в шапке списка', () {
+      expect(ru.ordersCount(1), '1 заказ');
+      expect(ru.ordersCount(3), '3 заказа');
+      expect(ru.ordersCount(11), '11 заказов');
+    });
+
+    test('в узбекском числительное форму не меняет', () {
+      expect(uz.coolersCount(1), '1 kuler');
+      expect(uz.coolersCount(5), '5 kuler');
+      expect(uz.ordersCount(5), '5 buyurtma');
+    });
+  });
+
   group('Единицы и написание', () {
     test('сокращение «шт.» с точкой', () {
       expect(ru.reportsCapsulesCount(12), '12 шт.');

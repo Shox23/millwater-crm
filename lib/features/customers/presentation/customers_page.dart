@@ -14,7 +14,6 @@ import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/load_more_notifier.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/search_field.dart';
-import '../../../core/widgets/segmented_toggle.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../bloc/customers_bloc.dart';
@@ -76,36 +75,17 @@ class _CustomersView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.page,
                   ),
+                  // Поле одно и переключателя рядом больше нет: серверный
+                  // `search` ищет по имени, телефону и адресу сразу, и режим
+                  // «по адресу» с выкачиванием всей базы стал лишним.
                   child: SearchField(
-                    hint: state.searchMode.hint(context.l10n),
+                    hint: context.l10n.customerSearch,
                     onChanged: (q) => bloc.add(CustomersSearchChanged(q)),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                // Поле поиска одно, а ищет по-разному: имя и телефон ищет
-                // сервер, адрес — мы сами по полной выборке, потому что
-                // такого параметра в API пока нет. Режим показан явно, иначе
-                // непонятно, почему запрос находит то одно, то другое.
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.page,
-                  ),
-                  child: SegmentedToggle<CustomerSearchMode>(
-                    value: state.searchMode,
-                    onChanged: (mode) =>
-                        bloc.add(CustomersSearchModeChanged(mode)),
-                    options: [
-                      for (final mode in CustomerSearchMode.values)
-                        SegmentOption(
-                          value: mode,
-                          label: mode.label(context.l10n),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Отбирает сервер, а не список на экране: иначе «С долгом»
-                // показывал бы должников только из загруженных страниц.
+                // Отбирает сервер — кроме «С кулером»: этот фильтр он потерял
+                // вместе с полем, и отбор идёт по загруженным страницам.
                 FilterChips(
                   labels: [
                     for (final f in CustomerFilter.values)

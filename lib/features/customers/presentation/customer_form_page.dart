@@ -9,6 +9,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/forms/submit_state.dart';
 import '../../../core/utils/idempotency.dart';
+import '../../../core/utils/money_formatter.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_button.dart';
@@ -17,9 +18,17 @@ import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/labeled_text_field.dart';
+import '../../../core/widgets/quantity_stepper.dart';
+import '../../../core/widgets/segmented_toggle.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/network/api_envelope.dart';
 import '../../../data/repositories/crm_repository.dart';
+
+/// Чем задан стартовый баланс заказчика.
+///
+/// Отдельное перечисление, а не два поля суммы: сервер держит инвариант
+/// «либо долг, либо предоплата», и в форме он должен быть виден глазом.
+enum _BalanceKind { none, debt, prepayment }
 
 /// Форма создания/редактирования заказчика.
 class CustomerFormPage extends StatefulWidget {
@@ -55,9 +64,30 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   final _phoneFocus = FocusNode();
   final _addressFocus = FocusNode();
   final _commentFocus = FocusNode();
+  final _balanceFocus = FocusNode();
+  final _priceFocus = FocusNode();
 
-  /// У заказчика стоит кулер — влияет на то, как водитель обслуживает точку.
-  late bool _hasCooler;
+  /// Сколько кулеров стоит у заказчика.
+  ///
+  /// Пришло на смену переключателю «есть кулер»: булево значение мигрирует
+  /// само — `hasCooler` у модели теперь производное от количества.
+  late int _coolerCount;
+
+  /// Стартовый баланс: долг, предоплата или ничего.
+  ///
+  /// Одно поле суммы, а не два: сервер запрещает ненулевой долг вместе с
+  /// ненулевой предоплатой (422 `BOTH_BALANCES_SET`), и форма не должна
+  /// давать собрать состояние, которое он отвергнет.
+  late _BalanceKind _balanceKind;
+  late final TextEditingController _balance;
+
+  /// Цена капсулы для этого заказчика; выключено — считаем по общему прайсу.
+  late bool _customPrice;
+  late final TextEditingController _price;
+
+  /// Действующая общая цена — под полем видно, от чего отступает админ.
+  /// `null`, пока прайс не пришёл: показывать нечего, но и мешать нечему.
+  int? _listPrice;
 
   /// Заказчик в работе. Только для правки: нового сервер и так заводит
   /// активным, отдельного поля в `CreateCustomer` нет.
@@ -90,8 +120,39 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     );
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
-    _hasCooler = customer?.hasCooler ?? false;
+    _coolerCount = customer?.coolerCount ?? 0;
     _isActive = customer?.isActive ?? true;
+
+    _balanceKind = switch (customer) {
+      Customer(debt: > 0) => _BalanceKind.debt,
+      Customer(prepayment: > 0) => _BalanceKind.prepayment,
+      _ => _BalanceKind.none,
+    };
+    _balance = TextEditingController(text: switch (_balanceKind) {
+      _BalanceKind.debt => '${customer!.debt}',
+      _BalanceKind.prepayment => '${customer!.prepayment}',
+      _BalanceKind.none => '',
+    });
+
+    _customPrice = customer?.hasIndividualPrice ?? false;
+    _price = TextEditingController(
+      text: customer?.customWaterPrice?.toString() ?? '',
+    );
+
+    _loadListPrice();
+  }
+
+  /// Подтягивает действующую цену капсулы для подсказки под полем.
+  ///
+  /// Молча: подсказка — удобство, а не условие сохранения, и упавший запрос
+  /// за прайсом не повод мешать админу заводить заказчика.
+  Future<void> _loadListPrice() async {
+    try {
+      final prices = await context.read<CrmRepository>().getPrices();
+      if (mounted) setState(() => _listPrice = prices.capsulePrice);
+    } catch (_) {
+      // Подсказки просто не будет.
+    }
   }
 
   @override
@@ -100,11 +161,29 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _phone.dispose();
     _address.dispose();
     _comment.dispose();
+    _balance.dispose();
+    _price.dispose();
     _nameFocus.dispose();
     _phoneFocus.dispose();
     _addressFocus.dispose();
     _commentFocus.dispose();
+    _balanceFocus.dispose();
+    _priceFocus.dispose();
     super.dispose();
+  }
+
+  /// Введённая сумма баланса; 0 — поле пустое или не число.
+  int get _balanceAmount => int.tryParse(_balance.text.trim()) ?? 0;
+
+  int get _debt => _balanceKind == _BalanceKind.debt ? _balanceAmount : 0;
+  int get _prepayment =>
+      _balanceKind == _BalanceKind.prepayment ? _balanceAmount : 0;
+
+  /// Индивидуальная цена; `null` — считать по общему прайсу.
+  int? get _customWaterPrice {
+    if (!_customPrice) return null;
+    final value = int.tryParse(_price.text.trim()) ?? 0;
+    return value > 0 ? value : null;
   }
 
   String? get _commentOrNull =>
@@ -118,8 +197,20 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
             UzPhone.normalize(customer?.phone ?? '') ||
         _address.text.trim() != (customer?.address ?? '') ||
         _comment.text.trim() != (customer?.comment ?? '') ||
-        _hasCooler != (customer?.hasCooler ?? false) ||
+        _coolerCount != (customer?.coolerCount ?? 0) ||
+        _balanceChanged ||
+        _customWaterPrice != customer?.customWaterPrice ||
         _isActive != (customer?.isActive ?? true);
+  }
+
+  /// Баланс правили руками — только тогда он уйдёт на сервер.
+  ///
+  /// Иначе форма правки названия отправила бы долг, каким он был при её
+  /// открытии, и откатила бы оплату, которую водитель принял тем временем.
+  bool get _balanceChanged {
+    final customer = widget.customer;
+    return _debt != (customer?.debt ?? 0) ||
+        _prepayment != (customer?.prepayment ?? 0);
   }
 
   Future<void> _submit() async {
@@ -139,7 +230,25 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
         (_phoneFocus, _v.phone(_phone.text)),
         (_addressFocus, _addressRule(_address.text)),
         (_commentFocus, _commentRule(_comment.text)),
+        (_balanceFocus, _balanceRule(_balance.text)),
+        (_priceFocus, _priceRule(_price.text)),
       ];
+
+  /// Сумма баланса обязательна, когда выбран долг или предоплата: «Долг» с
+  /// пустым полем — это не ноль, а недозаполненная форма.
+  String? _balanceRule(String? value) {
+    if (_balanceKind == _BalanceKind.none) return null;
+    final amount = int.tryParse((value ?? '').trim()) ?? 0;
+    return amount > 0 ? null : context.l10n.customerFormBalanceEmpty;
+  }
+
+  /// То же для индивидуальной цены: включённый переключатель без цены
+  /// сервер отвергнет (`custom_water_price` должен быть больше нуля).
+  String? _priceRule(String? value) {
+    if (!_customPrice) return null;
+    final amount = int.tryParse((value ?? '').trim()) ?? 0;
+    return amount > 0 ? null : context.l10n.customerFormPriceEmpty;
+  }
 
   /// Все поля заполнены верно — кнопку можно разблокировать.
   bool get _valid => _checks.every((c) => c.$2 == null);
@@ -162,20 +271,29 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
 
     final saved = await submit(
       () => widget.isEdit
-          ? repo.updateCustomer(widget.customer!.copyWith(
-              name: _name.text.trim(),
-              phone: phone,
-              address: _address.text.trim(),
-              comment: _commentOrNull,
-              hasCooler: _hasCooler,
-              isActive: _isActive,
-            ))
+          ? repo.updateCustomer(
+              widget.customer!.copyWith(
+                name: _name.text.trim(),
+                phone: phone,
+                address: _address.text.trim(),
+                comment: _commentOrNull,
+                coolerCount: _coolerCount,
+                debt: _debt,
+                prepayment: _prepayment,
+                customWaterPrice: _customWaterPrice,
+                isActive: _isActive,
+              ),
+              balanceChanged: _balanceChanged,
+            )
           : repo.addCustomer(
               name: _name.text.trim(),
               phone: phone,
               address: _address.text.trim(),
               comment: _commentOrNull,
-              hasCooler: _hasCooler,
+              coolerCount: _coolerCount,
+              debt: _debt,
+              prepayment: _prepayment,
+              customWaterPrice: _customWaterPrice,
               idempotencyKey: _idempotencyKey,
             ),
       // Сервер может отклонить и валидные с виду данные: занятый телефон,
@@ -270,24 +388,55 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
               ),
+              // Кулеры считаем штуками: у офиса их бывает несколько, и на
+              // вывозе водителю надо знать, сколько забирать. Прежний
+              // переключатель «есть кулер» мигрирует сам — 0 или 1.
               AppCard(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppSpacing.md,
                   children: [
-                    Expanded(
-                      child: Text(
-                        context.l10n.customerFormHasCooler,
-                        style: AppTypography.bodyStrong
-                            .copyWith(color: context.tokens.text),
-                      ),
+                    Text(
+                      context.l10n.customerFormCoolers,
+                      style: AppTypography.bodyStrong
+                          .copyWith(color: context.tokens.text),
                     ),
-                    Switch(
-                      value: _hasCooler,
+                    QuantityStepper(
+                      value: _coolerCount,
+                      max: 10,
+                      caption: context.l10n.customerFormCoolersHint,
                       onChanged: submitting
-                          ? null
-                          : (value) => setState(() => _hasCooler = value),
+                          ? (_) {}
+                          : (value) => setState(() => _coolerCount = value),
                     ),
                   ],
                 ),
+              ),
+              _BalanceBlock(
+                kind: _balanceKind,
+                controller: _balance,
+                focusNode: _balanceFocus,
+                validator: _balanceRule,
+                enabled: !submitting,
+                onKindChanged: (kind) => setState(() {
+                  _balanceKind = kind;
+                  // «Нет» стирает сумму: иначе она осталась бы в поле и
+                  // вернулась бы при следующем переключении, а на сервер
+                  // ушёл бы ноль — расхождение видимого и отправленного.
+                  if (kind == _BalanceKind.none) _balance.clear();
+                }),
+              ),
+              _PriceBlock(
+                custom: _customPrice,
+                controller: _price,
+                focusNode: _priceFocus,
+                validator: _priceRule,
+                listPrice: _listPrice,
+                enabled: !submitting,
+                onModeChanged: (custom) => setState(() {
+                  _customPrice = custom;
+                  if (!custom) _price.clear();
+                }),
               ),
               // Только в правке: у нового заказчика выключать нечего, да и
               // `CreateCustomer` такого поля не принимает.
@@ -363,6 +512,143 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Стартовый баланс: чем задан и на сколько.
+///
+/// Переключатель и поле суммы живут вместе, потому что порознь они врут:
+/// «Долг» без суммы и сумма без выбранного вида — оба состояния сервер
+/// отвергнет, и увидеть это надо на экране, а не в ответе 422.
+class _BalanceBlock extends StatelessWidget {
+  const _BalanceBlock({
+    required this.kind,
+    required this.controller,
+    required this.focusNode,
+    required this.validator,
+    required this.enabled,
+    required this.onKindChanged,
+  });
+
+  final _BalanceKind kind;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final FormFieldValidator<String> validator;
+  final bool enabled;
+  final ValueChanged<_BalanceKind> onKindChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.md,
+        children: [
+          Text(
+            l10n.customerFormBalance,
+            style: AppTypography.bodyStrong.copyWith(color: context.tokens.text),
+          ),
+          SegmentedToggle<_BalanceKind>(
+            value: kind,
+            onChanged: enabled ? onKindChanged : (_) {},
+            columns: 3,
+            options: [
+              SegmentOption(
+                value: _BalanceKind.none,
+                label: l10n.customerFormBalanceNone,
+              ),
+              SegmentOption(
+                value: _BalanceKind.debt,
+                label: l10n.customerFormBalanceDebt,
+              ),
+              SegmentOption(
+                value: _BalanceKind.prepayment,
+                label: l10n.customerFormBalancePrepayment,
+              ),
+            ],
+          ),
+          if (kind != _BalanceKind.none)
+            LabeledTextField(
+              label: l10n.customerFormBalanceAmount,
+              helper: l10n.customerFormBalanceHint,
+              controller: controller,
+              focusNode: focusNode,
+              validator: validator,
+              keyboardType: TextInputType.number,
+              maxLength: 12,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Цена капсулы: по общему прайсу или своя.
+class _PriceBlock extends StatelessWidget {
+  const _PriceBlock({
+    required this.custom,
+    required this.controller,
+    required this.focusNode,
+    required this.validator,
+    required this.listPrice,
+    required this.enabled,
+    required this.onModeChanged,
+  });
+
+  final bool custom;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final FormFieldValidator<String> validator;
+
+  /// Действующая общая цена; `null` — прайс ещё не пришёл или не добыт.
+  final int? listPrice;
+  final bool enabled;
+  final ValueChanged<bool> onModeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final price = listPrice;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.md,
+        children: [
+          Text(
+            l10n.customerFormPrice,
+            style: AppTypography.bodyStrong.copyWith(color: context.tokens.text),
+          ),
+          SegmentedToggle<bool>(
+            value: custom,
+            onChanged: enabled ? onModeChanged : (_) {},
+            options: [
+              SegmentOption(
+                value: false,
+                label: l10n.customerFormPriceDefault,
+              ),
+              SegmentOption(value: true, label: l10n.customerFormPriceCustom),
+            ],
+          ),
+          if (custom)
+            LabeledTextField(
+              label: l10n.customerFormPriceValue,
+              // Видно, от чего админ отступает: без общей цены рядом «15 000»
+              // не читается ни как скидка, ни как наценка.
+              helper: price == null
+                  ? null
+                  : l10n.customerFormPriceHelper(
+                      MoneyFormatter.sum(l10n, price),
+                    ),
+              controller: controller,
+              focusNode: focusNode,
+              validator: validator,
+              keyboardType: TextInputType.number,
+              maxLength: 9,
+            ),
+        ],
       ),
     );
   }

@@ -148,6 +148,53 @@ void main() {
     });
   });
 
+  group('Оплата в долг', () {
+    // Правило серверное: при `payment_method = debt` он требует ровно ноль и
+    // иначе отвечает 422 с английским текстом, который до водителя не
+    // доходит. Раньше клиент подставлял «капсулы × цена» при любом способе и
+    // упирался в этот отказ на каждой доставке в долг.
+    testWidgets('обнуляет сумму и показывает начисление', (tester) async {
+      await pumpPage(tester);
+      await addCapsule(tester);
+      expect(amountText(tester), '${price * 2}');
+
+      await tester.tap(find.text('В долг'));
+      await tester.pump();
+
+      expect(amountText(tester), '0');
+      // Ноль в поле — это не «привезли бесплатно»: стоимость целиком уходит
+      // заказчику, и водитель должен видеть, сколько именно ему записали.
+      expect(find.text('Уйдёт в долг'), findsOneWidget);
+    });
+
+    testWidgets('на сервер уходит ровно ноль', (tester) async {
+      final repo = await pumpPage(tester);
+
+      await tester.tap(find.text('В долг'));
+      await tester.pump();
+      await tester.tap(find.text('Завершить'));
+      await tester.pumpAndSettle();
+
+      expect(repo.amount, 0);
+      expect(repo.lastMethod, PaymentMethod.debt);
+    });
+
+    testWidgets('возврат к наличным восстанавливает расчёт', (tester) async {
+      await pumpPage(tester);
+      await addCapsule(tester);
+
+      await tester.tap(find.text('В долг'));
+      await tester.pump();
+      expect(amountText(tester), '0');
+
+      await tester.tap(find.text('Наличные'));
+      await tester.pump();
+
+      expect(amountText(tester), '${price * 2}');
+      expect(find.text('Уйдёт в долг'), findsNothing);
+    });
+  });
+
   group('Ручная правка суммы', () {
     testWidgets('переживает изменение количества', (tester) async {
       await pumpPage(tester);

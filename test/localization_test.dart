@@ -32,6 +32,13 @@ void main() {
       for (final method in PaymentMethod.values) {
         expect(method.label(uz), isNot(method.label(ru)));
       }
+      // Цели заказа приехали вместе с релизом — подписи нужны обеим локалям,
+      // иначе водитель-узбек увидит в списке русские слова.
+      for (final purpose in OrderPurpose.values) {
+        expect(purpose.label(uz), isNotEmpty);
+        expect(purpose.label(uz), isNot(purpose.label(ru)),
+            reason: 'цель ${purpose.wire} осталась по-русски');
+      }
     });
 
     test('деньги и склонения зависят от языка', () {

@@ -137,37 +137,58 @@ enum CustomerFilter {
   /// `null` — параметр не отправляем вовсе, сервер отдаёт и тех, и других.
   bool? get hasDebt => this == CustomerFilter.withDebt ? true : null;
 
-  bool? get hasCooler => this == CustomerFilter.withCooler ? true : null;
-
   /// Единственный, кто спрашивает про `false`: пустое значение сервер понял
   /// бы как «активные».
   bool? get isActive => this == CustomerFilter.inactive ? false : null;
+
+  /// Отбор по кулеру считается на клиенте, а не сервером.
+  ///
+  /// Параметр `has_cooler` из `GET /admin/customers` убрали вместе с самим
+  /// полем (теперь `cooler_count`), а нового фильтра не завели. Неизвестный
+  /// query-параметр сервер молча игнорирует — то есть чип «С кулером»
+  /// показывал бы всех подряд и врал бы, ничем этого не выдавая.
+  ///
+  /// Поэтому отбор идёт по уже загруженным страницам (см. `CustomersBloc`).
+  /// Цена решения: счётчик в шапке считает найденное, а не всю базу, и
+  /// страница может прийти почти пустой. Убрать, когда сервер вернёт фильтр.
+  bool get filtersCoolerLocally => this == CustomerFilter.withCooler;
 }
 
-/// По какому полю ищем заказчика.
+/// Цель заказа (`OrderPurpose` в API).
 ///
-/// Два режима, а не одно поле на всё: сервер ищет сам, а по адресу — пока
-/// нет. Смешивать серверную выдачу с досчитанной здесь значило бы показывать
-/// список, про который непонятно, полон он или нет.
-enum CustomerSearchMode {
-  /// Ищет сервер: имя, телефон и что он там ещё умеет.
-  nameOrPhone,
+/// Появилась вместе с переименованием точек маршрута в заказы: один и тот же
+/// выезд может быть доставкой, вывозом кулера или оптовой продажей, и деньги
+/// у них считаются по-разному.
+enum OrderPurpose {
+  /// Доставка капсул 19 л — поведение по умолчанию и подавляющее большинство.
+  delivery19l('delivery_19l'),
 
-  /// Ищем сами по полной выборке — параметра `address` в API нет.
-  /// Когда он появится, этот режим схлопывается в обычный запрос.
-  address;
+  /// Вывоз кулера и/или капсул заказчика.
+  pickup('pickup'),
 
-  /// Подпись переключателя на языке интерфейса.
+  /// Опт: бутыли 5 л и 10 л, цена договорная.
+  bulkWater('bulk_water');
+
+  const OrderPurpose(this.wire);
+
+  /// Значение, которым цель называется в API.
+  final String wire;
+
+  /// Подпись цели на языке интерфейса.
   String label(AppLocalizations l10n) => switch (this) {
-        CustomerSearchMode.nameOrPhone => l10n.customerSearchModeName,
-        CustomerSearchMode.address => l10n.customerSearchModeAddress,
+        OrderPurpose.delivery19l => l10n.orderPurposeDelivery,
+        OrderPurpose.pickup => l10n.orderPurposePickup,
+        OrderPurpose.bulkWater => l10n.orderPurposeBulk,
       };
 
-  /// Подсказка в поле поиска.
-  String hint(AppLocalizations l10n) => switch (this) {
-        CustomerSearchMode.nameOrPhone => l10n.customerSearch,
-        CustomerSearchMode.address => l10n.customerSearchAddress,
-      };
+  /// Незнакомая цель с сервера не должна ронять список: показываем заказ как
+  /// обычную доставку — это верно для всех заказов, заведённых до релиза.
+  static OrderPurpose fromJson(String value) => OrderPurpose.values.firstWhere(
+        (e) => e.wire == value,
+        orElse: () => OrderPurpose.delivery19l,
+      );
+
+  String toJson() => wire;
 }
 
 /// Способ оплаты. Значения совпадают с API (`PaymentMethod`), поле

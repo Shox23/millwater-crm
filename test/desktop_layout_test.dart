@@ -32,7 +32,7 @@ import 'package:intl/intl.dart';
 
 /// Запоминает, что форма отправила в репозиторий.
 class _RecordingRepository extends MockCrmRepository {
-  bool? addedHasCooler;
+  int? addedCoolerCount;
   Customer? updatedCustomer;
 
   @override
@@ -41,24 +41,33 @@ class _RecordingRepository extends MockCrmRepository {
     required String phone,
     required String address,
     String? comment,
-    bool hasCooler = false,
+    int coolerCount = 0,
+    int debt = 0,
+    int prepayment = 0,
+    int? customWaterPrice,
     String? idempotencyKey,
   }) {
-    addedHasCooler = hasCooler;
+    addedCoolerCount = coolerCount;
     return super.addCustomer(
       name: name,
       phone: phone,
       address: address,
       comment: comment,
-      hasCooler: hasCooler,
+      coolerCount: coolerCount,
+      debt: debt,
+      prepayment: prepayment,
+      customWaterPrice: customWaterPrice,
       idempotencyKey: idempotencyKey,
     );
   }
 
   @override
-  Future<Customer> updateCustomer(Customer customer) {
+  Future<Customer> updateCustomer(
+    Customer customer, {
+    bool balanceChanged = false,
+  }) {
     updatedCustomer = customer;
-    return super.updateCustomer(customer);
+    return super.updateCustomer(customer, balanceChanged: balanceChanged);
   }
 }
 
@@ -428,7 +437,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
       }
 
-      expect(repo.addedHasCooler, isTrue);
+      expect(repo.addedCoolerCount, 1);
       expect(repo.store.customers.last.hasCooler, isTrue);
       await settleToast(tester);
     });
@@ -438,7 +447,7 @@ void main() {
       // Заготовка идёт без кулеров — ставим его первому заказчику, чтобы
       // проверять именно снятие. Стор правим синхронно, до pump.
       repo.store.customers[0] =
-          repo.store.customers[0].copyWith(hasCooler: true);
+          repo.store.customers[0].copyWith(coolerCount: 1);
 
       await pumpShell(tester);
       await openSection(tester, 'Заказчики');

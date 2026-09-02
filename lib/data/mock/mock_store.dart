@@ -1,6 +1,7 @@
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
+import '../models/order.dart';
 import '../models/route_models.dart';
 import 'seed_data.dart';
 
@@ -46,6 +47,112 @@ class MockStore {
   void replaceRoute(String id, RouteDetail Function(RouteDetail) update) {
     final i = routes.indexWhere((r) => r.id == id);
     if (i != -1) routes[i] = update(routes[i]);
+  }
+
+  /// Заказы демо-режима.
+  ///
+  /// Выводятся из точек маршрутов, а не хранятся отдельным списком: на
+  /// сервере это одна и та же таблица (`route_customers` переименовали в
+  /// `orders`). Держи мок две независимые копии — закрытая водителем доставка
+  /// оказалась бы видна в маршруте и не видна в списке заказов, а именно это
+  /// расхождение демо и должно исключать.
+  ///
+  /// Цель у всех заказов одна: внутри маршрута сервер `purpose` не отдаёт,
+  /// и придумывать её здесь значило бы показывать в демо то, чего в API нет.
+  List<Order> orders({
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? customerId,
+    String? driverId,
+    String? routeId,
+    DeliveryStatus? status,
+    OrderPurpose? purpose,
+    PaymentMethod? paymentMethod,
+    String? search,
+  }) {
+    final result = <Order>[];
+    var number = 0;
+
+    for (final route in routes) {
+      for (final stop in route.stops) {
+        number++;
+        result.add(Order(
+          id: stop.id,
+          number: number,
+          sequence: stop.sequence,
+          status: stop.status,
+          purpose: OrderPurpose.delivery19l,
+          paymentMethod: stop.paymentMethod,
+          deliveredCapsules: stop.deliveredCapsules,
+          orderAmount: stop.paymentAmount,
+          completedAt: stop.completedAt,
+          createdAt: route.date,
+          customerId: stop.customerId,
+          customerName: stop.customerName,
+          customerPhone: stop.customerPhone,
+          customerAddress: stop.customerAddress,
+          routeId: route.id,
+          routeDate: route.date,
+          driverId: route.driverId,
+          driverFullName: route.driverFullName,
+        ));
+      }
+    }
+
+    // Локальная копия: параметр метода внутри замыкания не повышается до
+    // ненулевого типа, и без неё пришлось бы ставить `!` на каждое обращение.
+    final query = search?.trim().toLowerCase() ?? '';
+
+    bool matches(Order o) {
+      final date = o.routeDate ?? o.createdAt;
+      if (dateFrom != null && date.isBefore(dateFrom)) return false;
+      if (dateTo != null && date.isAfter(dateTo)) return false;
+      if (customerId != null && o.customerId != customerId) return false;
+      if (driverId != null && o.driverId != driverId) return false;
+      if (routeId != null && o.routeId != routeId) return false;
+      if (status != null && o.status != status) return false;
+      if (purpose != null && o.purpose != purpose) return false;
+      if (paymentMethod != null && o.paymentMethod != paymentMethod) {
+        return false;
+      }
+      if (query.isNotEmpty) {
+        final fields = [o.customerName, o.customerPhone, o.customerAddress];
+        if (!fields.any((f) => f.toLowerCase().contains(query))) return false;
+      }
+      return true;
+    }
+
+    // Новые сверху — как отдаёт сервер и как их ждёт список.
+    return result.where(matches).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  /// Переносит точку в другой маршрут.
+  ///
+  /// Повторяет поведение сервера: точка встаёт в конец очереди целевого
+  /// маршрута, а опустевший маршрут-источник отменяется — иначе в списке
+  /// остался бы маршрут на ноль точек, который водителю нечего везти.
+  void moveStop({required String stopId, required String targetRouteId}) {
+    for (var i = 0; i < routes.length; i++) {
+      final source = routes[i];
+      final si = source.stops.indexWhere((s) => s.id == stopId);
+      if (si == -1) continue;
+      if (source.id == targetRouteId) return;
+
+      final stop = source.stops[si];
+      final left = source.stops.toList()..removeAt(si);
+      routes[i] = copyRoute(
+        source,
+        stops: left,
+        status: left.isEmpty ? RouteStatus.cancelled : null,
+      );
+
+      replaceRoute(
+        targetRouteId,
+        (target) => copyRoute(target, stops: [...target.stops, stop]),
+      );
+      return;
+    }
   }
 
   /// Находит остановку по id и заменяет её, пересчитывая статус маршрута.

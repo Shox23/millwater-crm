@@ -133,20 +133,25 @@ void main() {
       expect(history.single.depositPrice, isPositive);
     });
 
-    test('новая цена уходит обеими полями и с ключом идемпотентности',
+    test('новая цена уходит всеми тремя полями и с ключом идемпотентности',
         () async {
       final adapter = _PricesAdapter();
       await repositoryWith(adapter).setPrices(
         capsulePrice: 25000,
         depositPrice: 50000,
+        damagedBottleFine: 40000,
         idempotencyKey: 'price-1',
       );
 
       final request = adapter.requests.single;
       expect(request.path, '/admin/prices');
+      // Штраф отправляется вместе с ценами: сервер принимает и подмножество,
+      // но экран показывает все три поля сразу, и «пошлю только изменённое»
+      // значило бы гадать, что админ считал изменением.
       expect(request.data, {
         'water_price': '25000',
         'deposit_price': '50000',
+        'damaged_bottle_fine': '40000',
       });
       expect(request.headers['Idempotency-Key'], 'price-1');
     });
@@ -157,18 +162,27 @@ void main() {
       final repo = MockCrmRepository();
       expect((await repo.getPrices()).capsulePrice, SeedData.capsulePrice);
 
-      await repo.setPrices(capsulePrice: 30000, depositPrice: 60000);
+      await repo.setPrices(
+        capsulePrice: 30000,
+        depositPrice: 60000,
+        damagedBottleFine: 40000,
+      );
       final current = await repo.getPrices();
 
       expect(current.capsulePrice, 30000);
       expect(current.depositPrice, 60000);
+      expect(current.damagedBottleFine, 40000);
     });
 
     test('история пополняется новой ценой и держит порядок', () async {
       final repo = MockCrmRepository();
       final before = await repo.getPriceHistory();
 
-      await repo.setPrices(capsulePrice: 30000, depositPrice: 60000);
+      await repo.setPrices(
+        capsulePrice: 30000,
+        depositPrice: 60000,
+        damagedBottleFine: 40000,
+      );
       final after = await repo.getPriceHistory();
 
       expect(after, hasLength(before.length + 1));
@@ -182,11 +196,13 @@ void main() {
       final first = await repo.setPrices(
         capsulePrice: 30000,
         depositPrice: 60000,
+        damagedBottleFine: 40000,
         idempotencyKey: 'price-42',
       );
       final second = await repo.setPrices(
         capsulePrice: 30000,
         depositPrice: 60000,
+        damagedBottleFine: 40000,
         idempotencyKey: 'price-42',
       );
 

@@ -6,6 +6,7 @@ import '../../../../l10n/l10n.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../data/models/customer.dart';
@@ -68,6 +69,32 @@ class CustomerCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    // Кулеры и своя цена — то, чем этот заказчик отличается
+                    // от остальных. Обычному не показываем ни строки: пустой
+                    // признак у большинства карточек был бы шумом.
+                    if (customer.hasCooler || customer.hasIndividualPrice)
+                      Row(
+                        spacing: AppSpacing.sm,
+                        children: [
+                          if (customer.hasCooler)
+                            _MarkerText(
+                              icon: Icons.water_drop_outlined,
+                              text: context.l10n
+                                  .coolersCount(customer.coolerCount),
+                            ),
+                          if (customer.hasIndividualPrice)
+                            Flexible(
+                              child: _MarkerText(
+                                icon: Icons.sell_outlined,
+                                text: context.l10n.customerCustomPrice(
+                                  MoneyFormatter.amount(
+                                    customer.customWaterPrice!,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -143,6 +170,34 @@ class _CapsuleTag extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Отличительный признак заказчика в карточке: иконка и короткая подпись.
+class _MarkerText extends StatelessWidget {
+  const _MarkerText({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 4,
+      children: [
+        Icon(icon, size: 14, color: t.primary),
+        Flexible(
+          child: Text(
+            text,
+            style: AppTypography.secondary.copyWith(color: t.primary),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

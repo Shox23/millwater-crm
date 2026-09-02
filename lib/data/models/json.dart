@@ -104,6 +104,28 @@ DateTime dateOr(Object? value, DateTime fallback) =>
 /// Заведомо «пустая» дата: не сегодня и не в будущем, сортировка её узнает.
 final DateTime epoch = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
+/// Вложенный объект; всё, что не словарь, — пустая карта.
+///
+/// Списочные ответы вкладывают заказчика и маршрут объектами, а прежний
+/// контракт описывал те же поля плоскими. Пустая карта вместо `null`
+/// избавляет модели от проверок на каждом поле.
+Map<String, dynamic> objectOr(Object? value) =>
+    value is Map ? value.cast<String, dynamic>() : const {};
+
+/// Первое непустое из значений-кандидатов.
+///
+/// Одно и то же поле сервер за релиз успел положить в трёх местах: во
+/// вложенном объекте с префиксом (`customer.customer_full_name`), в нём же
+/// без префикса (`customer.full_name`) и плоско в корне
+/// (`customer_full_name`). Перебор кандидатов в модели виден глазом, и при
+/// следующем переезде схемы правится добавлением одной строки.
+Object? firstNonNull(List<Object?> values) {
+  for (final value in values) {
+    if (value != null) return value;
+  }
+  return null;
+}
+
 /// Список словарей из поля [field]; всё, что не словарь, отбрасывается.
 List<Map<String, dynamic>> objectList(Object? value) {
   if (value is! List) return const [];

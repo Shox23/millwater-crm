@@ -1,6 +1,7 @@
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
+import '../models/order.dart';
 import '../models/price_settings.dart';
 import '../models/result_page.dart';
 import '../models/report_export.dart';
@@ -22,11 +23,14 @@ abstract class CrmRepository {
 
   /// Заводит новый прайс (`POST /admin/prices`) и возвращает его.
   ///
-  /// Обе цены отправляются вместе: `CreatePriceSettings` требует и ту,
-  /// и другую — «поменять только капсулу» на стороне API не бывает.
+  /// Все три значения отправляются вместе, хотя сервер теперь принимает и
+  /// подмножество: экран прайса показывает три поля сразу, и отправлять
+  /// «только изменённое» значило бы гадать, что именно админ считал
+  /// изменением. Непереданное сервер переносит из действующего прайса.
   Future<PriceSettings> setPrices({
     required int capsulePrice,
     required int depositPrice,
+    required int damagedBottleFine,
     String? idempotencyKey,
   });
 
@@ -66,10 +70,11 @@ abstract class CrmRepository {
   /// отчётов: должников и остаток капсул сводка не отдаёт, и они выводятся
   /// из справочника (см. `ReportsSummary.from`). Для списка, который
   /// листают, есть [getCustomersPage].
+  /// Фильтра по кулеру здесь нет намеренно: сервер его больше не принимает,
+  /// и отбор считается на клиенте — см. [CustomerFilter.filtersCoolerLocally].
   Future<List<Customer>> getCustomers({
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   });
 
@@ -78,20 +83,38 @@ abstract class CrmRepository {
     int page = 1,
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   });
   Future<Customer?> getCustomer(String id);
+
+  /// Заводит заказчика (`POST /admin/customers`).
+  ///
+  /// [debt] и [prepayment] — стартовый баланс. Оба ненулевыми быть не могут:
+  /// сервер отвечает 422 `BOTH_BALANCES_SET`, и форма не должна давать
+  /// собрать такое состояние.
+  /// [customWaterPrice] — индивидуальная цена капсулы; `null` — по общему
+  /// прайсу.
   /// [idempotencyKey] — см. [addDriver].
   Future<Customer> addCustomer({
     required String name,
     required String phone,
     required String address,
     String? comment,
-    bool hasCooler = false,
+    int coolerCount = 0,
+    int debt = 0,
+    int prepayment = 0,
+    int? customWaterPrice,
     String? idempotencyKey,
   });
-  Future<Customer> updateCustomer(Customer customer);
+
+  /// Сохраняет изменения заказчика (`PATCH /admin/customers/{id}`).
+  ///
+  /// [balanceChanged] — админ правил долг или предоплату вручную, и их надо
+  /// отправить. По умолчанию баланс не отправляется: см. `toUpdateJson`.
+  Future<Customer> updateCustomer(
+    Customer customer, {
+    bool balanceChanged = false,
+  });
   Future<void> deleteCustomer(String id);
 
   // ---- Маршруты ----
@@ -102,11 +125,19 @@ abstract class CrmRepository {
     RouteStatus? status,
   });
   Future<RouteDetail?> getRoute(String id);
+
+  /// Создаёт маршрут (`POST /admin/routes`).
+  ///
+  /// [purpose] — цель всех заказов маршрута. Отдельной цели у каждой точки
+  /// форма пока не спрашивает, но тело запроса её уже несёт: сервер ждёт
+  /// `customer_orders: [{customer_id, order_purpose}]`, а прежний плоский
+  /// `customer_ids` он молча игнорирует — маршрут при этом создавался пустым.
   /// [idempotencyKey] — см. [addDriver].
   Future<RouteDetail> createRoute({
     required String driverId,
     required DateTime date,
     required List<String> customerIds,
+    OrderPurpose purpose = OrderPurpose.delivery19l,
     String? idempotencyKey,
   });
   Future<void> deleteRoute(String id);
@@ -133,10 +164,14 @@ abstract class CrmRepository {
 
   /// Добавляет заказчика в маршрут
   /// (`POST /admin/routes/{id}/customers/{customerId}`).
-  /// Ответ 204 — см. оговорку у [assignDriver].
+  ///
+  /// Заказчик теперь передаётся ещё и телом запроса вместе с целью заказа:
+  /// сервер читает его оттуда, а не из пути. Ответ 204 — см. оговорку у
+  /// [assignDriver].
   Future<void> addRouteCustomer({
     required String routeId,
     required String customerId,
+    OrderPurpose purpose = OrderPurpose.delivery19l,
   });
 
   /// Убирает заказчика из маршрута
@@ -145,6 +180,66 @@ abstract class CrmRepository {
   Future<void> removeRouteCustomer({
     required String routeId,
     required String customerId,
+  });
+
+  // ---- Заказы ----
+  /// Страница списка заказов за всё время (`GET /admin/orders`).
+  ///
+  /// Отбор делает сервер целиком: период, заказчик, водитель, маршрут,
+  /// статус, цель, способ оплаты и поиск по имени, телефону и адресу.
+  Future<ResultPage<Order>> getOrdersPage({
+    int page = 1,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? customerId,
+    String? driverId,
+    String? routeId,
+    DeliveryStatus? status,
+    OrderPurpose? purpose,
+    PaymentMethod? paymentMethod,
+    String? search,
+  });
+
+  /// Один заказ (`GET /admin/orders/{id}`).
+  Future<Order?> getOrder(String id);
+
+  /// Переносит заказ в существующий маршрут
+  /// (`POST /admin/orders/{id}/move`, вариант `target_route_id`).
+  ///
+  /// Только пока заказ не закрыт: у закрытого сервер отвечает 409
+  /// `ORDER_ALREADY_COMPLETED`. Опустевший маршрут-источник сервер отменяет
+  /// сам. Ответ 204 без тела — заказ надо перечитать.
+  Future<void> moveOrderToRoute({
+    required String orderId,
+    required String targetRouteId,
+  });
+
+  /// Переносит заказ на дату (`POST /admin/orders/{id}/move`, вариант
+  /// `order_date`).
+  ///
+  /// Сервер ищет маршрут этой даты у этого водителя, а не найдя — **создаёт
+  /// маршрут без водителя**. Поэтому вызывающий обязан предупредить: заказ
+  /// уедет в маршрут, который некому везти.
+  /// Дата в прошлом отвергается (422 `DATE_IN_PAST`).
+  Future<void> moveOrderToDate({
+    required String orderId,
+    required DateTime date,
+    String? driverId,
+  });
+
+  /// Правит оплату закрытого заказа
+  /// (`PATCH /admin/orders/{id}/payment`, multipart).
+  ///
+  /// [amount] — итоговая сумма заказа целиком, а не доплата: разницу с уже
+  /// принятыми деньгами сервер посчитает сам и запишет отдельной строкой в
+  /// историю платежей, а остаток уйдёт заказчику в долг или предоплату.
+  /// Только у закрытого заказа: иначе 409 `ORDER_NOT_COMPLETED`.
+  Future<void> updateOrderPayment({
+    required String orderId,
+    required int amount,
+    required PaymentMethod method,
+    String? note,
+    String? photoPath,
   });
 
   // ---- Отчёты ----

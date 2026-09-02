@@ -7,6 +7,7 @@ import '../../../l10n/l10n.dart';
 import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/filter_chips.dart';
@@ -14,6 +15,8 @@ import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/stat_tile.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/repositories/driver_repository.dart';
+import '../../orders/bloc/orders_source.dart';
+import '../../orders/presentation/orders_page.dart';
 import '../../routes/presentation/widgets/hero_progress_card.dart';
 import '../../routes/presentation/widgets/route_card.dart';
 import '../bloc/my_routes_bloc.dart';
@@ -63,6 +66,25 @@ class _MyRoutesView extends StatelessWidget {
                   child: ScreenHeader(
                     label: context.l10n.routesHeaderToday(dateLabel),
                     title: context.l10n.myRoutesTitle,
+                    // Список маршрутов показывает сегодняшний день, а история
+                    // за всё время теперь есть у сервера — открываем её
+                    // отдельным экраном, чтобы сводка за день осталась
+                    // сводкой за день.
+                    action: IconActionButton(
+                      icon: Icons.receipt_long_outlined,
+                      tooltip: context.l10n.driverOrdersTitle,
+                      onPressed: () => Navigator.of(context).push(
+                        OverlayPageRoute<void>(
+                          builder: (_) => OrdersPage(
+                            source: DriverOrdersSource(
+                              context.read<DriverRepository>(),
+                            ),
+                            title: context.l10n.driverOrdersTitle,
+                            notifications: context.notificationEvents,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 Padding(

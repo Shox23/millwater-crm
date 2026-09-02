@@ -1449,4 +1449,330 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get desktopFieldCooler => 'Кулер';
+
+  @override
+  String get orderPurposeDelivery => 'Доставка 19 л';
+
+  @override
+  String get orderPurposePickup => 'Вывоз';
+
+  @override
+  String get orderPurposeBulk => 'Опт 5/10 л';
+
+  @override
+  String coolersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count кулеров',
+      few: '$count кулера',
+      one: '$count кулер',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String customerCustomPrice(String price) {
+    return 'Своя цена: $price';
+  }
+
+  @override
+  String get customerFormCoolers => 'Кулеров у заказчика';
+
+  @override
+  String get customerFormCoolersHint =>
+      'К кулеру капсулу ставят, без него воду переливают';
+
+  @override
+  String get customerFormBalance => 'Стартовый баланс';
+
+  @override
+  String get customerFormBalanceNone => 'Нет';
+
+  @override
+  String get customerFormBalanceDebt => 'Долг';
+
+  @override
+  String get customerFormBalancePrepayment => 'Предоплата';
+
+  @override
+  String get customerFormBalanceAmount => 'Сумма';
+
+  @override
+  String get customerFormBalanceEmpty => 'Введите сумму';
+
+  @override
+  String get customerFormBalanceHint =>
+      'Долг и предоплата одновременно невозможны';
+
+  @override
+  String get customerFormPrice => 'Цена капсулы';
+
+  @override
+  String get customerFormPriceDefault => 'По прайсу';
+
+  @override
+  String get customerFormPriceCustom => 'Своя';
+
+  @override
+  String get customerFormPriceValue => 'Цена для заказчика';
+
+  @override
+  String get customerFormPriceEmpty => 'Введите цену';
+
+  @override
+  String customerFormPriceHelper(String price) {
+    return 'Общая цена: $price';
+  }
+
+  @override
+  String get pricesDamagedFine => 'Штраф за брак';
+
+  @override
+  String get pricesDamagedFineHelper => 'Сум за одну повреждённую капсулу';
+
+  @override
+  String get pricesDamagedFineRow => 'Штраф за капсулу';
+
+  @override
+  String get completionDebtLine => 'Уйдёт в долг';
+
+  @override
+  String get completionDebtHint =>
+      'В долг деньги не принимают — сумма начисляется заказчику';
+
+  @override
+  String get errorBothBalances =>
+      'У заказчика не может быть долга и предоплаты одновременно';
+
+  @override
+  String get errorOrderCompleted => 'Заказ уже закрыт';
+
+  @override
+  String get errorOrderNotCompleted => 'Заказ ещё не закрыт';
+
+  @override
+  String get errorRouteNotInProgress => 'Маршрут не в работе';
+
+  @override
+  String get errorBulkPriceRequired => 'Укажите цену для опта';
+
+  @override
+  String get errorInvalidDamagedCount =>
+      'Повреждённых больше, чем привезли и забрали';
+
+  @override
+  String get errorCustomerPhoneExists =>
+      'Этот телефон уже записан за другим заказчиком';
+
+  @override
+  String get errorPhoneExists => 'Этот телефон уже занят';
+
+  @override
+  String get errorDriverBusy => 'У водителя уже есть маршрут на эту дату';
+
+  @override
+  String get errorRouteStarted => 'Маршрут уже начат';
+
+  @override
+  String get errorRouteCompleted => 'Маршрут уже завершён';
+
+  @override
+  String get errorAccessDenied => 'Нет доступа';
+
+  @override
+  String get errorNotFound => 'Запись не найдена';
+
+  @override
+  String get ordersTitle => 'Заказы';
+
+  @override
+  String get ordersTileHint => 'Все заказы за всё время';
+
+  @override
+  String get ordersSearch => 'Заказчик, телефон, адрес';
+
+  @override
+  String get ordersEmpty => 'Заказов пока нет';
+
+  @override
+  String get ordersLoadFailed => 'Не удалось загрузить заказы';
+
+  @override
+  String ordersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count заказов',
+      few: '$count заказа',
+      one: '$count заказ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String orderNumber(int number) {
+    return 'Заказ №$number';
+  }
+
+  @override
+  String get orderNoDriver => 'Водитель не назначен';
+
+  @override
+  String get orderSectionComposition => 'СОСТАВ';
+
+  @override
+  String get orderSectionMoney => 'РАСЧЁТ';
+
+  @override
+  String get orderSectionRoute => 'МАРШРУТ';
+
+  @override
+  String get orderDelivered => 'Доставлено';
+
+  @override
+  String get orderReturned => 'Забрано пустых';
+
+  @override
+  String get orderDamaged => 'Повреждено';
+
+  @override
+  String get orderBalanceAfter => 'Остаток у заказчика';
+
+  @override
+  String get orderAmount => 'Сумма заказа';
+
+  @override
+  String get orderPriceApplied => 'Цена капсулы в заказе';
+
+  @override
+  String get orderFineApplied => 'Штраф за повреждённую';
+
+  @override
+  String get orderPaymentMethod => 'Способ оплаты';
+
+  @override
+  String get orderCompletedAt => 'Закрыт';
+
+  @override
+  String get orderCreatedAt => 'Создан';
+
+  @override
+  String get orderNotCompleted => 'Ещё не закрыт';
+
+  @override
+  String get orderOpenFailed => 'Не удалось открыть заказ';
+
+  @override
+  String get driverOrdersTitle => 'Мои заказы';
+
+  @override
+  String get driverOrdersTileHint => 'История заказов за всё время';
+
+  @override
+  String pricesFineRow(String amount) {
+    return 'штраф $amount';
+  }
+
+  @override
+  String pricesConfirmFine(String fine) {
+    return 'Штраф за повреждённую капсулу — $fine.';
+  }
+
+  @override
+  String get orderMoveTitle => 'Перенести заказ';
+
+  @override
+  String get orderMoveDate => 'Дата';
+
+  @override
+  String get orderMoveRoutes => 'МАРШРУТ НА ЭТУ ДАТУ';
+
+  @override
+  String get orderMoveNewRoute => 'Новый маршрут';
+
+  @override
+  String get orderMoveNewRouteHint =>
+      'Сервер заведёт маршрут на выбранную дату';
+
+  @override
+  String get orderMoveNoDriver =>
+      'У нового маршрута не будет водителя — назначьте его на экране маршрутов';
+
+  @override
+  String get orderMoveNoRoutes => 'На эту дату маршрутов пока нет';
+
+  @override
+  String get orderMoveRoutesFailed => 'Не удалось загрузить маршруты';
+
+  @override
+  String get orderMoveAction => 'Перенести';
+
+  @override
+  String get orderMoveFailed => 'Не удалось перенести заказ.';
+
+  @override
+  String get orderMoved => 'Заказ перенесён';
+
+  @override
+  String orderRouteStops(int count, String driver) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count точек',
+      few: '$count точки',
+      one: '$count точка',
+    );
+    return '$_temp0 · $driver';
+  }
+
+  @override
+  String get orderNoDriverShort => 'без водителя';
+
+  @override
+  String get orderPaymentTitle => 'Изменение оплаты';
+
+  @override
+  String get orderPaymentAmount => 'Итоговая сумма заказа';
+
+  @override
+  String get orderPaymentAmountHint =>
+      'Не доплата, а вся сумма заказа: разницу сервер посчитает сам';
+
+  @override
+  String get orderPaymentAmountEmpty => 'Введите сумму';
+
+  @override
+  String orderPaymentWasBecomes(String before, String after) {
+    return 'Было $before → станет $after';
+  }
+
+  @override
+  String get orderPaymentNote => 'Комментарий';
+
+  @override
+  String get orderPaymentNoteHint =>
+      'Зачем правите — останется в истории платежей';
+
+  @override
+  String get orderPaymentBalanceNow => 'Баланс заказчика сейчас';
+
+  @override
+  String get orderPaymentBalanceHint =>
+      'Разницу сервер запишет заказчику в долг или предоплату';
+
+  @override
+  String get orderPaymentSaved => 'Оплата изменена';
+
+  @override
+  String get orderPaymentFailed => 'Не удалось изменить оплату.';
+
+  @override
+  String get orderActionMove => 'Перенести';
+
+  @override
+  String get orderActionPayment => 'Изменить оплату';
+
+  @override
+  String get errorDateInPast => 'Дата не может быть в прошлом';
 }

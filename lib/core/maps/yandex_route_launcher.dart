@@ -61,8 +61,8 @@ class YandexRouteLauncher {
   ///    нативному приложению (`canLaunchUrl`, затем `LaunchMode.externalApplication`).
   ///    Текстовые адреса сюда не отдаются: нативное приложение геокодит их
   ///    заметно хуже веб-версии.
-  /// 3. Веб-ссылка `https://yandex.ru/maps/` через `LaunchMode.inAppBrowserView`.
-  /// 4. Она же через `LaunchMode.externalApplication`.
+  /// 3. Веб-ссылка `https://yandex.ru/maps/` через `LaunchMode.externalApplication`.
+  /// 4. Она же через `LaunchMode.inAppBrowserView`.
   /// 5. Ничего не сработало — ошибка «Не удалось открыть Яндекс.Карты».
   Future<OpenRouteResult> openRoute(RouteData route) async {
     final invalid = route.validate();
@@ -86,17 +86,24 @@ class YandexRouteLauncher {
 
     final web = Uri.https(_webHost, _webPath, query);
 
-    // Именно inAppBrowserView, а не externalApplication: при внешнем запуске
-    // iOS перехватывает `yandex.ru/maps` universal link'ом и всё равно
-    // открывает нативные Яндекс.Карты — то есть отдаёт им ровно те текстовые
-    // адреса, которые мы хотели оставить веб-версии с её геокодером.
-    if (await _tryLaunch(web, LaunchMode.inAppBrowserView)) {
+    // Наружу, а не во встроенный браузер: маршрут строят, чтобы по нему
+    // ехать, а встроенная веб-карта показывает путь, но не ведёт — водитель
+    // из неё всё равно уходит в приложение, только лишним шагом. На iOS
+    // `yandex.ru/maps` подхватывает universal link'ом само приложение
+    // Яндекс.Карт, и это ровно то, что нужно.
+    //
+    // Раньше порядок был обратный: внешний запуск отдавал приложению
+    // текстовый адрес, а оно геокодит неформальные адреса заметно хуже
+    // веб-версии. Теперь адрес со вставленной ссылкой на карту разбирается
+    // в координаты (см. `RoutePoint.fromCustomer`), и беречь веб-геокодер
+    // больше не за чем.
+    if (await _tryLaunch(web, LaunchMode.externalApplication)) {
       return const OpenRouteResult.success();
     }
 
-    // Встроенного браузера может не быть (нет Custom Tabs, урезанная прошивка) —
-    // тогда остаётся обычный внешний браузер.
-    if (await _tryLaunch(web, LaunchMode.externalApplication)) {
+    // Открыть внешним приложением может быть нечем — на этот случай остаётся
+    // встроенный браузер.
+    if (await _tryLaunch(web, LaunchMode.inAppBrowserView)) {
       return const OpenRouteResult.success();
     }
 

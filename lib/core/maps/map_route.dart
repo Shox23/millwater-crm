@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'geo_link.dart';
+
 
 /// Точка маршрута: текстовый адрес и, если они известны, координаты.
 ///
@@ -11,6 +13,34 @@ class RoutePoint extends Equatable {
     this.latitude,
     this.longitude,
   });
+
+  /// Точка заказчика: координаты сервера, а если их нет — разобранные из
+  /// самого адреса.
+  ///
+  /// Менеджеры вставляют в поле адреса ссылку на карту. Без разбора она
+  /// уходит в `rtext` текстом, и геокодер ищет «https://…» — то есть не
+  /// находит ничего. Серверные координаты, когда они появятся, важнее:
+  /// адрес правил человек, а их фиксировал водитель на месте.
+  factory RoutePoint.fromCustomer({
+    required String address,
+    double? latitude,
+    double? longitude,
+  }) {
+    if (latitude != null && longitude != null) {
+      return RoutePoint(
+        address: address,
+        latitude: latitude,
+        longitude: longitude,
+      );
+    }
+
+    final parsed = GeoLink.tryParse(address);
+    return RoutePoint(
+      address: address,
+      latitude: parsed?.latitude,
+      longitude: parsed?.longitude,
+    );
+  }
 
   final String address;
   final double? latitude;

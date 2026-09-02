@@ -1428,4 +1428,325 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get desktopFieldCooler => 'Kuler';
+
+  @override
+  String get orderPurposeDelivery => '19 l yetkazish';
+
+  @override
+  String get orderPurposePickup => 'Olib ketish';
+
+  @override
+  String get orderPurposeBulk => 'Ulgurji 5/10 l';
+
+  @override
+  String coolersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kuler',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String customerCustomPrice(String price) {
+    return 'Shaxsiy narx: $price';
+  }
+
+  @override
+  String get customerFormCoolers => 'Mijozdagi kulerlar soni';
+
+  @override
+  String get customerFormCoolersHint =>
+      'Kulerga kapsula qo‘yiladi, usiz suv quyib beriladi';
+
+  @override
+  String get customerFormBalance => 'Boshlang‘ich balans';
+
+  @override
+  String get customerFormBalanceNone => 'Yo‘q';
+
+  @override
+  String get customerFormBalanceDebt => 'Qarz';
+
+  @override
+  String get customerFormBalancePrepayment => 'Oldindan to‘lov';
+
+  @override
+  String get customerFormBalanceAmount => 'Summa';
+
+  @override
+  String get customerFormBalanceEmpty => 'Summani kiriting';
+
+  @override
+  String get customerFormBalanceHint =>
+      'Qarz va oldindan to‘lov bir vaqtda bo‘lmaydi';
+
+  @override
+  String get customerFormPrice => 'Kapsula narxi';
+
+  @override
+  String get customerFormPriceDefault => 'Narxlar bo‘yicha';
+
+  @override
+  String get customerFormPriceCustom => 'Shaxsiy';
+
+  @override
+  String get customerFormPriceValue => 'Mijoz uchun narx';
+
+  @override
+  String get customerFormPriceEmpty => 'Narxni kiriting';
+
+  @override
+  String customerFormPriceHelper(String price) {
+    return 'Umumiy narx: $price';
+  }
+
+  @override
+  String get pricesDamagedFine => 'Shikast uchun jarima';
+
+  @override
+  String get pricesDamagedFineHelper =>
+      'Bitta shikastlangan kapsula uchun so‘m';
+
+  @override
+  String get pricesDamagedFineRow => 'Kapsula uchun jarima';
+
+  @override
+  String get completionDebtLine => 'Qarzga yoziladi';
+
+  @override
+  String get completionDebtHint =>
+      'Qarzga pul olinmaydi — summa mijozga yoziladi';
+
+  @override
+  String get errorBothBalances =>
+      'Mijozda qarz va oldindan to‘lov bir vaqtda bo‘lmaydi';
+
+  @override
+  String get errorOrderCompleted => 'Buyurtma allaqachon yopilgan';
+
+  @override
+  String get errorOrderNotCompleted => 'Buyurtma hali yopilmagan';
+
+  @override
+  String get errorRouteNotInProgress => 'Marshrut ishda emas';
+
+  @override
+  String get errorBulkPriceRequired => 'Ulgurji uchun narxni kiriting';
+
+  @override
+  String get errorInvalidDamagedCount =>
+      'Shikastlanganlar olib kelingan va olingandan ko‘p';
+
+  @override
+  String get errorCustomerPhoneExists =>
+      'Bu raqam boshqa mijozga biriktirilgan';
+
+  @override
+  String get errorPhoneExists => 'Bu raqam allaqachon band';
+
+  @override
+  String get errorDriverBusy => 'Haydovchida bu sanaga marshrut bor';
+
+  @override
+  String get errorRouteStarted => 'Marshrut allaqachon boshlangan';
+
+  @override
+  String get errorRouteCompleted => 'Marshrut allaqachon yakunlangan';
+
+  @override
+  String get errorAccessDenied => 'Ruxsat yo‘q';
+
+  @override
+  String get errorNotFound => 'Yozuv topilmadi';
+
+  @override
+  String get ordersTitle => 'Buyurtmalar';
+
+  @override
+  String get ordersTileHint => 'Butun davr uchun barcha buyurtmalar';
+
+  @override
+  String get ordersSearch => 'Mijoz, telefon, manzil';
+
+  @override
+  String get ordersEmpty => 'Hozircha buyurtmalar yo‘q';
+
+  @override
+  String get ordersLoadFailed => 'Buyurtmalarni yuklab bo‘lmadi';
+
+  @override
+  String ordersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count buyurtma',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String orderNumber(int number) {
+    return 'Buyurtma №$number';
+  }
+
+  @override
+  String get orderNoDriver => 'Haydovchi tayinlanmagan';
+
+  @override
+  String get orderSectionComposition => 'TARKIBI';
+
+  @override
+  String get orderSectionMoney => 'HISOB';
+
+  @override
+  String get orderSectionRoute => 'MARSHRUT';
+
+  @override
+  String get orderDelivered => 'Yetkazildi';
+
+  @override
+  String get orderReturned => 'Bo‘sh olindi';
+
+  @override
+  String get orderDamaged => 'Shikastlangan';
+
+  @override
+  String get orderBalanceAfter => 'Mijozdagi qoldiq';
+
+  @override
+  String get orderAmount => 'Buyurtma summasi';
+
+  @override
+  String get orderPriceApplied => 'Buyurtmadagi kapsula narxi';
+
+  @override
+  String get orderFineApplied => 'Shikast uchun jarima';
+
+  @override
+  String get orderPaymentMethod => 'To‘lov usuli';
+
+  @override
+  String get orderCompletedAt => 'Yopilgan';
+
+  @override
+  String get orderCreatedAt => 'Yaratilgan';
+
+  @override
+  String get orderNotCompleted => 'Hali yopilmagan';
+
+  @override
+  String get orderOpenFailed => 'Buyurtmani ochib bo‘lmadi';
+
+  @override
+  String get driverOrdersTitle => 'Mening buyurtmalarim';
+
+  @override
+  String get driverOrdersTileHint => 'Butun davr uchun buyurtmalar tarixi';
+
+  @override
+  String pricesFineRow(String amount) {
+    return 'jarima $amount';
+  }
+
+  @override
+  String pricesConfirmFine(String fine) {
+    return 'Shikastlangan kapsula uchun jarima — $fine.';
+  }
+
+  @override
+  String get orderMoveTitle => 'Buyurtmani ko‘chirish';
+
+  @override
+  String get orderMoveDate => 'Sana';
+
+  @override
+  String get orderMoveRoutes => 'SHU SANADAGI MARSHRUT';
+
+  @override
+  String get orderMoveNewRoute => 'Yangi marshrut';
+
+  @override
+  String get orderMoveNewRouteHint =>
+      'Server tanlangan sanaga marshrut yaratadi';
+
+  @override
+  String get orderMoveNoDriver =>
+      'Yangi marshrutda haydovchi bo‘lmaydi — uni marshrutlar ekranida tayinlang';
+
+  @override
+  String get orderMoveNoRoutes => 'Bu sanaga hozircha marshrut yo‘q';
+
+  @override
+  String get orderMoveRoutesFailed => 'Marshrutlarni yuklab bo‘lmadi';
+
+  @override
+  String get orderMoveAction => 'Ko‘chirish';
+
+  @override
+  String get orderMoveFailed => 'Buyurtmani ko‘chirib bo‘lmadi.';
+
+  @override
+  String get orderMoved => 'Buyurtma ko‘chirildi';
+
+  @override
+  String orderRouteStops(int count, String driver) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nuqta',
+    );
+    return '$_temp0 · $driver';
+  }
+
+  @override
+  String get orderNoDriverShort => 'haydovchisiz';
+
+  @override
+  String get orderPaymentTitle => 'To‘lovni o‘zgartirish';
+
+  @override
+  String get orderPaymentAmount => 'Buyurtmaning yakuniy summasi';
+
+  @override
+  String get orderPaymentAmountHint =>
+      'Qo‘shimcha to‘lov emas, butun summa: farqni server o‘zi hisoblaydi';
+
+  @override
+  String get orderPaymentAmountEmpty => 'Summani kiriting';
+
+  @override
+  String orderPaymentWasBecomes(String before, String after) {
+    return 'Edi $before → bo‘ladi $after';
+  }
+
+  @override
+  String get orderPaymentNote => 'Izoh';
+
+  @override
+  String get orderPaymentNoteHint =>
+      'Nima uchun o‘zgartirdingiz — to‘lovlar tarixida qoladi';
+
+  @override
+  String get orderPaymentBalanceNow => 'Mijoz balansi hozir';
+
+  @override
+  String get orderPaymentBalanceHint =>
+      'Farqni server mijozga qarz yoki oldindan to‘lov qilib yozadi';
+
+  @override
+  String get orderPaymentSaved => 'To‘lov o‘zgartirildi';
+
+  @override
+  String get orderPaymentFailed => 'To‘lovni o‘zgartirib bo‘lmadi.';
+
+  @override
+  String get orderActionMove => 'Ko‘chirish';
+
+  @override
+  String get orderActionPayment => 'To‘lovni o‘zgartirish';
+
+  @override
+  String get errorDateInPast => 'Sana o‘tmishda bo‘lishi mumkin emas';
 }

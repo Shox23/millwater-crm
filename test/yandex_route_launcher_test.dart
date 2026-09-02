@@ -96,8 +96,65 @@ void main() {
     });
   });
 
+  group('RoutePoint.fromCustomer', () {
+    // Ташкент; ссылка Яндекса несёт координаты в обратном порядке.
+    const link = 'https://yandex.uz/maps/?ll=69.240562,41.311081&z=17';
+
+    test('ссылка в поле адреса становится координатами', () {
+      final point = RoutePoint.fromCustomer(address: link);
+
+      // Без разбора эта строка ушла бы в rtext текстом, и геокодер искал бы
+      // «https://…» — то есть не нашёл бы ничего.
+      expect(point.hasCoordinates, isTrue);
+      expect(point.toRtextValue(), '41.311081,69.240562');
+    });
+
+    test('обычный адрес остаётся текстом', () {
+      final point = RoutePoint.fromCustomer(address: 'Чиланзар, 12 квартал');
+
+      expect(point.hasCoordinates, isFalse);
+      expect(point.toRtextValue(), 'Чиланзар, 12 квартал');
+    });
+
+    test('координаты сервера важнее разобранных из адреса', () {
+      final point = RoutePoint.fromCustomer(
+        address: link,
+        latitude: 41.5,
+        longitude: 69.5,
+      );
+
+      // Адрес правил человек, а координаты фиксировал водитель на месте.
+      expect(point.toRtextValue(), '41.5,69.5');
+    });
+
+    test('нераспознанная ссылка ведёт себя как сегодня', () {
+      // Короткую ссылку разбирает сервер; здесь она просто остаётся текстом.
+      const short = 'https://maps.app.goo.gl/aBcDeFgH';
+      final point = RoutePoint.fromCustomer(address: short);
+
+      expect(point.hasCoordinates, isFalse);
+      expect(point.toRtextValue(), short);
+    });
+
+    test('маршрут из адресов-ссылок открывает нативное приложение', () async {
+      final fake = _FakeLauncher(appInstalled: true);
+      final result = await fake.service.openRoute(RouteData(points: [
+        RoutePoint.fromCustomer(address: link),
+        RoutePoint.fromCustomer(
+          address: 'Мирабад https://yandex.uz/maps/?ll=69.28,41.29&z=17',
+        ),
+      ]));
+
+      expect(result.isSuccess, isTrue);
+      // Ради этого разбор и нужен: у всех точек есть координаты, геокодинг
+      // не участвует, маршрут уходит в Яндекс.Карты, а не в браузер.
+      expect(fake.opened.single.$1.scheme, 'yandexmaps');
+      expect(fake.opened.single.$2, LaunchMode.externalApplication);
+    });
+  });
+
   group('openRoute — веб-версия', () {
-    test('текстовые адреса открываются в браузере с rtt=auto', () async {
+    test('текстовые адреса уходят наружу с rtt=auto', () async {
       final fake = _FakeLauncher();
       final result = await fake.service.openRoute(
         RouteData(points: [_addr('Москва'), _addr('Тверская 1')]),
@@ -107,7 +164,9 @@ void main() {
       expect(result.error, isNull);
       // Текстовые адреса нативному приложению не предлагаются.
       expect(fake.probed, isEmpty);
-      expect(fake.opened.single.$2, LaunchMode.inAppBrowserView);
+      // Наружу, а не во встроенный браузер: по карте внутри приложения не
+      // поедешь, водителю нужен навигатор.
+      expect(fake.opened.single.$2, LaunchMode.externalApplication);
 
       final url = fake.lastUrl!;
       expect(url.scheme, 'https');
@@ -196,16 +255,18 @@ void main() {
       expect(url.queryParameters['rtt'], 'auto');
     });
 
-    test('приложение не установлено — тихий фолбэк в браузер', () async {
+    test('приложение не установлено — маршрут всё равно уходит наружу',
+        () async {
       final fake = _FakeLauncher();
       final result = await fake.service.openRoute(coords);
 
       expect(result.isSuccess, isTrue, reason: 'пользователь ошибки не видит');
       expect(fake.opened.single.$1.scheme, 'https');
-      expect(fake.opened.single.$2, LaunchMode.inAppBrowserView);
+      expect(fake.opened.single.$2, LaunchMode.externalApplication);
     });
 
-    test('deeplink не открылся — фолбэк в браузер', () async {
+    test('внешним запуском открыть нечем — остаётся встроенный браузер',
+        () async {
       final fake = _FakeLauncher(
         appInstalled: true,
         failModes: {LaunchMode.externalApplication: false},
@@ -213,21 +274,24 @@ void main() {
       final result = await fake.service.openRoute(coords);
 
       expect(result.isSuccess, isTrue);
-      expect(fake.opened.map((e) => e.$1.scheme), ['yandexmaps', 'https']);
+      // Deeplink, затем веб наружу, и лишь потом встроенный браузер.
+      expect(fake.opened.map((e) => e.$1.scheme), ['yandexmaps', 'https', 'https']);
+      expect(fake.opened.last.$2, LaunchMode.inAppBrowserView);
     });
   });
 
   group('openRoute — сбои', () {
     final route = RouteData(points: [_addr('А'), _addr('Б')]);
 
-    test('PlatformException из inAppBrowserView ведёт к внешнему браузеру',
+    test('PlatformException из внешнего запуска ведёт во встроенный браузер',
         () async {
-      final fake = _FakeLauncher(failModes: {LaunchMode.inAppBrowserView: true});
+      final fake =
+          _FakeLauncher(failModes: {LaunchMode.externalApplication: true});
       final result = await fake.service.openRoute(route);
 
       expect(result.isSuccess, isTrue);
       expect(fake.opened.map((e) => e.$2),
-          [LaunchMode.inAppBrowserView, LaunchMode.externalApplication]);
+          [LaunchMode.externalApplication, LaunchMode.inAppBrowserView]);
     });
 
     test('исключение из canLaunchUrl не роняет открытие', () async {

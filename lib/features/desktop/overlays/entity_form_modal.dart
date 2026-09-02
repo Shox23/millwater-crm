@@ -198,7 +198,11 @@ class _CustomerFormModalState extends State<CustomerFormModal>
   late final TextEditingController _phone;
   late final TextEditingController _address;
   late final TextEditingController _comment;
-  late bool _hasCooler;
+  /// Кулеры на десктопе остаются переключателем «есть/нет»: колонок в
+  /// таблице и без того много, а точное число правят в мобильной форме.
+  /// Хранится всё равно количество — иначе правка названия у заказчика с
+  /// тремя кулерами молча оставила бы ему один.
+  late int _coolerCount;
 
   final String _idempotencyKey = newIdempotencyKey('customer');
 
@@ -218,7 +222,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     );
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
-    _hasCooler = customer?.hasCooler ?? false;
+    _coolerCount = customer?.coolerCount ?? 0;
     _name.addListener(_onChanged);
   }
 
@@ -252,7 +256,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
             phone: phone,
             address: _address.text.trim(),
             comment: comment.isEmpty ? null : comment,
-            hasCooler: _hasCooler,
+            coolerCount: _coolerCount,
           ));
         } else {
           await repo.addCustomer(
@@ -260,7 +264,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
             phone: phone,
             address: _address.text.trim(),
             comment: comment.isEmpty ? null : comment,
-            hasCooler: _hasCooler,
+            coolerCount: _coolerCount,
             idempotencyKey: _idempotencyKey,
           );
         }
@@ -330,8 +334,14 @@ class _CustomerFormModalState extends State<CustomerFormModal>
                     (true, l10n.desktopWithCooler),
                     (false, l10n.desktopWithoutCooler),
                   ],
-                  value: _hasCooler,
-                  onChanged: (value) => setState(() => _hasCooler = value),
+                  value: _coolerCount > 0,
+                  onChanged: (value) => setState(
+                    // Прежнее количество не теряем: «есть» возвращает то, что
+                    // стояло у заказчика, и только у нового ставит первый.
+                    () => _coolerCount = value
+                        ? (widget.customer?.coolerCount ?? 0).clamp(1, 10)
+                        : 0,
+                  ),
                 ),
               ],
             ),

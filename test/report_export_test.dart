@@ -194,9 +194,9 @@ void main() {
     });
   });
 
-  group('Кулер заказчика', () {
-    test('поле переживает разбор ответа сервера', () {
-      final withCooler = {
+  group('Кулеры заказчика', () {
+    test('количество разбирается, а булев признак остаётся понятен', () {
+      final withCoolers = {
         'id': 'c1',
         'full_name': 'Влад',
         'phone': '+998901234567',
@@ -206,40 +206,73 @@ void main() {
         'debt': '0.00',
         'last_order_date': null,
         'is_active': true,
-        'has_cooler': true,
+        'cooler_count': 3,
+        'custom_water_price': null,
         'comment': null,
         'created_at': '2026-01-01T00:00:00Z',
       };
 
-      expect(customerFrom(withCooler).hasCooler, isTrue);
-      expect(
-        customerFrom({...withCooler, 'has_cooler': false}).hasCooler,
-        isFalse,
-      );
-      // Старый ответ без поля не должен ронять разбор.
-      final legacy = {...withCooler}..remove('has_cooler');
-      expect(customerFrom(legacy).hasCooler, isFalse);
+      expect(customerFrom(withCoolers).coolerCount, 3);
+      expect(customerFrom(withCoolers).hasCooler, isTrue);
+      expect(customerFrom({...withCoolers, 'cooler_count': 0}).hasCooler, isFalse);
+
+      // Старый стенд отдаёт булево поле — сборка с этим кодом смотрит и на
+      // него, иначе у всех заказчиков разом «кулера нет».
+      final legacy = {...withCoolers}..remove('cooler_count');
+      expect(customerFrom({...legacy, 'has_cooler': true}).coolerCount, 1);
+      expect(customerFrom(legacy).coolerCount, 0);
     });
 
-    test('кулер уходит на сервер при создании и правке', () async {
+    test('индивидуальная цена: ноль и мусор — это «цены нет»', () {
+      final base = {
+        'id': 'c1',
+        'full_name': 'Влад',
+        'phone': '+998901234567',
+        'address': 'Чиланзар, 5',
+        'bottle_balance': 0,
+        'prepayment': '0.00',
+        'debt': '0.00',
+        'last_order_date': null,
+        'is_active': true,
+        'cooler_count': 0,
+        'comment': null,
+        'created_at': '2026-01-01T00:00:00Z',
+      };
+
+      expect(
+        customerFrom({...base, 'custom_water_price': '15000.00'})
+            .customWaterPrice,
+        15000,
+      );
+      expect(
+        customerFrom({...base, 'custom_water_price': null}).hasIndividualPrice,
+        isFalse,
+      );
+      // Ноль сюда приходит только из неразобранного значения: считать по нему
+      // значило бы выставить заказчику ноль сум за капсулу.
+      expect(
+        customerFrom({...base, 'custom_water_price': '0'}).customWaterPrice,
+        isNull,
+      );
+    });
+
+    test('количество кулеров уходит на сервер при создании и правке', () async {
       final repo = MockCrmRepository();
 
       final created = await repo.addCustomer(
         name: 'Влад',
         phone: '+998901234567',
         address: 'Чиланзар, 5',
-        hasCooler: true,
+        coolerCount: 2,
       );
-      expect(created.hasCooler, isTrue);
-      expect(created.toUpdateJson()['has_cooler'], isTrue);
+      expect(created.coolerCount, 2);
+      expect(created.toUpdateJson()['cooler_count'], 2);
 
-      final off = await repo.updateCustomer(
-        created.copyWith(hasCooler: false),
-      );
+      final off = await repo.updateCustomer(created.copyWith(coolerCount: 0));
       expect(off.hasCooler, isFalse);
     });
 
-    test('кулер лежит в теле POST и PATCH, а не теряется по дороге', () async {
+    test('кулеры и своя цена лежат в теле POST и PATCH', () async {
       // Мок проверяет модель, но не то, что поле дошло до сети: между
       // репозиторием и сервером есть сборка тела, и молча потерять его
       // может именно она.
@@ -252,19 +285,46 @@ void main() {
         name: 'Влад',
         phone: '+998901234567',
         address: 'Чиланзар, 5',
-        hasCooler: true,
+        coolerCount: 2,
+        customWaterPrice: 15000,
       );
-      expect(adapter.bodies.last['has_cooler'], isTrue);
+      expect(adapter.bodies.last['cooler_count'], 2);
+      expect(adapter.bodies.last['custom_water_price'], '15000');
+      // Баланс отправляется всегда при создании: у нового заказчика он
+      // осмыслен, и сервер сам проверит, что оба не заданы разом.
+      expect(adapter.bodies.last['debt'], '0');
 
-      await repo.updateCustomer(created.copyWith(hasCooler: false));
-      expect(adapter.bodies.last['has_cooler'], isFalse);
+      await repo.updateCustomer(created.copyWith(coolerCount: 0));
+      expect(adapter.bodies.last['cooler_count'], 0);
+      // Долг и предоплата в PATCH не уходят, пока их не правили руками:
+      // иначе форма откатила бы оплату, принятую водителем, пока была открыта.
+      expect(adapter.bodies.last.containsKey('debt'), isFalse);
       expect(adapter.methods, ['POST', 'PATCH']);
+    });
+
+    test('правка баланса отправляет его явно', () async {
+      final adapter = _RecordingCustomerAdapter();
+      final dio = Dio(BaseOptions(baseUrl: 'http://test'))
+        ..httpClientAdapter = adapter;
+      final repo = ApiCrmRepository(dio);
+
+      final created = await repo.addCustomer(
+        name: 'Влад',
+        phone: '+998901234567',
+        address: 'Чиланзар, 5',
+      );
+
+      await repo.updateCustomer(
+        created.copyWith(debt: 50000),
+        balanceChanged: true,
+      );
+      expect(adapter.bodies.last['debt'], '50000');
+      expect(adapter.bodies.last['prepayment'], '0');
     });
   });
 }
 
-/// Запоминает тела запросов к `/admin/customers` и отвечает заказчиком,
-/// собранным из присланных полей.
+
 class _RecordingCustomerAdapter implements HttpClientAdapter {
   final List<Map<String, dynamic>> bodies = [];
   final List<String> methods = [];
@@ -293,7 +353,8 @@ class _RecordingCustomerAdapter implements HttpClientAdapter {
         'debt': '0.00',
         'last_order_date': null,
         'is_active': true,
-        'has_cooler': body['has_cooler'],
+        'cooler_count': body['cooler_count'],
+        'custom_water_price': body['custom_water_price'],
         'comment': body['comment'],
         'created_at': '2026-01-01T00:00:00Z',
       }),

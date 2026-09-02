@@ -1,5 +1,7 @@
 import '../../core/product_config.dart';
 import '../models/enums.dart';
+import '../models/order.dart';
+import '../models/result_page.dart';
 import '../models/route_models.dart';
 
 /// Контракт водительской части API (`/driver/*`).
@@ -13,6 +15,26 @@ abstract class DriverRepository {
 
   /// Один маршрут со списком точек (`GET /driver/routes/{id}`).
   Future<RouteDetail?> getMyRoute(String id);
+
+  /// Страница своих заказов за всё время (`GET /driver/orders`).
+  ///
+  /// `driver_id` не параметр: сервер подставляет водителя из токена и чужой
+  /// заказ не отдаст. Ради этого списка водитель наконец видит историю, а не
+  /// только сегодняшний маршрут.
+  Future<ResultPage<Order>> getMyOrders({
+    int page = 1,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? customerId,
+    String? routeId,
+    DeliveryStatus? status,
+    OrderPurpose? purpose,
+    PaymentMethod? paymentMethod,
+    String? search,
+  });
+
+  /// Один свой заказ (`GET /driver/orders/{id}`). Чужой — 403.
+  Future<Order?> getMyOrder(String id);
 
   /// Смена статуса доставки на точке.
   Future<void> updateDeliveryStatus({

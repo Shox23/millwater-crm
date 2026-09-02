@@ -10,6 +10,7 @@
 .history
 .svn/
 .swiftpm/
+docs/
 migrate_working_dir/
 
 # IntelliJ related
@@ -60,3 +61,4 @@ app.*.map.json
 # В git не идут — у боевого стенда, тестового и CI они разные.
 # Шаблон со всеми ключами: dart_defines.example.json
 /dart_defines.json
+PROMPT_PROJECT_CONTEXT.md

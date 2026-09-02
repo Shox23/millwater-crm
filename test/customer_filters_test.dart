@@ -6,7 +6,7 @@ import 'package:crm_millwater/features/customers/bloc/customers_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Что именно ушло на сервер за одну загрузку списка.
-typedef _Call = ({int page, bool? hasDebt, bool? hasCooler, bool? isActive});
+typedef _Call = ({int page, bool? hasDebt, bool? isActive});
 
 /// Запоминает параметры отбора и всегда обещает следующую страницу — иначе
 /// догрузку не проверить, сид кончается на второй.
@@ -18,19 +18,12 @@ class _RecordingRepository extends MockCrmRepository {
     int page = 1,
     String? search,
     bool? hasDebt,
-    bool? hasCooler,
     bool? isActive,
   }) async {
-    calls.add((
-      page: page,
-      hasDebt: hasDebt,
-      hasCooler: hasCooler,
-      isActive: isActive,
-    ));
+    calls.add((page: page, hasDebt: hasDebt, isActive: isActive));
     final items = await getCustomers(
       search: search,
       hasDebt: hasDebt,
-      hasCooler: hasCooler,
       isActive: isActive,
     );
     return ResultPage(items: items, page: page, hasMore: true, total: 99);
@@ -41,16 +34,19 @@ void main() {
   group('Чипы отбора', () {
     test('«Все» не отправляет ни одного фильтра', () {
       expect(CustomerFilter.all.hasDebt, isNull);
-      expect(CustomerFilter.all.hasCooler, isNull);
       expect(CustomerFilter.all.isActive, isNull);
+      expect(CustomerFilter.all.filtersCoolerLocally, isFalse);
     });
 
     test('каждый чип задаёт ровно один вопрос', () {
       expect(CustomerFilter.withDebt.hasDebt, isTrue);
-      expect(CustomerFilter.withDebt.hasCooler, isNull);
+      expect(CustomerFilter.withDebt.filtersCoolerLocally, isFalse);
 
-      expect(CustomerFilter.withCooler.hasCooler, isTrue);
+      // Кулеры сервер больше не отбирает — этот чип считается на клиенте, и
+      // серверных параметров он не задаёт вовсе.
+      expect(CustomerFilter.withCooler.filtersCoolerLocally, isTrue);
       expect(CustomerFilter.withCooler.hasDebt, isNull);
+      expect(CustomerFilter.withCooler.isActive, isNull);
 
       // Единственный, кто спрашивает про `false`: пустое значение сервер
       // понял бы как «активные».
@@ -104,14 +100,30 @@ void main() {
     });
 
     test('догрузка не теряет выбранный чип', () async {
-      bloc.add(const CustomersFilterChanged(CustomerFilter.withCooler));
+      bloc.add(const CustomersFilterChanged(CustomerFilter.withDebt));
       await loaded();
 
       bloc.add(const CustomersNextPageRequested());
       await bloc.stream.firstWhere((s) => !s.loadingMore && s.page == 2);
 
       expect(repo.calls.last.page, 2);
-      expect(repo.calls.last.hasCooler, isTrue);
+      expect(repo.calls.last.hasDebt, isTrue);
+    });
+
+    test('«С кулером» отбирает на клиенте: в запрос не уходит ничего',
+        () async {
+      bloc.add(const CustomersFilterChanged(CustomerFilter.withCooler));
+      await loaded();
+
+      // Параметра `has_cooler` у сервера больше нет, а неизвестный
+      // query-параметр он молча игнорирует — отправлять его значило бы
+      // показывать всех подряд под видом отбора.
+      expect(repo.calls.last.hasDebt, isNull);
+      expect(repo.calls.last.isActive, isNull);
+      expect(bloc.state.customers.every((c) => c.hasCooler), isTrue);
+      // Счётчик в шапке считает найденное, а не всю базу: серверный `total`
+      // про кулеры ничего не знает.
+      expect(bloc.state.total, bloc.state.customers.length);
     });
 
     test('повторное нажатие того же чипа запрос не шлёт', () async {
@@ -127,17 +139,9 @@ void main() {
   });
 
   group('Мок отбирает так же, как сервер', () {
-    test('«С кулером» и «Неактивные» отсекают по своим полям', () async {
+    test('«Неактивные» отсекают по своему полю', () async {
       final repo = MockCrmRepository();
       final all = await repo.getCustomers();
-
-      final withCooler = await repo.getCustomers(hasCooler: true);
-      final withoutCooler = await repo.getCustomers(hasCooler: false);
-      expect(withCooler.every((c) => c.hasCooler), isTrue);
-      expect(withoutCooler.every((c) => !c.hasCooler), isTrue);
-      // Проверяем правило, а не содержимое сида: два взаимодополняющих
-      // отбора обязаны вместе давать всю базу и ничего не терять.
-      expect(withCooler.length + withoutCooler.length, all.length);
 
       final active = await repo.getCustomers(isActive: true);
       final inactive = await repo.getCustomers(isActive: false);
