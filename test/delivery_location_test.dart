@@ -68,10 +68,19 @@ class _RecordingDriverRepository extends MockDriverRepository {
   @override
   Future<void> completeDelivery({
     required String stopId,
-    required int capsules,
+    required OrderPurpose purpose,
     required int amount,
-    required int bottleBalance,
     required PaymentMethod method,
+    int capsules = 0,
+    int returnedCapsules = 0,
+    int damagedCapsules = 0,
+    int? bottleBalance,
+    int bulk5lCount = 0,
+    int? bulk5lPrice,
+    int bulk10lCount = 0,
+    int? bulk10lPrice,
+    int pickedCoolers = 0,
+    int pickedBottles = 0,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
@@ -81,7 +90,10 @@ class _RecordingDriverRepository extends MockDriverRepository {
     this.longitude = longitude;
     return super.completeDelivery(
       stopId: stopId,
+      purpose: purpose,
       capsules: capsules,
+      returnedCapsules: returnedCapsules,
+      damagedCapsules: damagedCapsules,
       amount: amount,
       bottleBalance: bottleBalance,
       method: method,

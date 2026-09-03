@@ -189,6 +189,121 @@ void main() {
     });
   });
 
+  group('Поля релиза «касса и опт»', () {
+    test('принято по заказу считается сервером, а не суммой заказа', () {
+      final order = Order.fromJson(orderJson({
+        'order_amount': '0.00',
+        'paid_amount': '60000.00',
+      }));
+
+      // Ровно то, на чём ломается правка оплаты: стоимость заказа нулевая,
+      // а деньги по нему приняты. Ввести меньшую сумму — значит вернуть
+      // разницу заказчику.
+      expect(order.orderAmount, 0);
+      expect(order.paidAmount, 60000);
+    });
+
+    test('цена капсулы приходит из заказа, а не из общего прайса', () {
+      final order = Order.fromJson(orderJson({
+        'effective_water_price': '15000.00',
+        'damaged_bottle_fine': '40000.00',
+      }));
+
+      // У заказчика с индивидуальной ценой общий прайс врёт, и расчёт
+      // водителя разошёлся бы с серверным.
+      expect(order.effectiveWaterPrice, 15000);
+      expect(order.damagedBottleFine, 40000);
+    });
+
+    test('опт и вывоз разбираются', () {
+      final order = Order.fromJson(orderJson({
+        'bulk_5l_count': 12,
+        'bulk_5l_price': '9000.00',
+        'bulk_10l_count': 3,
+        'bulk_10l_price': '16000.00',
+        'picked_coolers': 1,
+        'picked_bottles': 4,
+      }));
+
+      expect(order.bulk5lCount, 12);
+      expect(order.bulk5lPrice, 9000);
+      expect(order.bulk10lCount, 3);
+      expect(order.bulk10lPrice, 16000);
+      expect(order.pickedCoolers, 1);
+      expect(order.pickedBottles, 4);
+    });
+
+    test('баланс заказчика приходит вместе с заказом', () {
+      final order = Order.fromJson(prefixedOrderJson());
+
+      // Отдельный запрос карточки заказчика ради двух чисел больше не нужен.
+      expect(order.customerDebt, 60000);
+      expect(order.customerPrepayment, 0);
+      expect(order.customerCoolerCount, 2);
+    });
+
+    test('история платежей: возврат отличается от приёма', () {
+      final order = Order.fromJson(orderJson({
+        'payments': [
+          {
+            'id': 'p-1',
+            'amount': '60000.00',
+            'payment_method': 'cash',
+            'created_at': '2026-08-25T10:00:00Z',
+          },
+          {
+            'id': 'p-2',
+            'amount': '-40000.00',
+            'payment_method': 'cash',
+            'note': 'правка админом',
+            'created_at': '2026-09-02T10:00:00Z',
+          },
+        ],
+      }));
+
+      expect(order.payments, hasLength(2));
+      expect(order.payments.first.isRefund, isFalse);
+      expect(order.payments.last.amount, -40000);
+      expect(order.payments.last.isRefund, isTrue);
+      expect(order.payments.last.note, 'правка админом');
+    });
+
+    test('платёж без «кто провёл» не роняет разбор', () {
+      // У строк, заведённых до релиза, поле пустое: сервер добавил колонку
+      // задним числом и заполнить её нечем.
+      final order = Order.fromJson(orderJson({
+        'payments': [
+          {
+            'id': 'p-1',
+            'amount': '20000.00',
+            'payment_method': 'cash',
+            'recorded_by_user_id': null,
+            'created_at': '2026-08-25T10:00:00Z',
+          },
+        ],
+      }));
+
+      expect(order.payments.single.recordedByUserId, isNull);
+      expect(order.payments.single.amount, 20000);
+    });
+
+    test('битая строка платежа стоит строки, а не всего заказа', () {
+      final order = Order.fromJson(orderJson({
+        'payments': [
+          {'amount': '20000.00'},
+          {
+            'id': 'p-2',
+            'amount': '5000.00',
+            'created_at': '2026-08-25T10:00:00Z',
+          },
+        ],
+      }));
+
+      expect(order.payments, hasLength(1));
+      expect(order.payments.single.id, 'p-2');
+    });
+  });
+
   group('Точка внутри маршрута', () {
     Map<String, dynamic> stopJson([Map<String, dynamic> extra = const {}]) => {
           'id': 's-1',
@@ -238,7 +353,8 @@ void main() {
       // вовсе, и раньше водитель получал список карточек без имени и адреса.
       final stop = RouteStop.fromJson({
         'id': 's-1',
-        'status': 'pending',
+        'status': 'delivered',
+        'completed_at': '2026-09-03T10:00:00Z',
         'sequence': 1,
         'order_amount': '60000.00',
         'customer': {
@@ -257,6 +373,36 @@ void main() {
       expect(stop.customerCoolerCount, 3);
       // `payment_amount` переименован в `order_amount`; без этого сумма
       // показывалась пустой у каждой точки.
+      expect(stop.paymentAmount, 60000);
+    });
+
+    test('у незакрытой точки суммы нет, даже когда сервер шлёт ноль', () {
+      // Сервер держит в `order_amount` ноль до закрытия. Принять его за
+      // введённую оплату нельзя: экран завершения перестаёт считать по
+      // прайсу и показывает водителю «0 сум» вместо цены капсул.
+      final stop = RouteStop.fromJson({
+        'id': 's-1',
+        'status': 'pending',
+        'order_amount': '0.00',
+        'paid_amount': '0',
+        'customer': {'customer_full_name': 'Кафе Тест'},
+      });
+
+      expect(stop.paymentAmount, isNull);
+      expect(stop.isCompleted, isFalse);
+    });
+
+    test('у закрытой точки с нулевой стоимостью показывается принятое', () {
+      // Заказы, закрытые до релиза: стоимость осталась нулём, а деньги по
+      // ним приняты.
+      final stop = RouteStop.fromJson({
+        'id': 's-1',
+        'status': 'delivered',
+        'completed_at': '2026-08-25T10:00:00Z',
+        'order_amount': '0.00',
+        'paid_amount': '60000.00',
+      });
+
       expect(stop.paymentAmount, 60000);
     });
 

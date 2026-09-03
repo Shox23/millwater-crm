@@ -191,6 +191,40 @@ enum OrderPurpose {
   String toJson() => wire;
 }
 
+/// Категория расхода водителя (`ExpenseCategory`).
+///
+/// Расходы водитель заносит по дороге, и список намеренно короткий: чем
+/// длиннее перечень, тем чаще всё уходит в «Прочее».
+enum ExpenseCategory {
+  fuel('fuel'),
+  lunch('lunch'),
+  repair('repair'),
+  other('other');
+
+  const ExpenseCategory(this.wire);
+
+  /// Значение, которым категория называется в API.
+  final String wire;
+
+  /// Подпись категории на языке интерфейса.
+  String label(AppLocalizations l10n) => switch (this) {
+        ExpenseCategory.fuel => l10n.expenseCategoryFuel,
+        ExpenseCategory.lunch => l10n.expenseCategoryLunch,
+        ExpenseCategory.repair => l10n.expenseCategoryRepair,
+        ExpenseCategory.other => l10n.expenseCategoryOther,
+      };
+
+  /// Незнакомая категория с сервера — «Прочее»: расход всё равно случился,
+  /// и терять его из-за подписи нельзя.
+  static ExpenseCategory fromJson(String value) =>
+      ExpenseCategory.values.firstWhere(
+        (e) => e.wire == value,
+        orElse: () => ExpenseCategory.other,
+      );
+
+  String toJson() => wire;
+}
+
 /// Способ оплаты. Значения совпадают с API (`PaymentMethod`), поле
 /// обязательное при завершении доставки.
 enum PaymentMethod {

@@ -2,6 +2,7 @@ import '../../core/product_config.dart';
 import '../models/enums.dart';
 import '../models/order.dart';
 import '../models/result_page.dart';
+import '../models/route_expense.dart';
 import '../models/route_models.dart';
 
 /// Контракт водительской части API (`/driver/*`).
@@ -44,6 +45,10 @@ abstract class DriverRepository {
 
   /// Завершение доставки.
   ///
+  /// [purpose] — цель заказа; от неё зависит, какие поля сервер вообще
+  /// принимает: доставке нужны капсулы и остаток, вывозу — забранные кулеры
+  /// и капсулы, опту — количество и **цена** пятилитровых и десятилитровых
+  /// бутылей (цена договорная, её вводит водитель).
   /// [bottleBalance] — сколько капсул остаётся у заказчика после доставки.
   /// В OpenAPI поле помечено необязательным, но без него сервер отвечает 500,
   /// а полученным значением он **перезаписывает** остаток заказчика.
@@ -58,13 +63,44 @@ abstract class DriverRepository {
   /// только при включённом [ProductConfig.captureDeliveryCoordinates].
   Future<void> completeDelivery({
     required String stopId,
-    required int capsules,
+    required OrderPurpose purpose,
     required int amount,
-    required int bottleBalance,
     required PaymentMethod method,
+    int capsules = 0,
+    int returnedCapsules = 0,
+    int damagedCapsules = 0,
+    int? bottleBalance,
+    int bulk5lCount = 0,
+    int? bulk5lPrice,
+    int bulk10lCount = 0,
+    int? bulk10lPrice,
+    int pickedCoolers = 0,
+    int pickedBottles = 0,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
     double? longitude,
   });
+
+  // ---- Расходы маршрута ----
+  /// Расходы по маршруту (`GET /driver/routes/{id}/expenses`).
+  Future<List<RouteExpense>> getRouteExpenses(String routeId);
+
+  /// Заносит расход (`POST /driver/routes/{id}/expenses`, multipart).
+  ///
+  /// [idempotencyKey] обязателен по смыслу: связь у водителя рвётся, а
+  /// повторная отправка — это второе списание из кассы. Сервер ключ пока
+  /// **не соблюдает** (сохраняет его под шаблоном пути, а ищет по
+  /// фактическому), поэтому вслепую повторять запрос нельзя даже с ключом.
+  Future<RouteExpense> addExpense({
+    required String routeId,
+    required int amount,
+    required ExpenseCategory category,
+    String? comment,
+    String? photoPath,
+    String? idempotencyKey,
+  });
+
+  /// Удаляет свой расход (`DELETE /driver/expenses/{id}`).
+  Future<void> deleteExpense(String expenseId);
 }

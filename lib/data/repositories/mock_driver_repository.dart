@@ -2,6 +2,7 @@ import '../mock/mock_store.dart';
 import '../models/enums.dart';
 import '../models/order.dart';
 import '../models/result_page.dart';
+import '../models/route_expense.dart';
 import '../models/route_models.dart';
 import 'driver_repository.dart';
 
@@ -12,6 +13,9 @@ class MockDriverRepository implements DriverRepository {
 
   final MockStore _store;
 
+  /// Ответы принятых расходов: ключ идемпотентности → созданная запись.
+  final Map<String, RouteExpense> _acceptedExpenses = {};
+
   /// Чьи маршруты отдаём: у водителя в приложении он всегда один.
   final String driverId;
 
@@ -21,6 +25,9 @@ class MockDriverRepository implements DriverRepository {
 
   /// Последний отправленный остаток капсул — для проверок в тестах.
   int? lastBottleBalance;
+
+  /// Цель последнего завершения — по ней тесты отличают три лика экрана.
+  OrderPurpose? lastPurpose;
 
   /// Последний отправленный способ оплаты — для проверок в тестах.
   PaymentMethod? lastMethod;
@@ -127,10 +134,19 @@ class MockDriverRepository implements DriverRepository {
   @override
   Future<void> completeDelivery({
     required String stopId,
-    required int capsules,
+    required OrderPurpose purpose,
     required int amount,
-    required int bottleBalance,
     required PaymentMethod method,
+    int capsules = 0,
+    int returnedCapsules = 0,
+    int damagedCapsules = 0,
+    int? bottleBalance,
+    int bulk5lCount = 0,
+    int? bulk5lPrice,
+    int bulk10lCount = 0,
+    int? bulk10lPrice,
+    int pickedCoolers = 0,
+    int pickedBottles = 0,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
@@ -139,6 +155,7 @@ class MockDriverRepository implements DriverRepository {
     await _tick();
     lastBottleBalance = bottleBalance;
     lastMethod = method;
+    lastPurpose = purpose;
     if (idempotencyKey != null && !seenIdempotencyKeys.add(idempotencyKey)) {
       return;
     }
@@ -151,11 +168,59 @@ class MockDriverRepository implements DriverRepository {
         customerLatitude: latitude,
         customerLongitude: longitude,
         deliveredCapsules: capsules,
+        returnedCapsules: returnedCapsules,
+        damagedCapsules: damagedCapsules,
         paymentAmount: amount,
         paymentMethod: method,
         paymentPhoto: photoPath,
         completedAt: DateTime.now(),
       ),
     );
+  }
+
+  @override
+  Future<List<RouteExpense>> getRouteExpenses(String routeId) async {
+    await _tick();
+    return _store.expenses.where((e) => e.routeId == routeId).toList();
+  }
+
+  @override
+  Future<RouteExpense> addExpense({
+    required String routeId,
+    required int amount,
+    required ExpenseCategory category,
+    String? comment,
+    String? photoPath,
+    String? idempotencyKey,
+  }) async {
+    await _tick();
+    // Повтор с тем же ключом обязан вернуть прежний расход, а не завести
+    // второй: у водителя рвётся связь, и второе списание из кассы — это
+    // потерянные деньги. Мок держит это правило, даже пока сервер его не
+    // соблюдает.
+    final known = _acceptedExpenses[idempotencyKey];
+    if (idempotencyKey != null && known != null) return known;
+
+    final expense = RouteExpense(
+      id: _store.nextId('exp'),
+      routeId: routeId,
+      driverId: driverId,
+      amount: amount,
+      category: category,
+      comment: (comment == null || comment.trim().isEmpty)
+          ? null
+          : comment.trim(),
+      photoUrl: photoPath,
+      createdAt: DateTime.now(),
+    );
+    _store.expenses.add(expense);
+    if (idempotencyKey != null) _acceptedExpenses[idempotencyKey] = expense;
+    return expense;
+  }
+
+  @override
+  Future<void> deleteExpense(String expenseId) async {
+    await _tick();
+    _store.expenses.removeWhere((e) => e.id == expenseId);
   }
 }

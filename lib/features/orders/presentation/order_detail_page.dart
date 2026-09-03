@@ -204,7 +204,7 @@ class OrderDetailPage extends StatelessWidget {
                     value: order.completedAt == null
                         ? l10n.orderNotCompleted
                         : DateFormat('dd.MM.yyyy HH:mm')
-                            .format(order.completedAt!.toLocal()),
+                            .format(order.completedAt!),
                   ),
                   if (order.driverFullName != null)
                     _TextRow(

@@ -54,7 +54,26 @@ class DeliveryCompletionPage extends StatefulWidget {
 }
 
 class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with SubmitState {
+  /// Цель заказа задана заранее и на экране не меняется: её выбрали при
+  /// сборке маршрута, а водитель отчитывается по тому, зачем приехал.
+  OrderPurpose get _purpose => widget.stop.purpose;
+
   late int _capsules;
+
+  /// Доставка 19 л: сколько пустых забрали и сколько из них с браком.
+  int _returned = 0;
+  int _damaged = 0;
+
+  /// Вывоз: сколько кулеров и капсул увезли с точки.
+  int _pickedCoolers = 0;
+  int _pickedBottles = 0;
+
+  /// Опт: количество и договорная цена за бутыль. Цену вводит водитель —
+  /// прайса на пятилитровки у сервера нет.
+  int _bulk5Count = 0;
+  int _bulk10Count = 0;
+  late final TextEditingController _bulk5Price;
+  late final TextEditingController _bulk10Price;
 
   /// Сколько капсул остаётся у заказчика после доставки. Сервер перезаписывает
   /// им остаток, а водительские эндпоинты текущего остатка не отдают —
@@ -68,7 +87,12 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// Так закрываются частичная оплата и долг: цифра остаётся его.
   bool _amountLocked = false;
 
-  PaymentMethod _method = PaymentMethod.cash;
+  /// Способ оплаты. У вывоза по умолчанию «в долг»: денег за него не берут,
+  /// а нулевую сумму сервер принимает только с этим способом — при наличных
+  /// он отвечает 422 «payment_amount must be greater than 0».
+  late PaymentMethod _method = widget.stop.purpose == OrderPurpose.pickup
+      ? PaymentMethod.debt
+      : PaymentMethod.cash;
   late final TextEditingController _amountController;
   XFile? _photo;
 
@@ -87,9 +111,13 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     // моменту нажатия «Завершить» координаты уже готовы и не тормозят отправку.
     if (widget.location != null) _captureLocation();
     _capsules = widget.stop.deliveredCapsules ?? 1;
+    _returned = widget.stop.returnedCapsules ?? 0;
+    _damaged = widget.stop.damagedCapsules ?? 0;
     _bottleBalance = _capsules;
+    _bulk5Price = TextEditingController();
+    _bulk10Price = TextEditingController();
     // Ранее введённая сумма важнее расчёта: значит, доставку уже проводили.
-    final amount = widget.stop.paymentAmount ?? _capsules * _capsulePrice;
+    final amount = widget.stop.paymentAmount ?? _calculatedAmount;
     _amountLocked = widget.stop.paymentAmount != null;
     _amountController = TextEditingController(text: '$amount');
     _loadPrice();
@@ -97,10 +125,18 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
 
   /// Цена капсулы, по которой считается сумма.
   ///
-  /// Начинается со значения сборки и заменяется живым прайсом, если сервер
-  /// его отдал, — см. [_loadPrice]. Ждать ответа экран не может: водитель
-  /// стоит у двери, и пустое поле суммы ему дороже точной цены.
-  int _capsulePrice = ProductConfig.capsulePrice;
+  /// Первым делом — цена **этого заказа** (`effective_water_price`): сервер
+  /// уже учёл в ней индивидуальную цену заказчика, и считать по общему
+  /// прайсу значило бы разойтись с ним на каждой доставке такому клиенту.
+  /// Если поля нет (старый стенд), берётся значение сборки и затем живой
+  /// прайс — см. [_loadPrice]. Ждать ответа экран не может: водитель стоит
+  /// у двери, и пустое поле суммы ему дороже точной цены.
+  late int _capsulePrice =
+      widget.stop.effectiveWaterPrice ?? ProductConfig.capsulePrice;
+
+  /// Штраф за повреждённую капсулу — тоже снимок с заказа. Своего источника
+  /// у водителя нет: общий прайс отдаёт только цену воды.
+  int get _damagedFine => widget.stop.damagedBottleFine ?? 0;
 
   /// Спрашивает живую цену и пересчитывает сумму под неё.
   ///
@@ -108,6 +144,9 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// у доставки, которую уже проводили, — затирать введённое число ответом
   /// сервера значило бы менять принятую оплату за спиной водителя.
   Future<void> _loadPrice() async {
+    // Цена заказа старше прайса: она уже содержит индивидуальную цену
+    // заказчика, а общий прайс её не знает.
+    if (widget.stop.effectiveWaterPrice != null) return;
     final price = await widget.price.value();
     if (!mounted || price == _capsulePrice) return;
     setState(() {
@@ -116,8 +155,52 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     });
   }
 
-  /// Сколько должно получиться по прайсу: капсулы × цена.
-  int get _calculatedAmount => _capsules * _capsulePrice;
+  /// Сколько должно получиться по расчёту — у каждой цели он свой.
+  ///
+  /// Доставка: привезённые капсулы по цене заказа плюс штраф за брак. Вывоз
+  /// денег не приносит. Опт считается по договорным ценам, которые водитель
+  /// вводит сам.
+  int get _calculatedAmount => switch (_purpose) {
+        OrderPurpose.delivery19l =>
+          _capsules * _capsulePrice + _damaged * _damagedFine,
+        OrderPurpose.pickup => 0,
+        OrderPurpose.bulkWater =>
+          _bulk5Count * _bulkPrice(_bulk5Price) +
+              _bulk10Count * _bulkPrice(_bulk10Price),
+      };
+
+  int _bulkPrice(TextEditingController controller) =>
+      int.tryParse(controller.text.trim()) ?? 0;
+
+  /// Вывоз, на котором ничего не забрали.
+  ///
+  /// Серверное правило: у `pickup` хотя бы одно из «кулеры / капсулы / брак»
+  /// обязано быть больше нуля (422 `PICKUP_QUANTITY_REQUIRED`). Пустой вывоз
+  /// и по смыслу нечего закрывать — водитель приехал и ничего не увёз.
+  bool get _pickupEmpty =>
+      _purpose == OrderPurpose.pickup &&
+      _pickedCoolers == 0 &&
+      _pickedBottles == 0 &&
+      _damaged == 0;
+
+  /// Ноль принимается только как «в долг».
+  ///
+  /// Серверное правило: при любом способе, кроме `debt`, сумма обязана быть
+  /// больше нуля, иначе 422 с английским текстом, который до водителя не
+  /// доходит. Ловим до отправки — на вывозе в это упирается каждый заказ.
+  bool get _zeroAmountConflict => _amountOrNull == 0 && !_isDebt;
+
+  /// Количество указано, а цена — нет: сервер такой заказ отвергает (422),
+  /// и упереться в отказ на глазах у заказчика незачем.
+  bool get _bulkPriceMissing =>
+      _purpose == OrderPurpose.bulkWater &&
+      ((_bulk5Count > 0 && _bulkPrice(_bulk5Price) <= 0) ||
+          (_bulk10Count > 0 && _bulkPrice(_bulk10Price) <= 0));
+
+  /// Пересчитывает сумму, пока водитель не назначил свою.
+  void _recalculate() {
+    if (!_amountLocked) _amountController.text = '$_calculatedAmount';
+  }
 
   void _onCapsulesChanged(int value) {
     setState(() {
@@ -126,7 +209,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
       // поправил остаток сам, его значение больше не трогаем.
       if (!_balanceLocked) _bottleBalance = value;
       // Сумма идёт за количеством, пока водитель не назначил свою.
-      if (!_amountLocked) _amountController.text = '$_calculatedAmount';
+      _recalculate();
     });
   }
 
@@ -181,6 +264,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   @override
   void dispose() {
     _amountController.dispose();
+    _bulk5Price.dispose();
+    _bulk10Price.dispose();
     super.dispose();
   }
 
@@ -212,10 +297,23 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     final completed = await submit(
       () => repo.completeDelivery(
         stopId: widget.stop.id,
-        capsules: _capsules,
+        purpose: _purpose,
         amount: _amount,
-        bottleBalance: _bottleBalance,
         method: _method,
+        capsules: _purpose == OrderPurpose.delivery19l ? _capsules : 0,
+        returnedCapsules: _returned,
+        damagedCapsules: _damaged,
+        // Остаток заказчика правит только доставка: вывоз и опт капсульный
+        // склад не трогают, и слать туда число незачем — сервер им
+        // **перезаписывает** остаток.
+        bottleBalance:
+            _purpose == OrderPurpose.delivery19l ? _bottleBalance : null,
+        bulk5lCount: _bulk5Count,
+        bulk5lPrice: _bulkPrice(_bulk5Price),
+        bulk10lCount: _bulk10Count,
+        bulk10lPrice: _bulkPrice(_bulk10Price),
+        pickedCoolers: _pickedCoolers,
+        pickedBottles: _pickedBottles,
         photoPath: _photo?.path,
         idempotencyKey: _idempotencyKey,
         latitude: _fix?.latitude,
@@ -232,6 +330,126 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
 
     if (completed && mounted) Navigator.of(context).pop(true);
   }
+
+  /// Поля, которые спрашиваются под конкретную цель заказа.
+  ///
+  /// Три лика одного экрана: доставке нужны капсулы, возврат, брак и остаток
+  /// у заказчика; вывозу — сколько кулеров и капсул увезли; опту —
+  /// количество и договорная цена бутылей. Общее (способ оплаты, сумма,
+  /// фото) остаётся снаружи.
+  List<Widget> _purposeSections(BuildContext context) => switch (_purpose) {
+        OrderPurpose.delivery19l => [
+            _LabeledCard(
+              label: context.l10n.completionCapsules,
+              child: QuantityStepper(
+                value: _capsules,
+                // Завершать доставку с нулём капсул нечего: это «не
+                // доставлено».
+                min: 1,
+                onChanged: _onCapsulesChanged,
+                caption: context.l10n.completionCapsulesCaption(
+                    ProductConfig.capsuleVolumeLiters),
+              ),
+            ),
+            _LabeledCard(
+              label: context.l10n.completionReturned,
+              child: QuantityStepper(
+                value: _returned,
+                min: 0,
+                onChanged: (value) => setState(() => _returned = value),
+                caption: context.l10n.completionReturnedCaption,
+              ),
+            ),
+            _LabeledCard(
+              label: context.l10n.completionDamaged,
+              child: QuantityStepper(
+                value: _damaged,
+                min: 0,
+                // Брак оплачивается штрафом, поэтому сумма идёт за ним.
+                onChanged: (value) => setState(() {
+                  _damaged = value;
+                  _recalculate();
+                }),
+                caption: context.l10n.completionDamagedCaption,
+              ),
+            ),
+            _LabeledCard(
+              label: context.l10n.completionBalance,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppSpacing.md,
+                children: [
+                  QuantityStepper(
+                    value: _bottleBalance,
+                    min: 0,
+                    onChanged: (value) => setState(() {
+                      _bottleBalance = value;
+                      _balanceLocked = true;
+                    }),
+                    caption: context.l10n.completionBalanceCaption,
+                  ),
+                  // Сервер этим числом ЗАМЕНЯЕТ остаток заказчика, а
+                  // подставлено сюда количество привезённых — правильного
+                  // значения взять негде, водительские эндпоинты остатка не
+                  // отдают. Пока счётчик не трогали, предупреждаем: не тронув
+                  // его, водитель молча затрёт склад клиента.
+                  if (!_balanceLocked) const _BalanceWarning(),
+                ],
+              ),
+            ),
+          ],
+        OrderPurpose.pickup => [
+            _LabeledCard(
+              label: context.l10n.completionPickedCoolers,
+              child: QuantityStepper(
+                value: _pickedCoolers,
+                min: 0,
+                onChanged: (value) => setState(() => _pickedCoolers = value),
+                caption: context.l10n.completionPickedCoolersCaption,
+              ),
+            ),
+            _LabeledCard(
+              label: context.l10n.completionPickedBottles,
+              child: QuantityStepper(
+                value: _pickedBottles,
+                min: 0,
+                onChanged: (value) => setState(() => _pickedBottles = value),
+                caption: context.l10n.completionPickedBottlesCaption,
+              ),
+            ),
+            _LabeledCard(
+              label: context.l10n.completionDamaged,
+              child: QuantityStepper(
+                value: _damaged,
+                min: 0,
+                onChanged: (value) => setState(() => _damaged = value),
+                caption: context.l10n.completionDamagedCaption,
+              ),
+            ),
+          ],
+        OrderPurpose.bulkWater => [
+            _BulkCard(
+              label: context.l10n.completionBulk5l,
+              count: _bulk5Count,
+              price: _bulk5Price,
+              onCountChanged: (value) => setState(() {
+                _bulk5Count = value;
+                _recalculate();
+              }),
+              onPriceChanged: () => setState(_recalculate),
+            ),
+            _BulkCard(
+              label: context.l10n.completionBulk10l,
+              count: _bulk10Count,
+              price: _bulk10Price,
+              onCountChanged: (value) => setState(() {
+                _bulk10Count = value;
+                _recalculate();
+              }),
+              onPriceChanged: () => setState(_recalculate),
+            ),
+          ],
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -274,41 +492,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 onRetry: submitting ? null : _captureLocation,
               ),
             ),
-          _LabeledCard(
-            label: context.l10n.completionCapsules,
-            child: QuantityStepper(
-              value: _capsules,
-              // Завершать доставку с нулём капсул нечего: это «не доставлено».
-              min: 1,
-              onChanged: _onCapsulesChanged,
-              caption: context.l10n.completionCapsulesCaption(
-                  ProductConfig.capsuleVolumeLiters),
-            ),
-          ),
-          _LabeledCard(
-            label: context.l10n.completionBalance,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: AppSpacing.md,
-              children: [
-                QuantityStepper(
-                  value: _bottleBalance,
-                  min: 0,
-                  onChanged: (value) => setState(() {
-                    _bottleBalance = value;
-                    _balanceLocked = true;
-                  }),
-                  caption: context.l10n.completionBalanceCaption,
-                ),
-                // Сервер этим числом ЗАМЕНЯЕТ остаток заказчика, а подставлено
-                // сюда количество привезённых — правильного значения взять
-                // негде, водительские эндпоинты остатка не отдают. Пока
-                // счётчик не трогали, предупреждаем: не тронув его, водитель
-                // молча затрёт склад клиента.
-                if (!_balanceLocked) const _BalanceWarning(),
-              ],
-            ),
-          ),
+          ..._purposeSections(context),
           _LabeledCard(
             label: context.l10n.completionMethod,
             child: SegmentedToggle<PaymentMethod>(
@@ -360,8 +544,20 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                             AppTypography.secondary.copyWith(color: t.text2)),
                   ],
                 ),
+                // Сначала то, что мешает отправить, и лишь потом пояснения:
+                // у вывоза способ по умолчанию «в долг», и подсказка про долг
+                // перекрывала собой причину, по которой кнопка не нажимается.
                 if (_amountOrNull == null)
                   Text(context.l10n.completionAmountRequired,
+                      style: AppTypography.secondary.copyWith(color: t.danger))
+                else if (_pickupEmpty)
+                  Text(context.l10n.completionPickupRequired,
+                      style: AppTypography.secondary.copyWith(color: t.danger))
+                else if (_bulkPriceMissing)
+                  Text(context.l10n.completionBulkPriceRequired,
+                      style: AppTypography.secondary.copyWith(color: t.danger))
+                else if (_zeroAmountConflict)
+                  Text(context.l10n.completionZeroNeedsDebt,
                       style: AppTypography.secondary.copyWith(color: t.danger))
                 else if (_isDebt)
                   // Ноль в поле — это не «привезли бесплатно»: стоимость
@@ -371,10 +567,15 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                     context.l10n.completionDebtHint,
                     style: AppTypography.secondary.copyWith(color: t.text2),
                   )
-                else
+                else if (_purpose == OrderPurpose.pickup)
+                  Text(context.l10n.completionPickupHint,
+                      style: AppTypography.secondary.copyWith(color: t.text2))
+                else if (_purpose == OrderPurpose.delivery19l)
                   _AmountHint(
                     capsules: _capsules,
                     price: _capsulePrice,
+                    damaged: _damaged,
+                    fine: _damagedFine,
                     // Кнопка возврата нужна, только если сумма разошлась
                     // с расчётом: иначе возвращать нечего.
                     onRestore: _amount == _calculatedAmount
@@ -415,7 +616,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             ),
             // Отдельной строкой, а не вместо итога: принято ноль и начислено
             // N — это два разных числа, и подменять одно другим нельзя.
-            if (_isDebt)
+            if (_isDebt && _debtAmount > 0)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -430,10 +631,20 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             AppButton(
               label: submitting ? context.l10n.commonSaving : context.l10n.completionSubmit,
               // Пустое поле суммы отправлять нельзя: на сервер ушёл бы ноль,
-              // неотличимый от осознанной оплаты в долг.
-              enabled: !submitting && _amountOrNull != null,
-              onPressed:
-                  (submitting || _amountOrNull == null) ? null : _submit,
+              // неотличимый от осознанной оплаты в долг. Опт без цены сервер
+              // отвергнет сам — упираться в отказ у заказчика незачем.
+              enabled: !submitting &&
+                  _amountOrNull != null &&
+                  !_bulkPriceMissing &&
+                  !_zeroAmountConflict &&
+                  !_pickupEmpty,
+              onPressed: (submitting ||
+                      _amountOrNull == null ||
+                      _bulkPriceMissing ||
+                      _zeroAmountConflict ||
+                      _pickupEmpty)
+                  ? null
+                  : _submit,
             ),
           ],
         ),
@@ -570,11 +781,18 @@ class _AmountHint extends StatelessWidget {
   const _AmountHint({
     required this.capsules,
     required this.price,
+    required this.damaged,
+    required this.fine,
     required this.onRestore,
   });
 
   final int capsules;
   final int price;
+
+  /// Брак и штраф за него: показываем слагаемое, только когда оно есть, —
+  /// иначе водитель видел бы «+ брак 0 × 0» на каждой обычной доставке.
+  final int damaged;
+  final int fine;
 
   /// null — сумма совпадает с расчётом, возвращать нечего.
   final VoidCallback? onRestore;
@@ -582,7 +800,15 @@ class _AmountHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final formula = '$capsules × ${MoneyFormatter.sum(context.l10n, price)}';
+    final l10n = context.l10n;
+    final formula = damaged > 0 && fine > 0
+        ? l10n.completionFormulaDamaged(
+            '$capsules',
+            MoneyFormatter.sum(l10n, price),
+            '$damaged',
+            MoneyFormatter.sum(l10n, fine),
+          )
+        : '$capsules × ${MoneyFormatter.sum(l10n, price)}';
 
     return Row(
       spacing: AppSpacing.sm,
@@ -623,6 +849,74 @@ class _LabeledCard extends StatelessWidget {
         children: [
           Text(label, style: AppTypography.fieldLabel.copyWith(color: t.text2)),
           child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Строка опта: сколько бутылей и по какой цене.
+///
+/// Цену вводит водитель, а не подставляет прайс: у пятилитровок и
+/// десятилитровок она договорная, у сервера её нет вовсе. Количество без
+/// цены он отвергает (422), поэтому поле не спрятано и не необязательно.
+class _BulkCard extends StatelessWidget {
+  const _BulkCard({
+    required this.label,
+    required this.count,
+    required this.price,
+    required this.onCountChanged,
+    required this.onPriceChanged,
+  });
+
+  final String label;
+  final int count;
+  final TextEditingController price;
+  final ValueChanged<int> onCountChanged;
+  final VoidCallback onPriceChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+
+    return _LabeledCard(
+      label: label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.md,
+        children: [
+          QuantityStepper(
+            value: count,
+            min: 0,
+            onChanged: onCountChanged,
+            caption: context.l10n.completionBulkCount,
+          ),
+          Row(
+            spacing: AppSpacing.sm,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: price,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (_) => onPriceChanged(),
+                  style: AppTypography.bodyStrong.copyWith(color: t.text),
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    hintText: context.l10n.completionBulkPrice,
+                    hintStyle:
+                        AppTypography.secondary.copyWith(color: t.text3),
+                  ),
+                ),
+              ),
+              Text(context.l10n.commonSum,
+                  style: AppTypography.secondary.copyWith(color: t.text2)),
+            ],
+          ),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
 import '../models/order.dart';
+import '../models/route_expense.dart';
 import '../models/route_models.dart';
 import 'seed_data.dart';
 
@@ -16,6 +17,10 @@ class MockStore {
   final List<Driver> drivers = SeedData.drivers();
   final List<Customer> customers = SeedData.customers();
   final List<RouteDetail> routes = SeedData.routes();
+
+  /// Расходы водителей по маршрутам. Пусты в начале демо: расход заводит сам
+  /// водитель по дороге, придумывать их за него незачем.
+  final List<RouteExpense> expenses = [];
 
   int _seq = 0;
 

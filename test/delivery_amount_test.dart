@@ -32,10 +32,19 @@ class _RecordingDriverRepository extends MockDriverRepository {
   @override
   Future<void> completeDelivery({
     required String stopId,
-    required int capsules,
+    required OrderPurpose purpose,
     required int amount,
-    required int bottleBalance,
     required PaymentMethod method,
+    int capsules = 0,
+    int returnedCapsules = 0,
+    int damagedCapsules = 0,
+    int? bottleBalance,
+    int bulk5lCount = 0,
+    int? bulk5lPrice,
+    int bulk10lCount = 0,
+    int? bulk10lPrice,
+    int pickedCoolers = 0,
+    int pickedBottles = 0,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
@@ -44,7 +53,10 @@ class _RecordingDriverRepository extends MockDriverRepository {
     this.amount = amount;
     return super.completeDelivery(
       stopId: stopId,
+      purpose: purpose,
       capsules: capsules,
+      returnedCapsules: returnedCapsules,
+      damagedCapsules: damagedCapsules,
       amount: amount,
       bottleBalance: bottleBalance,
       method: method,
@@ -69,6 +81,17 @@ class _DeferredCapsulePrice implements CapsulePrice {
 
 void main() {
   final price = ProductConfig.capsulePrice;
+
+  /// Подводит элемент в зону видимости и нажимает.
+  ///
+  /// Экран завершения вырос: у доставки теперь ещё возврат и брак, и способ
+  /// оплаты уехал за нижний край тестового окна — прямой `tap` промахивался.
+  Future<void> tapVisible(WidgetTester tester, Finder target) async {
+    await tester.ensureVisible(target);
+    await tester.pump();
+    await tester.tap(target);
+    await tester.pump();
+  }
 
   Future<_RecordingDriverRepository> pumpPage(
     WidgetTester tester, {
@@ -141,7 +164,7 @@ void main() {
       final repo = await pumpPage(tester);
 
       await addCapsule(tester);
-      await tester.tap(find.text('Завершить'));
+      await tapVisible(tester, find.text('Завершить'));
       await tester.pumpAndSettle();
 
       expect(repo.amount, price * 2);
@@ -158,7 +181,7 @@ void main() {
       await addCapsule(tester);
       expect(amountText(tester), '${price * 2}');
 
-      await tester.tap(find.text('В долг'));
+      await tapVisible(tester, find.text('В долг'));
       await tester.pump();
 
       expect(amountText(tester), '0');
@@ -170,9 +193,9 @@ void main() {
     testWidgets('на сервер уходит ровно ноль', (tester) async {
       final repo = await pumpPage(tester);
 
-      await tester.tap(find.text('В долг'));
+      await tapVisible(tester, find.text('В долг'));
       await tester.pump();
-      await tester.tap(find.text('Завершить'));
+      await tapVisible(tester, find.text('Завершить'));
       await tester.pumpAndSettle();
 
       expect(repo.amount, 0);
@@ -183,11 +206,11 @@ void main() {
       await pumpPage(tester);
       await addCapsule(tester);
 
-      await tester.tap(find.text('В долг'));
+      await tapVisible(tester, find.text('В долг'));
       await tester.pump();
       expect(amountText(tester), '0');
 
-      await tester.tap(find.text('Наличные'));
+      await tapVisible(tester, find.text('Наличные'));
       await tester.pump();
 
       expect(amountText(tester), '${price * 2}');
@@ -218,7 +241,7 @@ void main() {
       // краем, и без прокрутки тап по ней промахивается.
       await tester.ensureVisible(find.text('Вернуть расчёт'));
       await tester.pump();
-      await tester.tap(find.text('Вернуть расчёт'));
+      await tapVisible(tester, find.text('Вернуть расчёт'));
       await tester.pump();
 
       expect(amountText(tester), '$price');
@@ -261,15 +284,23 @@ void main() {
       expect(find.textContaining('Укажите сумму'), findsOneWidget);
     });
 
-    testWidgets('явный ноль остаётся законным — это оплата в долг',
+    testWidgets('явный ноль законен только как оплата в долг',
         (tester) async {
       final repo = await pumpPage(tester);
 
       await tester.enterText(find.byType(TextField), '0');
       await tester.pump();
 
+      // Ноль наличными сервер отвергает: «payment_amount must be greater
+      // than 0 for payment_method CASH». Ловим до отправки — иначе водитель
+      // видит общее «Не удалось» и не понимает, что делать.
+      expect(submitEnabled(tester), isFalse);
+      expect(find.textContaining('только со способом'), findsOneWidget);
+
+      await tapVisible(tester, find.text('В долг'));
+
       expect(submitEnabled(tester), isTrue);
-      await tester.tap(find.text('Завершить'));
+      await tapVisible(tester, find.text('Завершить'));
       await tester.pumpAndSettle();
 
       expect(repo.amount, 0);
@@ -301,9 +332,9 @@ void main() {
     testWidgets('правка счётчика убирает предупреждение', (tester) async {
       await pumpPage(tester);
 
-      // Второй «плюс» на экране — у остатка клиента.
-      await tester.tap(find.byIcon(Icons.add).at(1));
-      await tester.pump();
+      // Счётчиков на доставке четыре по порядку: привезено, забрано пустых,
+      // повреждено, остаток у клиента — «плюс» остатка последний.
+      await tapVisible(tester, find.byIcon(Icons.add).at(3));
 
       expect(find.textContaining('заменит прежний остаток'), findsNothing);
     });

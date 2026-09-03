@@ -5,6 +5,7 @@ import '../models/enums.dart';
 import '../models/json.dart';
 import '../models/order.dart';
 import '../models/result_page.dart';
+import '../models/route_expense.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
 import 'driver_repository.dart';
@@ -102,21 +103,46 @@ class ApiDriverRepository implements DriverRepository {
   @override
   Future<void> completeDelivery({
     required String stopId,
-    required int capsules,
+    required OrderPurpose purpose,
     required int amount,
-    required int bottleBalance,
     required PaymentMethod method,
+    int capsules = 0,
+    int returnedCapsules = 0,
+    int damagedCapsules = 0,
+    int? bottleBalance,
+    int bulk5lCount = 0,
+    int? bulk5lPrice,
+    int bulk10lCount = 0,
+    int? bulk10lPrice,
+    int pickedCoolers = 0,
+    int pickedBottles = 0,
     String? photoPath,
     String? idempotencyKey,
     double? latitude,
     double? longitude,
   }) async {
     final form = FormData.fromMap({
-      'delivered_bottles': capsules,
+      'purpose': purpose.toJson(),
       'payment_amount': MoneyParser.toApi(amount),
       'payment_method': method.toJson(),
-      // Без этого поля сервер отвечает 500, хотя в схеме оно необязательное.
-      'bottle_balance': bottleBalance,
+      'delivered_bottles': capsules,
+      'returned_bottles': returnedCapsules,
+      'damaged_bottles': damagedCapsules,
+      // Без этого поля сервер отвечает 500, хотя в схеме оно необязательное;
+      // у вывоза и опта остаток не меняется, и слать его незачем.
+      'bottle_balance': ?bottleBalance,
+      // Опт: количество без цены сервер отвергает (422), поэтому цена уходит
+      // только вместе с ненулевым количеством.
+      if (bulk5lCount > 0) ...{
+        'bulk_5l_count': bulk5lCount,
+        'bulk_5l_price': MoneyParser.toApi(bulk5lPrice ?? 0),
+      },
+      if (bulk10lCount > 0) ...{
+        'bulk_10l_count': bulk10lCount,
+        'bulk_10l_price': MoneyParser.toApi(bulk10lPrice ?? 0),
+      },
+      if (pickedCoolers > 0) 'picked_coolers': pickedCoolers,
+      if (pickedBottles > 0) 'picked_bottles': pickedBottles,
       if (photoPath != null)
         'payment_photo': await MultipartFile.fromFile(photoPath),
       // Только парой: одна координата без второй точку не задаёт, а поле
@@ -127,8 +153,12 @@ class ApiDriverRepository implements DriverRepository {
       },
     });
 
+    // Путь сменился вместе с переименованием точек в заказы: прежний
+    // `/driver/routes/customers/{id}/complete` сервер больше не знает и
+    // отвечает 404. Идентификатор тот же — таблицу переименовали, не
+    // пересоздали.
     await _dio.post(
-      '/driver/routes/customers/$stopId/complete',
+      '/driver/routes/orders/$stopId/complete',
       data: form,
       options: Options(
         contentType: 'multipart/form-data',
@@ -136,4 +166,42 @@ class ApiDriverRepository implements DriverRepository {
       ),
     );
   }
+
+  @override
+  Future<List<RouteExpense>> getRouteExpenses(String routeId) async {
+    final res = await _dio.get('/driver/routes/$routeId/expenses');
+    return parseList(unwrapData(res.data), RouteExpense.fromJson);
+  }
+
+  @override
+  Future<RouteExpense> addExpense({
+    required String routeId,
+    required int amount,
+    required ExpenseCategory category,
+    String? comment,
+    String? photoPath,
+    String? idempotencyKey,
+  }) async {
+    final form = FormData.fromMap({
+      'amount': MoneyParser.toApi(amount),
+      'category': category.toJson(),
+      if (comment != null && comment.trim().isNotEmpty)
+        'comment': comment.trim(),
+      if (photoPath != null) 'photo': await MultipartFile.fromFile(photoPath),
+    });
+
+    final res = await _dio.post(
+      '/driver/routes/$routeId/expenses',
+      data: form,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: {'Idempotency-Key': ?idempotencyKey},
+      ),
+    );
+    return RouteExpense.fromJson(asMap(res.data));
+  }
+
+  @override
+  Future<void> deleteExpense(String expenseId) =>
+      _dio.delete('/driver/expenses/$expenseId');
 }

@@ -6,6 +6,7 @@ import '../models/price_settings.dart';
 import '../models/result_page.dart';
 import '../models/report_export.dart';
 import '../models/reports_summary.dart';
+import '../models/route_expense.dart';
 import '../models/route_models.dart';
 
 /// Контракт админской части API (`/admin/*`).
@@ -241,6 +242,25 @@ abstract class CrmRepository {
     String? note,
     String? photoPath,
   });
+
+  // ---- Расходы ----
+  /// Расходы по маршруту (`GET /admin/routes/{id}/expenses`).
+  ///
+  /// Нужны рядом с кассой: остаток наличных у водителя — это собранное минус
+  /// расходы, и без списка непонятно, куда делись деньги.
+  Future<List<RouteExpense>> getRouteExpenses(String routeId);
+
+  /// Страница расходов за период (`GET /admin/expenses`).
+  Future<ResultPage<RouteExpense>> getExpensesPage({
+    int page,
+    String? driverId,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    ExpenseCategory? category,
+  });
+
+  /// Удаляет расход (`DELETE /admin/expenses/{id}`).
+  Future<void> deleteExpense(String expenseId);
 
   // ---- Отчёты ----
   /// Сводка за период (`GET /admin/reports/summary`) — как её отдал сервер.

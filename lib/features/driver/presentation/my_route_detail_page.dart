@@ -11,6 +11,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/utils/money_formatter.dart';
 import '../../../core/pricing/capsule_price.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_card.dart';
@@ -25,6 +26,7 @@ import '../../routes/presentation/widgets/build_route_section.dart';
 import '../../routes/presentation/widgets/route_card.dart';
 import '../../routes/presentation/widgets/stop_card.dart';
 import 'delivery_completion_page.dart';
+import 'route_cash_page.dart';
 
 /// Карточка своего маршрута: прогресс и точки с действиями.
 class MyRouteDetailPage extends StatefulWidget {
@@ -209,6 +211,40 @@ class _Body extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation(t.primary),
                 ),
               ),
+            ],
+          ),
+        ),
+        // Касса рядом с маршрутом, а не в профиле: расход водитель заносит
+        // по дороге, между точками, и искать его в другом разделе некогда.
+        AppCard(
+          onTap: () => Navigator.of(context).push(
+            OverlayPageRoute<void>(
+              builder: (_) => RouteCashPage(routeId: route.id),
+            ),
+          ),
+          child: Row(
+            spacing: AppSpacing.md,
+            children: [
+              Icon(Icons.account_balance_wallet_outlined,
+                  size: 20, color: t.primary),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
+                  children: [
+                    Text(context.l10n.cashOpen,
+                        style:
+                            AppTypography.bodyStrong.copyWith(color: t.text)),
+                    Text(
+                      MoneyFormatter.sum(
+                          context.l10n, route.cashBalance ?? route.collected),
+                      style:
+                          AppTypography.secondary.copyWith(color: t.text2),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 20, color: t.text3),
             ],
           ),
         ),

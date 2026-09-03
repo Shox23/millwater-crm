@@ -13,6 +13,7 @@ import '../models/price_settings.dart';
 import '../models/report_export.dart';
 import '../models/reports_summary.dart';
 import '../models/result_page.dart';
+import '../models/route_expense.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
 import 'crm_repository.dart';
@@ -531,6 +532,37 @@ class ApiCrmRepository implements CrmRepository {
       options: Options(contentType: 'multipart/form-data'),
     );
   }
+
+  // ---- Расходы ----
+  @override
+  Future<List<RouteExpense>> getRouteExpenses(String routeId) async {
+    final res = await _dio.get('/admin/routes/$routeId/expenses');
+    return parseList(unwrapData(res.data), RouteExpense.fromJson);
+  }
+
+  @override
+  Future<ResultPage<RouteExpense>> getExpensesPage({
+    int page = 1,
+    String? driverId,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    ExpenseCategory? category,
+  }) =>
+      _pageOf(
+        '/admin/expenses',
+        RouteExpense.fromJson,
+        page: page,
+        query: {
+          'driver_id': ?driverId,
+          if (dateFrom != null) 'date_from': formatApiDate(dateFrom),
+          if (dateTo != null) 'date_to': formatApiDate(dateTo),
+          if (category != null) 'category': category.toJson(),
+        },
+      );
+
+  @override
+  Future<void> deleteExpense(String expenseId) =>
+      _dio.delete('/admin/expenses/$expenseId');
 
   // ---- Отчёты ----
   @override

@@ -103,6 +103,7 @@ void main() {
       final repo = MockDriverRepository(driverId: 'd1');
       await repo.completeDelivery(
         stopId: 's2',
+        purpose: OrderPurpose.delivery19l,
         capsules: 3,
         amount: 60000,
         bottleBalance: 3,
@@ -125,6 +126,7 @@ void main() {
 
       await repo.completeDelivery(
         stopId: 's2',
+        purpose: OrderPurpose.delivery19l,
         capsules: 3,
         amount: 60000,
         bottleBalance: 3,
@@ -134,6 +136,7 @@ void main() {
       // Связь оборвалась, водитель нажал «Завершить» ещё раз.
       await repo.completeDelivery(
         stopId: 's2',
+        purpose: OrderPurpose.delivery19l,
         capsules: 99,
         amount: 999999,
         bottleBalance: 99,
@@ -155,6 +158,7 @@ void main() {
 
       await driver.completeDelivery(
         stopId: 's2',
+        purpose: OrderPurpose.delivery19l,
         capsules: 3,
         amount: 60000,
         bottleBalance: 3,
@@ -307,6 +311,10 @@ void main() {
 
       expect(find.text('Фото оплаты'), findsNothing);
 
+      // Способ оплаты уехал ниже: у доставки теперь спрашивают ещё возврат
+      // и брак, и до него нужно доскроллить.
+      await tester.ensureVisible(find.text('Карта'));
+      await settle(tester);
       await tester.tap(find.text('Карта'));
       await settle(tester);
 
@@ -314,6 +322,8 @@ void main() {
       expect(find.text('Камера'), findsOneWidget);
 
       // Вернулись к наличным — тайл снова скрыт.
+      await tester.ensureVisible(find.text('Наличные'));
+      await settle(tester);
       await tester.tap(find.text('Наличные'));
       await settle(tester);
 

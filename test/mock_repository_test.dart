@@ -87,6 +87,7 @@ void main() {
       // и работает по тому же MockStore.
       await MockDriverRepository(store: repo.store).completeDelivery(
         stopId: route.stops.first.id,
+        purpose: OrderPurpose.delivery19l,
         capsules: 4,
         amount: 80000,
         bottleBalance: 4,

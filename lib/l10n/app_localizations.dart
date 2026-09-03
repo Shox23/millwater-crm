@@ -2732,6 +2732,113 @@ abstract class AppLocalizations {
   /// **'В долг деньги не принимают — сумма начисляется заказчику'**
   String get completionDebtHint;
 
+  /// No description provided for @completionReturned.
+  ///
+  /// In ru, this message translates to:
+  /// **'ЗАБРАНО ПУСТЫХ'**
+  String get completionReturned;
+
+  /// No description provided for @completionReturnedCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'капсул забрали у заказчика'**
+  String get completionReturnedCaption;
+
+  /// No description provided for @completionDamaged.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПОВРЕЖДЕНО'**
+  String get completionDamaged;
+
+  /// No description provided for @completionDamagedCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'капсул с браком — за них штраф'**
+  String get completionDamagedCaption;
+
+  /// No description provided for @completionPickedCoolers.
+  ///
+  /// In ru, this message translates to:
+  /// **'КУЛЕРОВ ЗАБРАНО'**
+  String get completionPickedCoolers;
+
+  /// No description provided for @completionPickedCoolersCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'кулеров увозим с точки'**
+  String get completionPickedCoolersCaption;
+
+  /// No description provided for @completionPickedBottles.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАПСУЛ ЗАБРАНО'**
+  String get completionPickedBottles;
+
+  /// No description provided for @completionPickedBottlesCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'капсул увозим с точки'**
+  String get completionPickedBottlesCaption;
+
+  /// No description provided for @completionBulk5l.
+  ///
+  /// In ru, this message translates to:
+  /// **'БУТЫЛИ 5 Л'**
+  String get completionBulk5l;
+
+  /// No description provided for @completionBulk10l.
+  ///
+  /// In ru, this message translates to:
+  /// **'БУТЫЛИ 10 Л'**
+  String get completionBulk10l;
+
+  /// No description provided for @completionBulkCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'количество'**
+  String get completionBulkCount;
+
+  /// No description provided for @completionBulkPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена за бутыль'**
+  String get completionBulkPrice;
+
+  /// No description provided for @completionBulkPriceRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите цену за бутыль — сервер иначе не примет'**
+  String get completionBulkPriceRequired;
+
+  /// No description provided for @completionPickupHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вывоз без оплаты: оставьте сумму нулевой'**
+  String get completionPickupHint;
+
+  /// No description provided for @completionZeroNeedsDebt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нулевую сумму сервер принимает только со способом «В долг»'**
+  String get completionZeroNeedsDebt;
+
+  /// No description provided for @completionPickupRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите, что забрали: кулеры, капсулы или брак'**
+  String get completionPickupRequired;
+
+  /// No description provided for @completionFormulaDamaged.
+  ///
+  /// In ru, this message translates to:
+  /// **'{capsules} × {price} + брак {damaged} × {fine}'**
+  String completionFormulaDamaged(
+    String capsules,
+    String price,
+    String damaged,
+    String fine,
+  );
+
   /// No description provided for @errorBothBalances.
   ///
   /// In ru, this message translates to:
@@ -3127,6 +3234,186 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Изменить оплату'**
   String get orderActionPayment;
+
+  /// No description provided for @expenseCategoryFuel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Топливо'**
+  String get expenseCategoryFuel;
+
+  /// No description provided for @expenseCategoryLunch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обед'**
+  String get expenseCategoryLunch;
+
+  /// No description provided for @expenseCategoryRepair.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ремонт'**
+  String get expenseCategoryRepair;
+
+  /// No description provided for @expenseCategoryOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прочее'**
+  String get expenseCategoryOther;
+
+  /// No description provided for @cashTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Касса маршрута'**
+  String get cashTitle;
+
+  /// No description provided for @cashOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Касса и расходы'**
+  String get cashOpen;
+
+  /// No description provided for @cashCollectedCash.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наличными'**
+  String get cashCollectedCash;
+
+  /// No description provided for @cashCollectedCashless.
+  ///
+  /// In ru, this message translates to:
+  /// **'Безналом'**
+  String get cashCollectedCashless;
+
+  /// No description provided for @cashDebtAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ушло в долг'**
+  String get cashDebtAmount;
+
+  /// No description provided for @cashExpensesTotal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расходы'**
+  String get cashExpensesTotal;
+
+  /// No description provided for @cashBalance.
+  ///
+  /// In ru, this message translates to:
+  /// **'Остаток наличных'**
+  String get cashBalance;
+
+  /// No description provided for @cashBalanceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Собранные наличные минус расходы — столько нужно сдать'**
+  String get cashBalanceHint;
+
+  /// No description provided for @cashExpensesSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'РАСХОДЫ'**
+  String get cashExpensesSection;
+
+  /// No description provided for @cashNoExpenses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расходов пока нет'**
+  String get cashNoExpenses;
+
+  /// No description provided for @cashAddExpense.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить расход'**
+  String get cashAddExpense;
+
+  /// No description provided for @cashLoadFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить кассу'**
+  String get cashLoadFailed;
+
+  /// No description provided for @expenseTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый расход'**
+  String get expenseTitle;
+
+  /// No description provided for @expenseAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сумма расхода'**
+  String get expenseAmount;
+
+  /// No description provided for @expenseAmountHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько потратили из кассы'**
+  String get expenseAmountHint;
+
+  /// No description provided for @expenseAmountRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите сумму больше нуля'**
+  String get expenseAmountRequired;
+
+  /// No description provided for @expenseCategory.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАТЕГОРИЯ'**
+  String get expenseCategory;
+
+  /// No description provided for @expenseComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий'**
+  String get expenseComment;
+
+  /// No description provided for @expenseCommentHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Зачем потратили — останется в отчёте'**
+  String get expenseCommentHint;
+
+  /// No description provided for @expensePhoto.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото чека'**
+  String get expensePhoto;
+
+  /// No description provided for @expensePhotoSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снимок чека — по нему сверяют расход'**
+  String get expensePhotoSubtitle;
+
+  /// No description provided for @expenseSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расход записан'**
+  String get expenseSaved;
+
+  /// No description provided for @expenseFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось записать расход.'**
+  String get expenseFailed;
+
+  /// No description provided for @expenseDelete.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить расход'**
+  String get expenseDelete;
+
+  /// No description provided for @expenseDeleteConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расход вычтется из кассы обратно. Удалить?'**
+  String get expenseDeleteConfirm;
+
+  /// No description provided for @expenseDeleteFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось удалить расход.'**
+  String get expenseDeleteFailed;
 
   /// No description provided for @errorDateInPast.
   ///

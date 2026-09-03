@@ -1542,6 +1542,67 @@ class AppLocalizationsRu extends AppLocalizations {
       'В долг деньги не принимают — сумма начисляется заказчику';
 
   @override
+  String get completionReturned => 'ЗАБРАНО ПУСТЫХ';
+
+  @override
+  String get completionReturnedCaption => 'капсул забрали у заказчика';
+
+  @override
+  String get completionDamaged => 'ПОВРЕЖДЕНО';
+
+  @override
+  String get completionDamagedCaption => 'капсул с браком — за них штраф';
+
+  @override
+  String get completionPickedCoolers => 'КУЛЕРОВ ЗАБРАНО';
+
+  @override
+  String get completionPickedCoolersCaption => 'кулеров увозим с точки';
+
+  @override
+  String get completionPickedBottles => 'КАПСУЛ ЗАБРАНО';
+
+  @override
+  String get completionPickedBottlesCaption => 'капсул увозим с точки';
+
+  @override
+  String get completionBulk5l => 'БУТЫЛИ 5 Л';
+
+  @override
+  String get completionBulk10l => 'БУТЫЛИ 10 Л';
+
+  @override
+  String get completionBulkCount => 'количество';
+
+  @override
+  String get completionBulkPrice => 'Цена за бутыль';
+
+  @override
+  String get completionBulkPriceRequired =>
+      'Укажите цену за бутыль — сервер иначе не примет';
+
+  @override
+  String get completionPickupHint => 'Вывоз без оплаты: оставьте сумму нулевой';
+
+  @override
+  String get completionZeroNeedsDebt =>
+      'Нулевую сумму сервер принимает только со способом «В долг»';
+
+  @override
+  String get completionPickupRequired =>
+      'Укажите, что забрали: кулеры, капсулы или брак';
+
+  @override
+  String completionFormulaDamaged(
+    String capsules,
+    String price,
+    String damaged,
+    String fine,
+  ) {
+    return '$capsules × $price + брак $damaged × $fine';
+  }
+
+  @override
   String get errorBothBalances =>
       'У заказчика не может быть долга и предоплаты одновременно';
 
@@ -1772,6 +1833,98 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get orderActionPayment => 'Изменить оплату';
+
+  @override
+  String get expenseCategoryFuel => 'Топливо';
+
+  @override
+  String get expenseCategoryLunch => 'Обед';
+
+  @override
+  String get expenseCategoryRepair => 'Ремонт';
+
+  @override
+  String get expenseCategoryOther => 'Прочее';
+
+  @override
+  String get cashTitle => 'Касса маршрута';
+
+  @override
+  String get cashOpen => 'Касса и расходы';
+
+  @override
+  String get cashCollectedCash => 'Наличными';
+
+  @override
+  String get cashCollectedCashless => 'Безналом';
+
+  @override
+  String get cashDebtAmount => 'Ушло в долг';
+
+  @override
+  String get cashExpensesTotal => 'Расходы';
+
+  @override
+  String get cashBalance => 'Остаток наличных';
+
+  @override
+  String get cashBalanceHint =>
+      'Собранные наличные минус расходы — столько нужно сдать';
+
+  @override
+  String get cashExpensesSection => 'РАСХОДЫ';
+
+  @override
+  String get cashNoExpenses => 'Расходов пока нет';
+
+  @override
+  String get cashAddExpense => 'Добавить расход';
+
+  @override
+  String get cashLoadFailed => 'Не удалось загрузить кассу';
+
+  @override
+  String get expenseTitle => 'Новый расход';
+
+  @override
+  String get expenseAmount => 'Сумма расхода';
+
+  @override
+  String get expenseAmountHint => 'Сколько потратили из кассы';
+
+  @override
+  String get expenseAmountRequired => 'Укажите сумму больше нуля';
+
+  @override
+  String get expenseCategory => 'КАТЕГОРИЯ';
+
+  @override
+  String get expenseComment => 'Комментарий';
+
+  @override
+  String get expenseCommentHint => 'Зачем потратили — останется в отчёте';
+
+  @override
+  String get expensePhoto => 'Фото чека';
+
+  @override
+  String get expensePhotoSubtitle => 'Снимок чека — по нему сверяют расход';
+
+  @override
+  String get expenseSaved => 'Расход записан';
+
+  @override
+  String get expenseFailed => 'Не удалось записать расход.';
+
+  @override
+  String get expenseDelete => 'Удалить расход';
+
+  @override
+  String get expenseDeleteConfirm =>
+      'Расход вычтется из кассы обратно. Удалить?';
+
+  @override
+  String get expenseDeleteFailed => 'Не удалось удалить расход.';
 
   @override
   String get errorDateInPast => 'Дата не может быть в прошлом';

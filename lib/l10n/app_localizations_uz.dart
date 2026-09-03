@@ -1520,6 +1520,70 @@ class AppLocalizationsUz extends AppLocalizations {
       'Qarzga pul olinmaydi — summa mijozga yoziladi';
 
   @override
+  String get completionReturned => 'BO‘SH QAYTARILDI';
+
+  @override
+  String get completionReturnedCaption => 'buyurtmachidan olingan kapsulalar';
+
+  @override
+  String get completionDamaged => 'SHIKASTLANGAN';
+
+  @override
+  String get completionDamagedCaption => 'brak kapsulalar — ular uchun jarima';
+
+  @override
+  String get completionPickedCoolers => 'KULERLAR OLINDI';
+
+  @override
+  String get completionPickedCoolersCaption =>
+      'nuqtadan olib ketiladigan kulerlar';
+
+  @override
+  String get completionPickedBottles => 'KAPSULALAR OLINDI';
+
+  @override
+  String get completionPickedBottlesCaption =>
+      'nuqtadan olib ketiladigan kapsulalar';
+
+  @override
+  String get completionBulk5l => '5 L BUTILKALAR';
+
+  @override
+  String get completionBulk10l => '10 L BUTILKALAR';
+
+  @override
+  String get completionBulkCount => 'soni';
+
+  @override
+  String get completionBulkPrice => 'Bitta butilka narxi';
+
+  @override
+  String get completionBulkPriceRequired =>
+      'Butilka narxini kiriting — aks holda server qabul qilmaydi';
+
+  @override
+  String get completionPickupHint =>
+      'Olib ketish to‘lovsiz: summani nol qoldiring';
+
+  @override
+  String get completionZeroNeedsDebt =>
+      'Nol summani server faqat «Qarzga» usuli bilan qabul qiladi';
+
+  @override
+  String get completionPickupRequired =>
+      'Nimani olganingizni kiriting: kuler, kapsula yoki brak';
+
+  @override
+  String completionFormulaDamaged(
+    String capsules,
+    String price,
+    String damaged,
+    String fine,
+  ) {
+    return '$capsules × $price + brak $damaged × $fine';
+  }
+
+  @override
   String get errorBothBalances =>
       'Mijozda qarz va oldindan to‘lov bir vaqtda bo‘lmaydi';
 
@@ -1746,6 +1810,99 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get orderActionPayment => 'To‘lovni o‘zgartirish';
+
+  @override
+  String get expenseCategoryFuel => 'Yoqilg‘i';
+
+  @override
+  String get expenseCategoryLunch => 'Tushlik';
+
+  @override
+  String get expenseCategoryRepair => 'Ta’mirlash';
+
+  @override
+  String get expenseCategoryOther => 'Boshqa';
+
+  @override
+  String get cashTitle => 'Marshrut kassasi';
+
+  @override
+  String get cashOpen => 'Kassa va xarajatlar';
+
+  @override
+  String get cashCollectedCash => 'Naqd';
+
+  @override
+  String get cashCollectedCashless => 'Naqdsiz';
+
+  @override
+  String get cashDebtAmount => 'Qarzga ketdi';
+
+  @override
+  String get cashExpensesTotal => 'Xarajatlar';
+
+  @override
+  String get cashBalance => 'Naqd qoldiq';
+
+  @override
+  String get cashBalanceHint =>
+      'Yig‘ilgan naqd minus xarajatlar — shuncha topshiriladi';
+
+  @override
+  String get cashExpensesSection => 'XARAJATLAR';
+
+  @override
+  String get cashNoExpenses => 'Hozircha xarajat yo‘q';
+
+  @override
+  String get cashAddExpense => 'Xarajat qo‘shish';
+
+  @override
+  String get cashLoadFailed => 'Kassani yuklab bo‘lmadi';
+
+  @override
+  String get expenseTitle => 'Yangi xarajat';
+
+  @override
+  String get expenseAmount => 'Xarajat summasi';
+
+  @override
+  String get expenseAmountHint => 'Kassadan qancha sarflandi';
+
+  @override
+  String get expenseAmountRequired => 'Noldan katta summa kiriting';
+
+  @override
+  String get expenseCategory => 'TOIFA';
+
+  @override
+  String get expenseComment => 'Izoh';
+
+  @override
+  String get expenseCommentHint => 'Nimaga sarflandi — hisobotda qoladi';
+
+  @override
+  String get expensePhoto => 'Chek surati';
+
+  @override
+  String get expensePhotoSubtitle =>
+      'Chek surati — xarajat shu bo‘yicha tekshiriladi';
+
+  @override
+  String get expenseSaved => 'Xarajat yozildi';
+
+  @override
+  String get expenseFailed => 'Xarajatni yozib bo‘lmadi.';
+
+  @override
+  String get expenseDelete => 'Xarajatni o‘chirish';
+
+  @override
+  String get expenseDeleteConfirm =>
+      'Xarajat kassaga qaytariladi. O‘chirilsinmi?';
+
+  @override
+  String get expenseDeleteFailed => 'Xarajatni o‘chirib bo‘lmadi.';
 
   @override
   String get errorDateInPast => 'Sana o‘tmishda bo‘lishi mumkin emas';

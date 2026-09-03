@@ -90,7 +90,11 @@ double? optionalDouble(Object? value) {
 DateTime? optionalDate(Object? value) {
   final text = optionalString(value);
   if (text == null) return null;
-  return DateTime.tryParse(text);
+  // Метки времени сервер отдаёт в UTC (`...Z`), а показываем их водителю и
+  // админу по местным часам: расход, занесённый в 02:45 в Ташкенте,
+  // печатался как «21:45» и выглядел записанным вчера. Даты без зоны
+  // (`2026-09-03`) разбираются как локальные, и `toLocal` их не трогает.
+  return DateTime.tryParse(text)?.toLocal();
 }
 
 /// Дата или [fallback].

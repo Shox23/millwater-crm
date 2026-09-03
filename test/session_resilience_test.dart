@@ -159,6 +159,7 @@ void main() {
 
       await ApiDriverRepository(dio).completeDelivery(
         stopId: 'stop-1',
+        purpose: OrderPurpose.delivery19l,
         capsules: 2,
         amount: 40000,
         bottleBalance: 2,

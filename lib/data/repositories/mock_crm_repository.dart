@@ -11,6 +11,7 @@ import '../models/order.dart';
 import '../models/price_settings.dart';
 import '../models/report_export.dart';
 import '../models/reports_summary.dart';
+import '../models/route_expense.dart';
 import '../models/route_models.dart';
 import 'crm_repository.dart';
 
@@ -572,6 +573,56 @@ class MockCrmRepository implements CrmRepository {
       orderId,
       (s) => s.copyWith(paymentAmount: amount, paymentMethod: method),
     );
+  }
+
+  // ---- Расходы ----
+  @override
+  Future<List<RouteExpense>> getRouteExpenses(String routeId) async {
+    await _tick();
+    return store.expenses.where((e) => e.routeId == routeId).toList();
+  }
+
+  @override
+  Future<ResultPage<RouteExpense>> getExpensesPage({
+    int page = 1,
+    String? driverId,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    ExpenseCategory? category,
+  }) async {
+    await _tick();
+    var result = store.expenses.toList();
+    if (driverId != null) {
+      result = result.where((e) => e.driverId == driverId).toList();
+    }
+    if (category != null) {
+      result = result.where((e) => e.category == category).toList();
+    }
+    // Границы включаются и сравниваются по календарному дню — как в
+    // остальных списках мока.
+    if (dateFrom != null) {
+      final from = dayOnly(dateFrom);
+      result = result
+          .where((e) => !dayOnly(e.createdAt).isBefore(from))
+          .toList();
+    }
+    if (dateTo != null) {
+      final to = dayOnly(dateTo);
+      result =
+          result.where((e) => !dayOnly(e.createdAt).isAfter(to)).toList();
+    }
+    return ResultPage(
+      items: result,
+      page: page,
+      hasMore: false,
+      total: result.length,
+    );
+  }
+
+  @override
+  Future<void> deleteExpense(String expenseId) async {
+    await _tick();
+    store.expenses.removeWhere((e) => e.id == expenseId);
   }
 
   // ---- Отчёты ----
