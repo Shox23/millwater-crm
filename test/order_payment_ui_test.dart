@@ -233,4 +233,27 @@ void main() {
     expect(find.text('Заказ ещё не закрыт'), findsOneWidget);
     expect(find.text('Изменение оплаты'), findsOneWidget);
   });
+
+  testWidgets('уход с тронутой формы переспрашивает', (tester) async {
+    await pumpPayment(tester);
+    await enterAmount(tester, '30000');
+
+    // Свайп «назад» на iOS доходит до PopScope тем же путём, что и кнопка.
+    final popped = await tester.binding.handlePopRoute();
+    await settle(tester);
+
+    expect(popped, isTrue);
+    expect(find.text('Выйти без сохранения?'), findsOneWidget);
+    // Экран не закрылся, пока не ответили.
+    expect(find.text('Изменение оплаты'), findsOneWidget);
+  });
+
+  testWidgets('нетронутую форму отпускает без вопросов', (tester) async {
+    await pumpPayment(tester);
+
+    await tester.binding.handlePopRoute();
+    await settle(tester);
+
+    expect(find.text('Выйти без сохранения?'), findsNothing);
+  });
 }

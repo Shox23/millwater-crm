@@ -6,7 +6,7 @@ import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/data/mock/mock_store.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/notification_event.dart';
-import 'package:crm_millwater/data/models/reports_summary.dart';
+import 'package:crm_millwater/data/models/report_rows.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/data/network/sse_client.dart';
 import 'package:crm_millwater/data/repositories/api_notifications_repository.dart';
@@ -430,12 +430,13 @@ class _CountingRepository extends MockCrmRepository {
   }
 
   @override
-  Future<SummaryReport> getSummaryReport({
-    DateTime? dateFrom,
-    DateTime? dateTo,
+  Future<List<GeneralReportRow>> getGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
   }) {
     summaryCalls++;
-    return super.getSummaryReport(dateFrom: dateFrom, dateTo: dateTo);
+    return super.getGeneralReport(dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
   }
 
   @override

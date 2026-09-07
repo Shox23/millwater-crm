@@ -1,6 +1,11 @@
+import 'package:crm_millwater/app/locale_cubit.dart';
+import 'package:crm_millwater/app/settings/settings_storage.dart';
+import 'package:crm_millwater/app/theme/theme_cubit.dart';
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/data/mock/mock_store.dart';
 import 'package:crm_millwater/data/models/enums.dart';
+import 'package:crm_millwater/data/models/order.dart';
+import 'package:crm_millwater/data/models/result_page.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/core/pricing/capsule_price.dart';
 import 'package:crm_millwater/data/repositories/driver_repository.dart';
@@ -8,6 +13,7 @@ import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
 import 'package:crm_millwater/features/driver/bloc/my_routes_bloc.dart';
 import 'package:crm_millwater/features/driver/presentation/delivery_completion_page.dart';
+import 'package:crm_millwater/features/driver/presentation/driver_shell.dart';
 import 'package:crm_millwater/features/driver/presentation/my_route_detail_page.dart';
 import 'package:crm_millwater/features/driver/presentation/my_routes_page.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
@@ -18,6 +24,40 @@ import 'package:flutter_test/flutter_test.dart';
 /// Водитель, у которого маршрутов нет вообще.
 class _EmptyDriverRepository extends MockDriverRepository {
   _EmptyDriverRepository() : super(driverId: 'нет-такого-водителя');
+}
+
+/// Считает, ходил ли кто-нибудь за данными профиля.
+class _CountingDriverRepository extends MockDriverRepository {
+  _CountingDriverRepository() : super(driverId: 'd1');
+
+  int orderPages = 0;
+
+  @override
+  Future<ResultPage<Order>> getMyOrders({
+    int page = 1,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? customerId,
+    String? routeId,
+    DeliveryStatus? status,
+    OrderPurpose? purpose,
+    PaymentMethod? paymentMethod,
+    String? search,
+  }) {
+    // Статистика профиля — единственное, что спрашивает заказы за период.
+    if (dateFrom != null) orderPages++;
+    return super.getMyOrders(
+      page: page,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+      customerId: customerId,
+      routeId: routeId,
+      status: status,
+      purpose: purpose,
+      paymentMethod: paymentMethod,
+      search: search,
+    );
+  }
 }
 
 /// Репозиторий, падающий на чтении списка.
@@ -407,6 +447,36 @@ void main() {
       expect(state.deliveredToday, 0);
       expect(state.stopsToday, 0);
       expect(state.routesCount, 1);
+    });
+  });
+
+  group('Вкладки водителя строятся лениво', () {
+    testWidgets('профиль не ходит в сеть, пока его не открыли', (tester) async {
+      final repo = _CountingDriverRepository();
+      // Профиль тянет за собой настройки темы и языка — в дереве приложения
+      // их кладёт `app.dart`.
+      await pumpPage(
+        tester,
+        repo,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider(
+                create: (_) => ThemeCubit(storage: InMemorySettingsStorage())),
+            BlocProvider(
+                create: (_) => LocaleCubit(storage: InMemorySettingsStorage())),
+          ],
+          child: const DriverShell(),
+        ),
+      );
+
+      // `IndexedStack` строит всех детей сразу — без заглушки профиль
+      // тянул бы статистику при каждом входе водителя в приложение.
+      expect(repo.orderPages, 0);
+
+      await tester.tap(find.text('Профиль'));
+      await settle(tester);
+
+      expect(repo.orderPages, greaterThan(0));
     });
   });
 }

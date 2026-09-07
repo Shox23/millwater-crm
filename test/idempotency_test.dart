@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Отдаёт заранее заданный ответ и запоминает заголовки запросов.
@@ -121,7 +122,7 @@ void main() {
       await repositoryWith(adapter).createRoute(
         driverId: 'd1',
         date: DateTime(2026, 8, 8),
-        customerIds: const ['c1'],
+        orders: const [RouteOrderInput(customerId: 'c1')],
         idempotencyKey: 'route-1',
       );
 

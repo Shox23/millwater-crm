@@ -12,6 +12,7 @@ import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/load_more_notifier.dart';
 import '../../../core/widgets/search_field.dart';
+import '../../../core/utils/stats_period.dart';
 import '../../../data/models/enums.dart';
 import '../bloc/orders_bloc.dart';
 import '../bloc/orders_source.dart';
@@ -151,6 +152,7 @@ class _OrdersView extends StatelessWidget {
                     OrdersPurposeChanged(i == 0 ? null : purposes[i - 1]),
                   ),
                 ),
+                _DateChips(state: state),
                 // Список не стирается на время запроса — нужен отдельный
                 // признак «запрос в пути». Высота зарезервирована всегда,
                 // иначе список дёргается на каждую букву в поиске.
@@ -266,6 +268,72 @@ class _OrdersList extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+/// Отбор по дате: «Все», три готовых периода и диапазон из календаря.
+///
+/// Последний чип не выбирает готовое значение, а открывает календарь, и
+/// подписан выбранным диапазоном, когда тот задан: иначе выбранный период
+/// негде было бы увидеть, а чип «Период…» выглядел бы невыбранным при
+/// работающем отборе.
+class _DateChips extends StatelessWidget {
+  const _DateChips({required this.state});
+
+  final OrdersState state;
+
+  static const _presets = StatsPeriod.values;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final bloc = context.read<OrdersBloc>();
+    final filter = state.dateFilter;
+    final custom = filter is OrdersCustomDate ? filter : null;
+
+    final rangeLabel = custom == null
+        ? l10n.ordersDateRange
+        : l10n.ordersDateRangeValue(
+            custom.labelParts.$1,
+            custom.labelParts.$2,
+          );
+
+    return FilterChips(
+      labels: [
+        l10n.filterAll,
+        for (final period in _presets) period.label(l10n),
+        rangeLabel,
+      ],
+      selectedIndex: switch (filter) {
+        OrdersAnyDate() => 0,
+        OrdersPeriodDate(:final period) => _presets.indexOf(period) + 1,
+        OrdersCustomDate() => _presets.length + 1,
+      },
+      onSelected: (i) async {
+        if (i == 0) {
+          bloc.add(const OrdersDateChanged(OrdersAnyDate()));
+          return;
+        }
+        if (i <= _presets.length) {
+          bloc.add(OrdersDateChanged(OrdersPeriodDate(_presets[i - 1])));
+          return;
+        }
+
+        final now = DateTime.now();
+        final picked = await showDateRangePicker(
+          context: context,
+          // Заказы бывают старше года — нижнюю границу берём с запасом, а
+          // будущее ограничиваем сегодняшним днём: заказов вперёд не бывает.
+          firstDate: DateTime(now.year - 3),
+          lastDate: DateTime(now.year, now.month, now.day),
+          initialDateRange: custom == null
+              ? null
+              : DateTimeRange(start: custom.from, end: custom.to),
+        );
+        if (picked == null) return;
+        bloc.add(OrdersDateChanged(OrdersCustomDate.of(picked)));
+      },
     );
   }
 }

@@ -11,7 +11,7 @@ import '../models/json.dart';
 import '../models/order.dart';
 import '../models/price_settings.dart';
 import '../models/report_export.dart';
-import '../models/reports_summary.dart';
+import '../models/report_rows.dart';
 import '../models/result_page.dart';
 import '../models/route_expense.dart';
 import '../models/route_models.dart';
@@ -373,23 +373,30 @@ class ApiCrmRepository implements CrmRepository {
 
   @override
   Future<RouteDetail> createRoute({
-    required String driverId,
     required DateTime date,
-    required List<String> customerIds,
+    required List<RouteOrderInput> orders,
+    String? driverId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     String? idempotencyKey,
   }) async {
     final res = await _dio.post(
       '/admin/routes',
       data: {
-        'driver_id': driverId,
+        // Ключа нет вовсе, когда водителя не назначили: сервер ждёт
+        // отсутствия поля, а не `null`.
+        'driver_id': ?driverId,
         'date': _formatDate(date),
         // Прежний `customer_ids` сервер не отвергает, а тихо отбрасывает
         // (`extra: ignore`), и маршрут создавался пустым — без ошибки, без
         // признака в интерфейсе, заметно только по жалобе водителя.
         'customer_orders': [
-          for (final id in customerIds)
-            {'customer_id': id, 'order_purpose': purpose.toJson()},
+          for (final order in orders)
+            {
+              'customer_id': order.customerId,
+              // Своя цель точки перебивает цель маршрута.
+              'order_purpose': (order.purpose ?? purpose).toJson(),
+              'sequence': ?order.sequence,
+            },
         ],
       },
       options: _idempotent(idempotencyKey),
@@ -565,31 +572,93 @@ class ApiCrmRepository implements CrmRepository {
       _dio.delete('/admin/expenses/$expenseId');
 
   // ---- Отчёты ----
-  @override
-  Future<SummaryReport> getSummaryReport({
-    DateTime? dateFrom,
-    DateTime? dateTo,
-  }) async {
-    final res = await _dio.get('/admin/reports/summary', queryParameters: {
-      if (dateFrom != null) 'date_from': _formatDate(dateFrom),
-      if (dateTo != null) 'date_to': _formatDate(dateTo),
-    });
-    return SummaryReport.fromJson(asMap(res.data));
-  }
+  //
+  // Три разреза одного периода. Пути и параметры отличаются только сегментом,
+  // а разбор — типом строки, поэтому оба запроса собраны общими хелперами:
+  // добавлять четвёртый отчёт иначе значило бы копировать всё целиком.
 
   @override
-  Future<ReportExport> exportSummaryReport({
+  Future<List<GeneralReportRow>> getGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _report('general', GeneralReportRow.fromJson,
+          dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+
+  @override
+  Future<List<CustomerReportRow>> getCustomersReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _report('customers', CustomerReportRow.fromJson,
+          dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+
+  @override
+  Future<List<DriverReportRow>> getDriversReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _report('drivers', DriverReportRow.fromJson,
+          dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+
+  @override
+  Future<ReportExport> exportGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _reportExport('general',
+          dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+
+  @override
+  Future<ReportExport> exportCustomersReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _reportExport('customers',
+          dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+
+  @override
+  Future<ReportExport> exportDriversReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _reportExport('drivers',
+          dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+
+  /// Отчёт как список строк.
+  ///
+  /// Ответ — голый массив, без конверта `{items, total}`, в отличие от всех
+  /// остальных списков этого API. `parseList` терпим: строка без обязательного
+  /// поля пропускается, а не роняет весь отчёт.
+  Future<List<T>> _report<T>(
+    String kind,
+    T Function(Map<String, dynamic>) fromJson, {
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) async {
+    final res = await _dio.get(
+      '/admin/reports/$kind',
+      queryParameters: _reportQuery(dateFrom, dateTo, driverId),
+    );
+    return parseList(unwrapData(res.data), fromJson);
+  }
+
+  Future<ReportExport> _reportExport(
+    String kind, {
     required DateTime dateFrom,
     required DateTime dateTo,
     String? driverId,
   }) async {
     final res = await _dio.get<List<int>>(
-      '/admin/reports/export',
-      queryParameters: {
-        'date_from': _formatDate(dateFrom),
-        'date_to': _formatDate(dateTo),
-        'driver_id': ?driverId,
-      },
+      '/admin/reports/$kind/export',
+      queryParameters: _reportQuery(dateFrom, dateTo, driverId),
       // Тело — файл, а не JSON: разбирать его нечем и незачем.
       options: Options(responseType: ResponseType.bytes),
     );
@@ -597,9 +666,21 @@ class ApiCrmRepository implements CrmRepository {
     return ReportExport(
       bytes: Uint8List.fromList(res.data ?? const []),
       filename: _filenameFrom(res.headers) ??
-          'millwater-${_formatDate(dateFrom)}_${_formatDate(dateTo)}.xlsx',
+          'millwater-$kind-${_formatDate(dateFrom)}_${_formatDate(dateTo)}.xlsx',
     );
   }
+
+  /// Границы обязательны у всех трёх отчётов — без них сервер отвечает 422.
+  Map<String, dynamic> _reportQuery(
+    DateTime dateFrom,
+    DateTime dateTo,
+    String? driverId,
+  ) =>
+      {
+        'date_from': _formatDate(dateFrom),
+        'date_to': _formatDate(dateTo),
+        'driver_id': ?driverId,
+      };
 
   /// Имя файла из `Content-Disposition`, если сервер его прислал.
   ///

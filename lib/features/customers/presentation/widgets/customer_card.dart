@@ -73,8 +73,14 @@ class CustomerCard extends StatelessWidget {
                     // от остальных. Обычному не показываем ни строки: пустой
                     // признак у большинства карточек был бы шумом.
                     if (customer.hasCooler || customer.hasIndividualPrice)
-                      Row(
+                      // Wrap, а не Row: рядом с кнопками правки и удаления на
+                      // строку двух пометок не хватает, и цена обрезалась до
+                      // «Своя ц…» — то есть исчезало ровно то число, ради
+                      // которого пометка и стоит. Не поместились — вторая
+                      // уходит на следующую строку целиком.
+                      Wrap(
                         spacing: AppSpacing.sm,
+                        runSpacing: 4,
                         children: [
                           if (customer.hasCooler)
                             _MarkerText(
@@ -83,13 +89,11 @@ class CustomerCard extends StatelessWidget {
                                   .coolersCount(customer.coolerCount),
                             ),
                           if (customer.hasIndividualPrice)
-                            Flexible(
-                              child: _MarkerText(
-                                icon: Icons.sell_outlined,
-                                text: context.l10n.customerCustomPrice(
-                                  MoneyFormatter.amount(
-                                    customer.customWaterPrice!,
-                                  ),
+                            _MarkerText(
+                              icon: Icons.sell_outlined,
+                              text: context.l10n.customerCustomPrice(
+                                MoneyFormatter.amount(
+                                  customer.customWaterPrice!,
                                 ),
                               ),
                             ),

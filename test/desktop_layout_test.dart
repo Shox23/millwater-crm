@@ -20,6 +20,10 @@ import 'package:crm_millwater/features/desktop/overlays/entity_form_modal.dart';
 import 'package:crm_millwater/features/desktop/presentation/desktop_header.dart';
 import 'package:crm_millwater/features/desktop/presentation/desktop_section.dart';
 import 'package:crm_millwater/features/desktop/presentation/desktop_shell.dart';
+import 'package:crm_millwater/features/desktop/presentation/pages/cash_desktop_page.dart';
+import 'package:crm_millwater/features/desktop/presentation/pages/orders_desktop_page.dart';
+import 'package:crm_millwater/features/desktop/widgets/desktop_table.dart';
+import 'package:crm_millwater/features/routes/presentation/route_form_page.dart';
 import 'package:crm_millwater/features/desktop/presentation/driver_desktop_stub.dart';
 import 'package:crm_millwater/features/desktop/widgets/desktop_button.dart';
 import 'package:crm_millwater/features/driver/presentation/driver_shell.dart';
@@ -427,8 +431,14 @@ void main() {
       await tester.enterText(customerField(2), 'Мирабад, 5');
       await tester.pump();
 
-      // По умолчанию кулера нет — включаем его переключателем.
-      await tester.tap(find.text('С кулером'));
+      // По умолчанию кулеров нет — добавляем один степпером. Переключатель
+      // «есть/нет» заменён на количество: к кулеру ставят капсулу, и их у
+      // заказчика может быть несколько.
+      // Ищем внутри модалки: такой же плюс стоит в кнопке «+ Заказчик».
+      await tester.tap(find.descendant(
+        of: find.byType(CustomerFormModal),
+        matching: find.byIcon(Icons.add),
+      ));
       await tester.pump();
 
       await tester.tap(find.widgetWithText(DesktopButton, 'Сохранить'));
@@ -460,7 +470,7 @@ void main() {
       }
       expect(find.byType(CustomerFormModal), findsOneWidget);
 
-      await tester.tap(find.text('Без кулера'));
+      await tester.tap(find.byIcon(Icons.remove));
       await tester.pump();
 
       await tester.tap(find.widgetWithText(DesktopButton, 'Сохранить'));
@@ -505,6 +515,53 @@ void main() {
       await tester.pump();
 
       expect(saveButton().onPressed, isNotNull);
+    });
+
+    testWidgets('раздел «Заказы» показывает таблицу за всё время',
+        (tester) async {
+      await pumpShell(tester);
+      await openSection(tester, 'Заказы');
+
+      // Заказы приходят страницами — блок ходит в сеть после открытия.
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(find.byType(OrdersDesktopPage), findsOneWidget);
+      // Таблица не пуста: в заготовке заказы есть, и за всё время, а не
+      // только за сегодня — этим раздел и отличается от «Маршрутов».
+      expect(find.byType(DesktopTable), findsOneWidget);
+      expect(visibleRows(), greaterThan(0));
+    });
+
+    testWidgets('раздел «Касса» сводит расходы за период', (tester) async {
+      await pumpShell(tester);
+      await openSection(tester, 'Касса');
+
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(find.byType(CashDesktopPage), findsOneWidget);
+      // Категории показываются все четыре, включая нулевые: ноль по
+      // «Ремонту» — тоже ответ на вопрос, на что ушли деньги.
+      for (final label in ['Топливо', 'Обед', 'Ремонт', 'Прочее']) {
+        expect(find.text(label), findsWidgets, reason: label);
+      }
+    });
+
+    testWidgets('в разделе «Маршруты» кнопка заводит маршрут', (tester) async {
+      await pumpShell(tester);
+
+      // Раньше кнопки создания у маршрутов не было вовсе — маршрут заводился
+      // только с телефона.
+      await tester.tap(find.widgetWithText(DesktopButton, 'Маршрут'));
+      await tester.pump();
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(find.byType(RouteFormPage), findsOneWidget);
     });
   });
 }

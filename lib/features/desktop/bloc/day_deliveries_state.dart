@@ -144,6 +144,33 @@ class DayDeliveriesState extends Equatable {
   int get collected =>
       rows.fold<int>(0, (sum, r) => sum + (r.stop.paymentAmount ?? 0));
 
+  /// Маршруты дня без повторов: строк на маршрут столько, сколько в нём
+  /// точек, а касса у маршрута одна — сложив её по строкам, получили бы её
+  /// столько раз, сколько было доставок.
+  List<RouteDetail> get _routes {
+    final seen = <String>{};
+    return [
+      for (final row in rows)
+        if (seen.add(row.route.id)) row.route,
+    ];
+  }
+
+  /// Касса дня, как её посчитал сервер.
+  ///
+  /// Кассой считаются только наличные: карта и перевод уходят на счёт
+  /// компании, и вычитать из них расходы водителя было бы неправдой.
+  int get cashCollected =>
+      _routes.fold<int>(0, (sum, r) => sum + (r.cashCollected ?? 0));
+
+  int get cashlessCollected =>
+      _routes.fold<int>(0, (sum, r) => sum + (r.cashlessCollected ?? 0));
+
+  int get expensesTotal =>
+      _routes.fold<int>(0, (sum, r) => sum + (r.expensesTotal ?? 0));
+
+  /// Сколько наличных должно остаться на руках у водителей за день.
+  int get cashBalance => cashCollected - expensesTotal;
+
   /// Ушло в долг за день. Оценка: см. [DeliveryRow.expectedAmount].
   int get debt => rows
       .where((r) => r.isDebt)

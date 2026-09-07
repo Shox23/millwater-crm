@@ -129,7 +129,7 @@ class _Kpis extends StatelessWidget {
             child: DesktopKpiCard(
               icon: Icons.local_shipping_outlined,
               color: t.primary,
-              value: '${summary.deliveriesDone} / ${summary.deliveriesTotal}',
+              value: '${summary.deliveries}',
               label: l10n.reportsDeliveries,
               large: true,
             ),

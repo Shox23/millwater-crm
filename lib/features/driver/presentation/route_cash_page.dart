@@ -13,6 +13,7 @@ import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/route_cash_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/detail_scaffold.dart';
@@ -127,7 +128,7 @@ class _RouteCashPageState extends State<RouteCashPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: AppSpacing.lg,
                   children: [
-                    _CashCard(route: route),
+                    RouteCashCard(route: route),
                     SectionBlock(
                       label: l10n.cashExpensesSection,
                       child: Column(
@@ -160,90 +161,6 @@ class _RouteCashPageState extends State<RouteCashPage> {
   }
 }
 
-/// Сводка кассы. Числа берутся у сервера; на стенде без этих полей строки
-/// показывают ноль, а не пустоту — «нет данных» и «не собрано» водителю
-/// одинаково означают «сдавать нечего».
-class _CashCard extends StatelessWidget {
-  const _CashCard({required this.route});
-
-  final RouteDetail route;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final t = context.tokens;
-    final balance = route.cashBalance ?? 0;
-
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AppSpacing.md,
-        children: [
-          _CashRow(
-            label: l10n.cashCollectedCash,
-            value: route.cashCollected ?? 0,
-          ),
-          _CashRow(
-            label: l10n.cashCollectedCashless,
-            value: route.cashlessCollected ?? 0,
-          ),
-          _CashRow(label: l10n.cashDebtAmount, value: route.debtAmount ?? 0),
-          _CashRow(
-            label: l10n.cashExpensesTotal,
-            value: route.expensesTotal ?? 0,
-          ),
-          Divider(color: t.border, height: 1),
-          _CashRow(
-            label: l10n.cashBalance,
-            value: balance,
-            strong: true,
-            // Минус — рабочее состояние: расход больше собранного разрешён,
-            // водитель заправился на свои.
-            color: balance < 0 ? t.danger : t.success,
-          ),
-          Text(l10n.cashBalanceHint,
-              style: AppTypography.secondary.copyWith(color: t.text2)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CashRow extends StatelessWidget {
-  const _CashRow({
-    required this.label,
-    required this.value,
-    this.strong = false,
-    this.color,
-  });
-
-  final String label;
-  final int value;
-  final bool strong;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-
-    return Row(
-      children: [
-        Expanded(
-          child: Text(label,
-              style: AppTypography.secondary.copyWith(color: t.text2)),
-        ),
-        Text(
-          MoneyFormatter.sum(context.l10n, value),
-          style: strong
-              ? AppTypography.money.copyWith(fontSize: 18, color: color ?? t.text)
-              : AppTypography.bodyStrong.copyWith(color: color ?? t.text),
-        ),
-      ],
-    );
-  }
-}
-
-/// Строка расхода: категория, сумма, комментарий и время.
 class _ExpenseRow extends StatelessWidget {
   const _ExpenseRow({required this.expense, required this.onDelete});
 

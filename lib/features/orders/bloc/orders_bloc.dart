@@ -10,6 +10,10 @@ import '../../../data/models/order.dart';
 import '../../../data/models/result_page.dart';
 import 'orders_source.dart';
 
+import 'orders_date_filter.dart';
+
+export 'orders_date_filter.dart';
+
 part 'orders_event.dart';
 part 'orders_state.dart';
 
@@ -27,6 +31,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<OrdersSearchChanged>(_onSearchChanged);
     on<OrdersStatusChanged>(_onStatusChanged);
     on<OrdersPurposeChanged>(_onPurposeChanged);
+    on<OrdersDateChanged>(_onDateChanged);
     on<OrdersNextPageRequested>(_onNextPage);
 
     // Водитель закрыл заказ — список устарел прямо сейчас. Первое событие
@@ -111,12 +116,26 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     }
   }
 
-  Future<ResultPage<Order>> _load(int page) => _source.load(
-        page: page,
-        status: state.statusFilter,
-        purpose: state.purposeFilter,
-        search: state.query,
-      );
+  Future<ResultPage<Order>> _load(int page) {
+    final (from, to) = state.dateFilter.range;
+    return _source.load(
+      page: page,
+      status: state.statusFilter,
+      purpose: state.purposeFilter,
+      search: state.query,
+      dateFrom: from,
+      dateTo: to,
+    );
+  }
+
+  void _onDateChanged(OrdersDateChanged event, Emitter<OrdersState> emit) {
+    if (event.filter == state.dateFilter) return;
+    // Как и у остальных фильтров: отложенный запрос от набора текста ушёл бы
+    // со старым отбором и затёр бы свежий ответ.
+    _debounce?.cancel();
+    emit(state.copyWith(dateFilter: event.filter));
+    add(const OrdersRequested());
+  }
 
   void _onStatusChanged(OrdersStatusChanged event, Emitter<OrdersState> emit) {
     if (event.status == state.statusFilter) return;

@@ -81,6 +81,27 @@ class RouteListItem extends Equatable {
       ];
 }
 
+/// Точка будущего маршрута: кого добавляем и зачем.
+///
+/// Отдельный тип, а не голый список идентификаторов: сервер принимает
+/// `customer_orders: [{customer_id, order_purpose, sequence}]`, и маршрут
+/// может быть смешанным — по дороге и капсулы завезли, и кулер забрали.
+class RouteOrderInput extends Equatable {
+  const RouteOrderInput({required this.customerId, this.purpose, this.sequence});
+
+  final String customerId;
+
+  /// `null` — берётся цель маршрута. Своя цель нужна только тем точкам,
+  /// которые от неё отличаются.
+  final OrderPurpose? purpose;
+
+  /// Порядок объезда. `null` — сервер поставит следующим номером.
+  final int? sequence;
+
+  @override
+  List<Object?> get props => [customerId, purpose, sequence];
+}
+
 /// Остановка маршрута — доставка конкретному заказчику (RouteCustomerResponse).
 class RouteStop extends Equatable {
   const RouteStop({
@@ -102,6 +123,13 @@ class RouteStop extends Equatable {
     this.purpose = OrderPurpose.delivery19l,
     this.returnedCapsules,
     this.damagedCapsules,
+    this.pickedCoolers,
+    this.pickedBottles,
+    this.bulk5lCount,
+    this.bulk5lPrice,
+    this.bulk10lCount,
+    this.bulk10lPrice,
+    this.capsuleBalanceAfter,
     this.effectiveWaterPrice,
     this.damagedBottleFine,
   });
@@ -149,6 +177,24 @@ class RouteStop extends Equatable {
   final int? returnedCapsules;
   final int? damagedCapsules;
 
+  /// Что увезли при цели «вывоз» и что продали при цели «опт».
+  ///
+  /// Без них закрытая точка вывоза выглядела как «0 капсул»: карточка знала
+  /// только про доставленные капсулы, и вся работа водителя — два кулера и
+  /// три капсулы — из маршрута пропадала.
+  final int? pickedCoolers;
+  final int? pickedBottles;
+  final int? bulk5lCount;
+  final int? bulk10lCount;
+
+  /// Договорные цены опта, по которым закрыли точку. Нужны карточке точки:
+  /// без них «12 × 10 л» не превращается в сумму, и проверить расчёт нечем.
+  final int? bulk5lPrice;
+  final int? bulk10lPrice;
+
+  /// Остаток капсул у заказчика после этой доставки (`bottle_balance_after`).
+  final int? capsuleBalanceAfter;
+
   /// Цена капсулы **для этого заказчика** и штраф за брак, как их посчитал
   /// сервер. У заказчика с индивидуальной ценой общий прайс врёт, и расчёт
   /// водителя разошёлся бы с серверным — разницу сервер записал бы в долг.
@@ -186,6 +232,11 @@ class RouteStop extends Equatable {
     int? deliveredCapsules,
     int? returnedCapsules,
     int? damagedCapsules,
+    int? pickedCoolers,
+    int? pickedBottles,
+    int? bulk5lCount,
+    int? bulk10lCount,
+    int? capsuleBalanceAfter,
     int? paymentAmount,
     PaymentMethod? paymentMethod,
     String? paymentPhoto,
@@ -203,6 +254,13 @@ class RouteStop extends Equatable {
       deliveredCapsules: deliveredCapsules ?? this.deliveredCapsules,
       returnedCapsules: returnedCapsules ?? this.returnedCapsules,
       damagedCapsules: damagedCapsules ?? this.damagedCapsules,
+      pickedCoolers: pickedCoolers ?? this.pickedCoolers,
+      pickedBottles: pickedBottles ?? this.pickedBottles,
+      bulk5lCount: bulk5lCount ?? this.bulk5lCount,
+      bulk10lCount: bulk10lCount ?? this.bulk10lCount,
+      bulk5lPrice: bulk5lPrice,
+      bulk10lPrice: bulk10lPrice,
+      capsuleBalanceAfter: capsuleBalanceAfter ?? this.capsuleBalanceAfter,
       paymentAmount: paymentAmount ?? this.paymentAmount,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paymentPhoto: paymentPhoto ?? this.paymentPhoto,
@@ -265,7 +323,7 @@ class RouteStop extends Equatable {
         // У закрытых заказов, заведённых до релиза, стоимость осталась нулём,
         // хотя деньги по ним приняты, — тогда показываем принятое.
         paymentAmount: _closedAmount(json, completedAt, status),
-        paymentMethod: _method(json['payment_method']),
+        paymentMethod: PaymentMethod.tryFromJson(json['payment_method']),
         paymentPhoto: optionalString(json['payment_photo']),
         completedAt: completedAt,
         // `customer_has_cooler` сервер отдавал до переименования точек в
@@ -282,6 +340,13 @@ class RouteStop extends Equatable {
         purpose: OrderPurpose.fromJson(stringOr(json['purpose'])),
         returnedCapsules: optionalInt(json['returned_bottles']),
         damagedCapsules: optionalInt(json['damaged_bottles']),
+        pickedCoolers: optionalInt(json['picked_coolers']),
+        pickedBottles: optionalInt(json['picked_bottles']),
+        bulk5lCount: optionalInt(json['bulk_5l_count']),
+        bulk10lCount: optionalInt(json['bulk_10l_count']),
+        bulk5lPrice: _money(json['bulk_5l_price']),
+        bulk10lPrice: _money(json['bulk_10l_price']),
+        capsuleBalanceAfter: optionalInt(json['bottle_balance_after']),
         effectiveWaterPrice: _money(json['effective_water_price']),
         damagedBottleFine: _money(json['damaged_bottle_fine']),
       );
@@ -318,17 +383,6 @@ class RouteStop extends Equatable {
     return _money(json['paid_amount']) ?? ordered;
   }
 
-  static PaymentMethod? _method(Object? value) {
-    final wire = optionalString(value);
-    if (wire == null) return null;
-    for (final method in PaymentMethod.values) {
-      if (method.wire == wire) return method;
-    }
-    // Незнакомый способ оплаты — не повод терять точку: сумму и статус
-    // показать всё ещё можно, а подпись способа просто не появится.
-    return null;
-  }
-
   @override
   List<Object?> get props => [
         id,
@@ -346,6 +400,13 @@ class RouteStop extends Equatable {
         purpose,
         returnedCapsules,
         damagedCapsules,
+        pickedCoolers,
+        pickedBottles,
+        bulk5lCount,
+        bulk10lCount,
+        bulk5lPrice,
+        bulk10lPrice,
+        capsuleBalanceAfter,
         effectiveWaterPrice,
         damagedBottleFine,
       ];
@@ -392,13 +453,29 @@ class RouteDetail extends Equatable {
   /// Сколько наличных должно остаться у водителя: собранное минус расходы.
   final int? cashBalance;
 
-  /// Сумма собранных за маршрут оплат.
+  /// Наличные, собранные за маршрут, — то, что водитель везёт в руках.
   ///
   /// Серверный подсчёт точнее — он видит все платежи, включая правки админа,
   /// — поэтому берём его, когда он есть, и складываем точки, когда нет.
   int get collected =>
       cashCollected ??
       stops.fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0));
+
+  /// Вся выручка маршрута: наличные плюс безнал.
+  ///
+  /// Отдельно от [collected], потому что это разные вопросы. «Сколько
+  /// маршрут принёс» — это выручка; «сколько водитель должен сдать» — только
+  /// наличные, карта и перевод ушли на счёт компании. Показывать выручку
+  /// одними наличными значит занижать день на весь безнал.
+  ///
+  /// На стенде без блока кассы сумма по точкам и есть вся выручка: способа
+  /// оплаты там не разобрать, а деньги приняты все.
+  int get revenue {
+    if (cashCollected == null && cashlessCollected == null) {
+      return stops.fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0));
+    }
+    return (cashCollected ?? 0) + (cashlessCollected ?? 0);
+  }
 
   factory RouteDetail.fromJson(Map<String, dynamic> json) => RouteDetail(
         id: requireString(json['id'], 'id'),

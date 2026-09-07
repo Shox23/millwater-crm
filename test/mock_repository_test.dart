@@ -2,6 +2,7 @@ import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/reports_summary.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
+import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -23,17 +24,20 @@ void main() {
       expect(stops, 10);
       expect(done, 5);
 
-      final report = await repo.getSummaryReport();
-      expect(report.totalRevenue, 280000);
-      expect(report.completedDeliveries, 5);
-      expect(report.completedDeliveries + report.failedDeliveries, 10);
+      // Общий отчёт — строка на состоявшуюся доставку; выручка складывается
+      // из строк, незавершённых точек в нём нет вовсе.
+      final rows = await repo.getGeneralReport(
+        dateFrom: DateTime(2020), dateTo: DateTime(2030));
+      expect(rows.fold<int>(0, (sum, r) => sum + r.orderAmount), 280000);
+      expect(rows, hasLength(5));
     });
 
     test('отчёт: долги 420 000 у 2 клиентов, капсул 26', () async {
-      // Должников и капсулы сводка не отдаёт — их сводит ReportsSummary.from
-      // из ответа сервера и справочника заказчиков.
+      // Долг и капсулы — показатели «на сейчас» по всей базе; ни один отчёт
+      // их не отдаёт, поэтому справочник заказчиков по-прежнему нужен.
       final s = ReportsSummary.from(
-        await repo.getSummaryReport(),
+        await repo.getGeneralReport(
+            dateFrom: DateTime(2020), dateTo: DateTime(2030)),
         await repo.getCustomers(),
       );
       expect(s.debtTotal, 420000);
@@ -43,7 +47,8 @@ void main() {
 
     test('должники в отчёте идут по убыванию суммы', () async {
       final s = ReportsSummary.from(
-        await repo.getSummaryReport(),
+        await repo.getGeneralReport(
+            dateFrom: DateTime(2020), dateTo: DateTime(2030)),
         await repo.getCustomers(),
       );
       final amounts = s.debtors.map((d) => d.amount).toList();
@@ -78,7 +83,10 @@ void main() {
       final route = await repo.createRoute(
         driverId: 'd1',
         date: DateTime(2026, 7, 6),
-        customerIds: ['c1', 'c2'],
+        orders: const [
+          RouteOrderInput(customerId: 'c1'),
+          RouteOrderInput(customerId: 'c2'),
+        ],
       );
       expect(route.stops.length, 2);
       expect(route.status, RouteStatus.created);

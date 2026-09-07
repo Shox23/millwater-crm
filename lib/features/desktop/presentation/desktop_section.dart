@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
 
-/// Разделы десктопной оболочки — те же четыре, что вкладки у админа.
+/// Разделы десктопной оболочки.
+///
+/// Пять повторяют вкладки админского телефона, шестой — «Касса» — только
+/// десктопный: сводить расходы всех водителей за месяц удобно за столом, а
+/// не в дороге.
 enum DesktopSection {
   routes(Icons.route_outlined),
+  orders(Icons.receipt_long_outlined),
   drivers(Icons.local_shipping_outlined),
   customers(Icons.storefront_outlined),
+  cash(Icons.account_balance_wallet_outlined),
   reports(Icons.insights_outlined);
 
   const DesktopSection(this.icon);
@@ -16,8 +22,10 @@ enum DesktopSection {
   /// Подпись в боковом меню.
   String label(AppLocalizations l10n) => switch (this) {
         DesktopSection.routes => l10n.navRoutes,
+        DesktopSection.orders => l10n.ordersTitle,
         DesktopSection.drivers => l10n.navDrivers,
         DesktopSection.customers => l10n.navCustomers,
+        DesktopSection.cash => l10n.navCash,
         DesktopSection.reports => l10n.navReports,
       };
 
@@ -25,11 +33,15 @@ enum DesktopSection {
   /// ключей: меню и заголовок экрана — разные строки, и однажды разойдутся.
   String title(AppLocalizations l10n) => switch (this) {
         DesktopSection.routes => l10n.routesTitle,
+        DesktopSection.orders => l10n.ordersTitle,
         DesktopSection.drivers => l10n.driversTitle,
         DesktopSection.customers => l10n.customersTitle,
+        DesktopSection.cash => l10n.cashDesktopTitle,
         DesktopSection.reports => l10n.reportsTitle,
       };
 
-  /// Есть ли у раздела поиск. У отчётов искать нечего — там сводные числа.
-  bool get hasSearch => this != DesktopSection.reports;
+  /// Есть ли у раздела поиск. У отчётов и кассы искать нечего — там
+  /// сводные числа и отбор чипами.
+  bool get hasSearch =>
+      this != DesktopSection.reports && this != DesktopSection.cash;
 }

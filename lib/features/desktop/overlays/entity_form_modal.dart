@@ -6,12 +6,14 @@ import '../../../l10n/l10n.dart';
 
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/forms/balance_kind.dart';
 import '../../../core/forms/submit_state.dart';
 import '../../../core/utils/driver_password.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
 import '../../../core/widgets/labeled_text_field.dart';
+import '../../../core/widgets/quantity_stepper.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/driver.dart';
 import '../../../data/network/api_envelope.dart';
@@ -159,6 +161,7 @@ class _DriverFormModalState extends State<DriverFormModal> with SubmitState {
                       : LabeledTextField(
                           label: l10n.driverFormPassword,
                           helper: l10n.driverFormPasswordHelper,
+                          helperMaxLines: 2,
                           controller: _password,
                           validator: _v.password(),
                           // Пароль сгенерирован и восстановить его нечем —
@@ -198,13 +201,36 @@ class _CustomerFormModalState extends State<CustomerFormModal>
   late final TextEditingController _phone;
   late final TextEditingController _address;
   late final TextEditingController _comment;
-  /// Кулеры на десктопе остаются переключателем «есть/нет»: колонок в
-  /// таблице и без того много, а точное число правят в мобильной форме.
-  /// Хранится всё равно количество — иначе правка названия у заказчика с
-  /// тремя кулерами молча оставила бы ему один.
   late int _coolerCount;
 
+  /// Стартовый баланс: одно поле на долг и предоплату, а не два.
+  /// Сервер запрещает оба ненулевыми (422 `BOTH_BALANCES_SET`), и форма не
+  /// должна давать собрать состояние, которое он отвергнет.
+  late BalanceKind _balanceKind;
+  late final TextEditingController _balance;
+
+  /// Индивидуальная цена капсулы; пусто — по общему прайсу.
+  late final TextEditingController _price;
+  late bool _customPrice;
+
   final String _idempotencyKey = newIdempotencyKey('customer');
+
+  int get _balanceAmount => int.tryParse(_balance.text.trim()) ?? 0;
+  int get _debt => _balanceKind == BalanceKind.debt ? _balanceAmount : 0;
+  int get _prepayment =>
+      _balanceKind == BalanceKind.prepayment ? _balanceAmount : 0;
+
+  int? get _customWaterPrice {
+    if (!_customPrice) return null;
+    final value = int.tryParse(_price.text.trim()) ?? 0;
+    return value > 0 ? value : null;
+  }
+
+  /// Баланс отправляется только когда его трогали: иначе правка имени
+  /// затирала бы долг, накопленный доставками с тех пор.
+  bool get _balanceChanged =>
+      _debt != (widget.customer?.debt ?? 0) ||
+      _prepayment != (widget.customer?.prepayment ?? 0);
 
   @override
   void didChangeDependencies() {
@@ -223,6 +249,22 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
     _coolerCount = customer?.coolerCount ?? 0;
+    _balanceKind = switch (customer) {
+      Customer(debt: > 0) => BalanceKind.debt,
+      Customer(prepayment: > 0) => BalanceKind.prepayment,
+      _ => BalanceKind.none,
+    };
+    _balance = TextEditingController(
+      text: switch (_balanceKind) {
+        BalanceKind.debt => '${customer!.debt}',
+        BalanceKind.prepayment => '${customer!.prepayment}',
+        BalanceKind.none => '',
+      },
+    );
+    _customPrice = customer?.customWaterPrice != null;
+    _price = TextEditingController(
+      text: customer?.customWaterPrice?.toString() ?? '',
+    );
     _name.addListener(_onChanged);
   }
 
@@ -233,6 +275,8 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     _phone.dispose();
     _address.dispose();
     _comment.dispose();
+    _balance.dispose();
+    _price.dispose();
     super.dispose();
   }
 
@@ -251,13 +295,19 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     final ok = await submit(
       () async {
         if (widget.isEdit) {
-          await repo.updateCustomer(widget.customer!.copyWith(
-            name: _name.text.trim(),
-            phone: phone,
-            address: _address.text.trim(),
-            comment: comment.isEmpty ? null : comment,
-            coolerCount: _coolerCount,
-          ));
+          await repo.updateCustomer(
+            widget.customer!.copyWith(
+              name: _name.text.trim(),
+              phone: phone,
+              address: _address.text.trim(),
+              comment: comment.isEmpty ? null : comment,
+              coolerCount: _coolerCount,
+              debt: _debt,
+              prepayment: _prepayment,
+              customWaterPrice: _customWaterPrice,
+            ),
+            balanceChanged: _balanceChanged,
+          );
         } else {
           await repo.addCustomer(
             name: _name.text.trim(),
@@ -265,6 +315,9 @@ class _CustomerFormModalState extends State<CustomerFormModal>
             address: _address.text.trim(),
             comment: comment.isEmpty ? null : comment,
             coolerCount: _coolerCount,
+            debt: _debt,
+            prepayment: _prepayment,
+            customWaterPrice: _customWaterPrice,
             idempotencyKey: _idempotencyKey,
           );
         }
@@ -329,20 +382,73 @@ class _CustomerFormModalState extends State<CustomerFormModal>
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                DesktopSegmented<bool>(
-                  options: [
-                    (true, l10n.desktopWithCooler),
-                    (false, l10n.desktopWithoutCooler),
-                  ],
-                  value: _coolerCount > 0,
-                  onChanged: (value) => setState(
-                    // Прежнее количество не теряем: «есть» возвращает то, что
-                    // стояло у заказчика, и только у нового ставит первый.
-                    () => _coolerCount = value
-                        ? (widget.customer?.coolerCount ?? 0).clamp(1, 10)
-                        : 0,
+                // Степпер, а не «есть/нет»: к кулеру ставят капсулу, и их
+                // может быть несколько — переключатель терял это число.
+                QuantityStepper(
+                  value: _coolerCount,
+                  max: 10,
+                  onChanged: (value) => setState(() => _coolerCount = value),
+                ),
+              ],
+            ),
+            // Стартовый баланс: одно поле, потому что сервер запрещает
+            // ненулевой долг вместе с ненулевой предоплатой.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppSpacing.sm,
+              children: [
+                Text(
+                  l10n.customerFormBalance,
+                  style: DesktopTypography.secondary.copyWith(
+                    color: context.tokens.text2,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                DesktopSegmented<BalanceKind>(
+                  options: [
+                    (BalanceKind.none, l10n.customerFormBalanceNone),
+                    (BalanceKind.debt, l10n.customerFormBalanceDebt),
+                    (BalanceKind.prepayment, l10n.customerFormBalancePrepayment),
+                  ],
+                  value: _balanceKind,
+                  onChanged: (value) => setState(() => _balanceKind = value),
+                ),
+                if (_balanceKind != BalanceKind.none)
+                  LabeledTextField(
+                    label: l10n.customerFormBalanceAmount,
+                    helper: l10n.customerFormBalanceHint,
+                    helperMaxLines: 2,
+                    controller: _balance,
+                    keyboardType: TextInputType.number,
+                  ),
+              ],
+            ),
+            // Индивидуальная цена капсулы — по ней сервер считает заказ.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppSpacing.sm,
+              children: [
+                Text(
+                  l10n.customerFormPrice,
+                  style: DesktopTypography.secondary.copyWith(
+                    color: context.tokens.text2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                DesktopSegmented<bool>(
+                  options: [
+                    (false, l10n.customerFormPriceDefault),
+                    (true, l10n.customerFormPriceCustom),
+                  ],
+                  value: _customPrice,
+                  onChanged: (value) => setState(() => _customPrice = value),
+                ),
+                if (_customPrice)
+                  LabeledTextField(
+                    label: l10n.customerFormPriceValue,
+                    controller: _price,
+                    keyboardType: TextInputType.number,
+                  ),
               ],
             ),
             LabeledTextField(

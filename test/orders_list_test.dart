@@ -6,6 +6,7 @@ import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
 import 'package:crm_millwater/data/mock/mock_store.dart';
 import 'package:crm_millwater/features/orders/bloc/orders_bloc.dart';
 import 'package:crm_millwater/features/orders/bloc/orders_source.dart';
+import 'package:crm_millwater/core/utils/stats_period.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Что именно ушло на сервер за одну загрузку списка.
@@ -14,6 +15,8 @@ typedef _Call = ({
   DeliveryStatus? status,
   OrderPurpose? purpose,
   String? search,
+  DateTime? dateFrom,
+  DateTime? dateTo,
 });
 
 /// Запоминает параметры отбора и всегда обещает следующую страницу — иначе
@@ -30,8 +33,17 @@ class _RecordingSource implements OrdersSource {
     DeliveryStatus? status,
     OrderPurpose? purpose,
     String? search,
+    DateTime? dateFrom,
+    DateTime? dateTo,
   }) async {
-    calls.add((page: page, status: status, purpose: purpose, search: search));
+    calls.add((
+      page: page,
+      status: status,
+      purpose: purpose,
+      search: search,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+    ));
     return ResultPage(
       items: [
         for (var i = 0; i < 2; i++)
@@ -77,7 +89,74 @@ void main() {
       expect(source.calls.single.page, 1);
       expect(source.calls.single.status, isNull);
       expect(source.calls.single.purpose, isNull);
+      // Дат тоже нет: список показывает всё время — этим он и отличается от
+      // экрана маршрутов, привязанного ко дню.
+      expect(source.calls.single.dateFrom, isNull);
+      expect(source.calls.single.dateTo, isNull);
       expect(bloc.state.total, 99);
+    });
+
+    test('готовый период уходит границами, а не названием', () async {
+      bloc.add(const OrdersRequested());
+      await loaded();
+
+      bloc.add(const OrdersDateChanged(OrdersPeriodDate(StatsPeriod.today)));
+      await loaded();
+
+      final today = DateTime.now();
+      final call = source.calls.last;
+      expect(call.dateFrom, isNotNull);
+      expect(call.dateTo, isNotNull);
+      expect(call.dateFrom!.day, today.day);
+      expect(call.dateTo!.day, today.day);
+      // Отбор меняет запрос, а не режет уже загруженное: страница берётся
+      // заново с первой.
+      expect(call.page, 1);
+    });
+
+    test('выбранный диапазон уходит как есть', () async {
+      bloc.add(const OrdersRequested());
+      await loaded();
+
+      final from = DateTime(2026, 8, 15);
+      final to = DateTime(2026, 8, 20);
+      bloc.add(OrdersDateChanged(OrdersCustomDate(from, to)));
+      await loaded();
+
+      expect(source.calls.last.dateFrom, from);
+      expect(source.calls.last.dateTo, to);
+    });
+
+    test('возврат к «за всё время» снимает границы', () async {
+      bloc.add(const OrdersRequested());
+      await loaded();
+
+      bloc.add(const OrdersDateChanged(OrdersPeriodDate(StatsPeriod.month)));
+      await loaded();
+      expect(source.calls.last.dateFrom, isNotNull);
+
+      bloc.add(const OrdersDateChanged(OrdersAnyDate()));
+      await loaded();
+
+      expect(source.calls.last.dateFrom, isNull);
+      expect(source.calls.last.dateTo, isNull);
+      expect(bloc.state.hasFilters, isFalse);
+    });
+
+    test('повторный выбор того же периода в сеть не ходит', () async {
+      bloc.add(const OrdersRequested());
+      await loaded();
+
+      bloc.add(const OrdersDateChanged(OrdersPeriodDate(StatsPeriod.week)));
+      await loaded();
+      final count = source.calls.length;
+
+      // Тот же период, но другой экземпляр — сравнение по значению, а не по
+      // ссылке: иначе каждый тап по уже выбранному чипу дёргал бы сервер.
+      bloc.add(const OrdersDateChanged(OrdersPeriodDate(StatsPeriod.week)));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(source.calls.length, count);
     });
 
     test('отбор уходит на сервер, а не режет загруженное', () async {

@@ -46,12 +46,20 @@ class DesktopBadge extends StatelessWidget {
               height: 6,
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
-          Text(
-            text,
-            style: (large
-                    ? DesktopTypography.badgeLarge
-                    : DesktopTypography.badge)
-                .copyWith(color: color),
+          // Flexible: бейдж живёт в ячейке таблицы, а её ширина задана
+          // колонкой. Без него длинная подпись не сжимается, а выдавливает
+          // строку за край — и ломает вёрстку всей таблицы, а не только себя.
+          Flexible(
+            child: Text(
+              text,
+              style: (large
+                      ? DesktopTypography.badgeLarge
+                      : DesktopTypography.badge)
+                  .copyWith(color: color),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            ),
           ),
         ],
       ),

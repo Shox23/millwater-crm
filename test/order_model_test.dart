@@ -322,6 +322,36 @@ void main() {
           ...extra,
         };
 
+    test('вывоз и опт разбираются у точки', () {
+      // Без этих полей закрытая точка вывоза выглядела как «0 капсул»:
+      // модель знала только про доставленные, и забранные кулеры пропадали
+      // из карточки маршрута вместе со всей работой водителя.
+      final pickup = RouteStop.fromJson(stopJson({
+        'purpose': 'pickup',
+        'picked_coolers': 2,
+        'picked_bottles': 3,
+      }));
+
+      expect(pickup.purpose, OrderPurpose.pickup);
+      expect(pickup.pickedCoolers, 2);
+      expect(pickup.pickedBottles, 3);
+
+      final bulk = RouteStop.fromJson(stopJson({
+        'purpose': 'bulk_water',
+        'bulk_5l_count': 10,
+        'bulk_10l_count': 4,
+      }));
+
+      expect(bulk.bulk5lCount, 10);
+      expect(bulk.bulk10lCount, 4);
+
+      // Старый стенд полей не отдаёт — это null, а не ноль: ноль означал бы
+      // «забрали ничего», а мы просто не знаем.
+      final legacy = RouteStop.fromJson(stopJson());
+      expect(legacy.pickedCoolers, isNull);
+      expect(legacy.bulk5lCount, isNull);
+    });
+
     test('способ оплаты и кулеры разбираются', () {
       final stop = RouteStop.fromJson(stopJson());
 

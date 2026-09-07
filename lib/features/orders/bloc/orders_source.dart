@@ -17,6 +17,8 @@ abstract class OrdersSource {
     DeliveryStatus? status,
     OrderPurpose? purpose,
     String? search,
+    DateTime? dateFrom,
+    DateTime? dateTo,
   });
 }
 
@@ -32,12 +34,16 @@ class AdminOrdersSource implements OrdersSource {
     DeliveryStatus? status,
     OrderPurpose? purpose,
     String? search,
+    DateTime? dateFrom,
+    DateTime? dateTo,
   }) =>
       _repository.getOrdersPage(
         page: page,
         status: status,
         purpose: purpose,
         search: search,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
       );
 }
 
@@ -56,11 +62,15 @@ class DriverOrdersSource implements OrdersSource {
     DeliveryStatus? status,
     OrderPurpose? purpose,
     String? search,
+    DateTime? dateFrom,
+    DateTime? dateTo,
   }) =>
       _repository.getMyOrders(
         page: page,
         status: status,
         purpose: purpose,
         search: search,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
       );
 }

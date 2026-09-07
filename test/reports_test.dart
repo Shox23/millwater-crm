@@ -1,4 +1,5 @@
 import 'package:crm_millwater/data/models/customer.dart';
+import 'package:crm_millwater/data/models/report_rows.dart';
 import 'package:crm_millwater/data/models/reports_summary.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/features/reports/bloc/reports_bloc.dart';
@@ -25,46 +26,48 @@ class _SlowFirstRepository extends MockCrmRepository {
   final List<ReportPeriodRange> ranges = [];
 
   @override
-  Future<SummaryReport> getSummaryReport({
-    DateTime? dateFrom,
-    DateTime? dateTo,
+  Future<List<GeneralReportRow>> getGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
   }) async {
     final delay = _delays[_call.clamp(0, _delays.length - 1)];
     _call++;
     ranges.add((from: dateFrom, to: dateTo));
     await Future<void>.delayed(delay);
     // Выручка кодирует номер вызова — по ней видно, чей ответ дошёл.
-    return SummaryReport(
-      routesCount: 0,
-      completedDeliveries: 0,
-      failedDeliveries: 0,
-      totalRevenue: _call,
-      totalDebt: 0,
-    );
+    return [_row(amount: _call)];
   }
 }
 
 typedef ReportPeriodRange = ({DateTime? from, DateTime? to});
 
+/// Строка общего отчёта — минимальная, со значащей только суммой.
+GeneralReportRow _row({int amount = 0, int delivered = 0}) => GeneralReportRow(
+      date: DateTime(2026, 8, 25),
+      driverName: 'Азиз',
+      customer: 'Кафе',
+      deliveredCapsules: delivered,
+      returnedCapsules: 0,
+      damagedCapsules: 0,
+      coolerCount: 0,
+      orderAmount: amount,
+    );
+
 void main() {
   group('Сводка по должникам', () {
     test('итог равен сумме строк списка', () {
-      const report = SummaryReport(
-        routesCount: 1,
-        completedDeliveries: 1,
-        failedDeliveries: 0,
-        totalRevenue: 100000,
-        // Сервер прислал своё число — на экране оно не должно разойтись
-        // со списком, который тут же показан.
-        totalDebt: 999999,
-      );
+      // Долг сервер отдельным числом больше не присылает: он считается по
+      // тем же заказчикам, что попадут в список, — иначе итог над списком
+      // разошёлся бы с суммой его строк.
+      final rows = [_row(amount: 100000)];
       final customers = [
         _customer(id: '1', debt: 120000),
         _customer(id: '2', debt: 300000),
         _customer(id: '3'),
       ];
 
-      final summary = ReportsSummary.from(report, customers);
+      final summary = ReportsSummary.from(rows, customers);
 
       expect(summary.debtorsCount, 2);
       expect(summary.debtTotal, 420000);
@@ -75,14 +78,7 @@ void main() {
     });
 
     test('должники идут по убыванию суммы', () {
-      const report = SummaryReport(
-        routesCount: 0,
-        completedDeliveries: 0,
-        failedDeliveries: 0,
-        totalRevenue: 0,
-        totalDebt: 0,
-      );
-      final summary = ReportsSummary.from(report, [
+      final summary = ReportsSummary.from(const <GeneralReportRow>[], [
         _customer(id: '1', debt: 100),
         _customer(id: '2', debt: 900),
         _customer(id: '3', debt: 500),
@@ -93,14 +89,7 @@ void main() {
 
     test('остаток капсул считается по всем заказчикам, не только должникам',
         () {
-      const report = SummaryReport(
-        routesCount: 0,
-        completedDeliveries: 0,
-        failedDeliveries: 0,
-        totalRevenue: 0,
-        totalDebt: 0,
-      );
-      final summary = ReportsSummary.from(report, [
+      final summary = ReportsSummary.from(const <GeneralReportRow>[], [
         _customer(id: '1', debt: 100, capsules: 5),
         _customer(id: '2', capsules: 3),
       ]);

@@ -20,11 +20,16 @@ import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/initials_avatar.dart';
+import '../../../core/widgets/route_cash_card.dart';
+import '../../../core/widgets/section_block.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/models/notification_event.dart';
+import '../../../data/models/order.dart';
+import '../../../data/models/route_expense.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/crm_repository.dart';
+import '../../orders/presentation/order_detail_page.dart';
 import 'route_form_page.dart';
 import 'stop_detail_page.dart';
 import 'widgets/route_card.dart';
@@ -42,6 +47,10 @@ class RouteDetailPage extends StatefulWidget {
 
 class _RouteDetailPageState extends State<RouteDetailPage> {
   RouteDetail? _route;
+
+  /// Расходы водителя по маршруту. Отдельным запросом: в ответе маршрута их
+  /// нет, есть только итоговая сумма в блоке кассы.
+  List<RouteExpense> _expenses = const [];
   bool _loading = true;
   bool _loadFailed = false;
   StreamSubscription<NotificationEvent>? _notifications;
@@ -75,11 +84,17 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       });
     }
     try {
-      final route =
-          await context.read<CrmRepository>().getRoute(widget.routeId);
+      final repo = context.read<CrmRepository>();
+      final route = await repo.getRoute(widget.routeId);
+      // Расходы грузим отдельно и не роняем ими карточку: маршрут без списка
+      // расходов показать можно, а без маршрута список расходов бессмыслен.
+      final expenses = await repo
+          .getRouteExpenses(widget.routeId)
+          .catchError((_) => const <RouteExpense>[]);
       if (!mounted) return;
       setState(() {
         _route = route;
+        _expenses = expenses;
         _loading = false;
       });
     } catch (_) {
@@ -127,12 +142,36 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     await _load();
   }
 
-  /// Админу точка доступна только на просмотр: завершение доставки —
-  /// driver-эндпоинт, под админским токеном он отвечает 403.
-  void _openStop(RouteStop stop) {
-    Navigator.of(context).push(
-      OverlayPageRoute<void>(builder: (_) => StopDetailPage(stop: stop)),
+  /// Открывает точку карточкой заказа.
+  ///
+  /// Точка маршрута и заказ — одна и та же запись (`stop.id` это `order.id`),
+  /// но карточка заказа знает про неё больше: цель, брак и возврат, опт,
+  /// историю платежей, перенос и правку оплаты. Дублировать всё это в
+  /// карточке точки значило бы вести два экрана про одно.
+  ///
+  /// Если заказ не пришёл — старый стенд без `/admin/orders/{id}` или сеть —
+  /// остаётся прежняя карточка точки: она собрана из данных маршрута и
+  /// показывается без единого запроса.
+  Future<void> _openStop(RouteStop stop) async {
+    final repo = context.read<CrmRepository>();
+    Order? order;
+    try {
+      order = await repo.getOrder(stop.id);
+    } catch (_) {
+      // Молча: ниже открывается запасная карточка.
+    }
+    if (!mounted) return;
+
+    final loaded = order;
+    final changed = await Navigator.of(context).push<bool>(
+      OverlayPageRoute<bool>(
+        builder: (_) => loaded == null
+            ? StopDetailPage(stop: stop)
+            : OrderDetailPage(order: loaded, canManage: true),
+      ),
     );
+    // Перенос или правка оплаты меняют маршрут — перечитываем его целиком.
+    if (changed == true && mounted) await _load();
   }
 
   @override
@@ -161,7 +200,12 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                           style: AppTypography.secondary
                               .copyWith(color: t.text2)),
                     )
-                  : _RouteBody(route: route, onStopTap: _openStop),
+                  : _RouteBody(
+                      route: route,
+                      expenses: _expenses,
+                      onStopTap: _openStop,
+                      onAssignDriver: _editRoute,
+                    ),
       // Панель целиком исчезает, когда с маршрутом уже нечего делать:
       // у завершённого и отменённого не осталось ни правок, ни отмены.
       bottomBar: _loadFailed ||
@@ -175,7 +219,12 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                   if (route.status.canCancel)
                     Expanded(
                       child: AppButton(
-                        label: context.l10n.routeCancelAction,
+                        // Короткая подпись: на половине ширины «Отменить
+                        // маршрут» обрезалось до «Отменить ма…», а узбекское
+                        // «Marshrutni bekor qilish» и подавно. Слово
+                        // «маршрут» здесь и так из контекста экрана, а
+                        // полностью действие называет диалог подтверждения.
+                        label: context.l10n.routeCancelShort,
                         variant: AppButtonVariant.secondary,
                         onPressed: _cancelRoute,
                       ),
@@ -196,15 +245,23 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
 }
 
 class _RouteBody extends StatelessWidget {
-  const _RouteBody({required this.route, required this.onStopTap});
+  const _RouteBody({
+    required this.route,
+    required this.expenses,
+    required this.onStopTap,
+    required this.onAssignDriver,
+  });
 
   final RouteDetail route;
+  final List<RouteExpense> expenses;
   final ValueChanged<RouteStop> onStopTap;
+  final ValueChanged<RouteDetail> onAssignDriver;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final driverName = route.driverFullName ?? '—';
+    final driverName = route.driverFullName ?? '';
+    final hasDriver = driverName.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,9 +287,21 @@ class _RouteBody extends StatelessWidget {
               Row(
                 spacing: AppSpacing.md,
                 children: [
-                  // Админский ответ водителя всегда содержит; `?? '—'` —
-                  // страховка от неполных данных, а не рабочий сценарий.
-                  InitialsAvatar(name: driverName, size: 46),
+                  // Маршрут-заготовку собирают без водителя — это законное
+                  // состояние, а не неполные данные. Пустое имя читалось бы
+                  // как сбой загрузки, поэтому у него своя иконка и подпись.
+                  if (hasDriver)
+                    InitialsAvatar(name: driverName, size: 46)
+                  else
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: t.surface2,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.person_off_outlined, color: t.text3),
+                    ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,14 +310,28 @@ class _RouteBody extends StatelessWidget {
                         Text(context.l10n.driverTitle,
                             style: AppTypography.secondary
                                 .copyWith(color: t.text2)),
-                        Text(driverName,
-                            style: AppTypography.bodyStrong
-                                .copyWith(color: t.text)),
+                        Text(
+                          hasDriver ? driverName : context.l10n.routeNoDriver,
+                          style: AppTypography.bodyStrong.copyWith(
+                              color: hasDriver ? t.text : t.warn),
+                        ),
                       ],
                     ),
                   ),
+                  // Назначение — та же форма правки: отдельного экрана под
+                  // одно поле заводить незачем.
+                  if (!hasDriver && route.status.canAssignDriver)
+                    AppButton(
+                      label: context.l10n.routeAssignDriver,
+                      variant: AppButtonVariant.secondary,
+                      onPressed: () => onAssignDriver(route),
+                    ),
                 ],
               ),
+              if (!hasDriver)
+                Text(context.l10n.routeNoDriverHint,
+                    style:
+                        AppTypography.secondary.copyWith(color: t.text2)),
               Row(
                 spacing: AppSpacing.md,
                 children: [
@@ -261,13 +344,41 @@ class _RouteBody extends StatelessWidget {
                   Expanded(
                     child: _MiniStat(
                       label: context.l10n.routeStatCollected,
-                      value: MoneyFormatter.sum(context.l10n, route.collected),
+                      // Вся выручка, а не одни наличные: разбивку на
+                      // наличные и безнал показывает блок кассы ниже, а в
+                      // шапке «Собрано» одними наличными занижало день.
+                      value: MoneyFormatter.sum(context.l10n, route.revenue),
                     ),
                   ),
                 ],
               ),
             ],
           ),
+        ),
+        // Касса приходит с сервером в самом маршруте; локальный подсчёт по
+        // точкам остаётся запасным вариантом внутри `RouteDetail.collected`
+        // для стендов, где этих полей ещё нет.
+        SectionBlock(
+          label: context.l10n.routeCashSection,
+          // Подсказку про «сдать остаток» показываем водителю, а не админу:
+          // деньги сдаёт не он.
+          child: RouteCashCard(route: route, showHint: false),
+        ),
+        SectionBlock(
+          label: context.l10n.routeExpensesSection,
+          child: expenses.isEmpty
+              ? AppCard(
+                  child: Text(context.l10n.routeNoExpenses,
+                      style: AppTypography.secondary
+                          .copyWith(color: t.text2)),
+                )
+              : Column(
+                  spacing: AppSpacing.sm,
+                  children: [
+                    for (final expense in expenses)
+                      _ExpenseRow(expense: expense),
+                  ],
+                ),
         ),
         // Построения маршрута здесь нет намеренно: маршрут строится от
         // текущего места того, кто нажал кнопку, а админ по нему не едет —
@@ -308,6 +419,50 @@ class _MiniStat extends StatelessWidget {
         children: [
           Text(label, style: AppTypography.fieldLabel.copyWith(color: t.text2)),
           Text(value, style: AppTypography.bodyStrong.copyWith(color: t.text)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Строка расхода водителя: категория, комментарий и сумма.
+///
+/// Только на просмотр: удалять чужой расход админ может по контракту, но
+/// делать это из карточки маршрута опасно — рядом лежат деньги, и промах
+/// пальцем стоил бы записи. Удаление живёт у водителя.
+class _ExpenseRow extends StatelessWidget {
+  const _ExpenseRow({required this.expense});
+
+  final RouteExpense expense;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final comment = expense.comment;
+
+    return AppCard(
+      compact: true,
+      child: Row(
+        spacing: AppSpacing.md,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(expense.category.label(context.l10n),
+                    style: AppTypography.bodyStrong.copyWith(color: t.text)),
+                if (comment != null && comment.trim().isNotEmpty)
+                  Text(comment,
+                      style:
+                          AppTypography.secondary.copyWith(color: t.text2),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          Text(MoneyFormatter.sum(context.l10n, expense.amount),
+              style: AppTypography.bodyStrong.copyWith(color: t.danger)),
         ],
       ),
     );

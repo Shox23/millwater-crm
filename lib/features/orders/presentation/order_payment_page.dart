@@ -14,6 +14,7 @@ import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/labeled_text_field.dart';
 import '../../../core/widgets/photo_attach_tile.dart';
@@ -95,6 +96,29 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> with SubmitState {
 
   bool get _valid => (_amountOrNull ?? -1) >= 0;
 
+  /// Форму трогали — уход без сохранения нужно переспросить.
+  ///
+  /// Шире, чем [_changed]: комментарий на дельту не влияет и кнопку не
+  /// включает, но набранный и потерянный свайпом текст — та же потеря
+  /// работы, что и сумма.
+  bool get _dirty => _changed || _note.text.trim().isNotEmpty;
+
+  /// Закрытие экрана: при тронутой форме спрашиваем подтверждение.
+  Future<void> _leave() async {
+    if (!_dirty) {
+      Navigator.of(context).pop(false);
+      return;
+    }
+    final leave = await showConfirmDialog(
+      context,
+      title: context.l10n.leaveWithoutSavingTitle,
+      message: context.l10n.leaveWithoutSavingMessage,
+      confirmLabel: context.l10n.commonLeave,
+      cancelLabel: context.l10n.commonStay,
+    );
+    if (leave && mounted) Navigator.of(context).pop(false);
+  }
+
   Future<void> _submit() async {
     final repo = context.read<CrmRepository>();
     final l10n = context.l10n;
@@ -123,7 +147,14 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> with SubmitState {
     final after = _amountOrNull ?? 0;
     final customer = _customer;
 
-    return DetailScaffold(
+    return PopScope(
+      // Не `false`: наглухо запрещённый pop гасит краевой жест «назад» на
+      // iOS. Нетронутую форму отпускаем сразу, тронутую перехватываем.
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _leave();
+      },
+      child: DetailScaffold(
       title: l10n.orderPaymentTitle,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,6 +282,7 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> with SubmitState {
             ),
           ],
         ),
+      ),
       ),
     );
   }

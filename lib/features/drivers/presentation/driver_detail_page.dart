@@ -7,7 +7,9 @@ import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../core/export/file_sharer.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/utils/stats_period.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
@@ -21,13 +23,22 @@ import '../../../core/widgets/stat_tile.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/driver.dart';
 import '../../../data/repositories/crm_repository.dart';
+import '../../reports/presentation/report_export_page.dart';
 import 'driver_form_page.dart';
 
 /// Экран «Водитель» — детали, статы, контакты.
 class DriverDetailPage extends StatelessWidget {
-  const DriverDetailPage({super.key, required this.driver});
+  const DriverDetailPage({
+    super.key,
+    required this.driver,
+    this.fileSharer = const PlatformFileSharer(),
+  });
 
   final Driver driver;
+
+  /// Подменяется в тестах — как на экране отчётов: настоящий «Поделиться»
+  /// в виджет-тесте не открыть.
+  final FileSharer fileSharer;
 
   Future<void> _delete(BuildContext context) async {
     final confirmed = await showConfirmDialog(
@@ -43,6 +54,26 @@ class DriverDetailPage extends StatelessWidget {
       fallback: context.l10n.driverDeleteFailed,
     );
     if (ok && context.mounted) Navigator.of(context).pop(true);
+  }
+
+  /// Открывает выгрузку с уже выбранным разрезом и этим водителем.
+  ///
+  /// Отдельного экрана под отчёт одного водителя нет намеренно: тот же
+  /// `ReportExportPage` умеет и период, и обработку отказа, и отправку файла
+  /// в «Поделиться». Здесь он открывается с предвыбранными параметрами.
+  void _report(BuildContext context) {
+    Navigator.of(context).push(
+      OverlayPageRoute<void>(
+        builder: (_) => ReportExportPage(
+          // Период правится на самом экране; месяц — разумное начало для
+          // разбора работы водителя.
+          period: StatsPeriod.month,
+          fileSharer: fileSharer,
+          initialKind: ReportKind.drivers,
+          initialDriverId: driver.id,
+        ),
+      ),
+    );
   }
 
   Future<void> _edit(BuildContext context) async {
@@ -108,6 +139,44 @@ class DriverDetailPage extends StatelessWidget {
                   label: context.l10n.driverCreatedAt,
                   value: DateFormat('dd.MM.yyyy').format(driver.createdAt),
                 ),
+              ],
+            ),
+          ),
+          // Действие, а не показатель, поэтому отдельной плиткой, а не в
+          // карточке контактов. В нижнюю панель третьей кнопкой не ставим:
+          // там удаление и правка, и выгрузка среди них читалась бы как
+          // ещё одно необратимое действие.
+          AppCard(
+            onTap: () => _report(context),
+            child: Row(
+              spacing: AppSpacing.md,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: t.softOf(t.primary),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(Icons.file_download_outlined,
+                      size: 20, color: t.primary),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 2,
+                    children: [
+                      Text(context.l10n.driverReportTile,
+                          style: AppTypography.bodyStrong
+                              .copyWith(color: t.text)),
+                      Text(context.l10n.driverReportTileHint,
+                          style: AppTypography.secondary
+                              .copyWith(color: t.text2)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: t.text2),
               ],
             ),
           ),

@@ -1010,6 +1010,12 @@ abstract class AppLocalizations {
   /// **'Отменить маршрут'**
   String get routeCancelAction;
 
+  /// No description provided for @routeCancelShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить'**
+  String get routeCancelShort;
+
   /// No description provided for @routeCancelFailed.
   ///
   /// In ru, this message translates to:
@@ -1039,6 +1045,42 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'СОБРАНО'**
   String get routeStatCollected;
+
+  /// No description provided for @routeNoDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель не назначен'**
+  String get routeNoDriver;
+
+  /// No description provided for @routeNoDriverHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут никто не повезёт, пока водителя нет'**
+  String get routeNoDriverHint;
+
+  /// No description provided for @routeAssignDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Назначить'**
+  String get routeAssignDriver;
+
+  /// No description provided for @routeCashSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАССА МАРШРУТА'**
+  String get routeCashSection;
+
+  /// No description provided for @routeExpensesSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'РАСХОДЫ ВОДИТЕЛЯ'**
+  String get routeExpensesSection;
+
+  /// No description provided for @routeNoExpenses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расходов по маршруту нет'**
+  String get routeNoExpenses;
 
   /// No description provided for @routeStops.
   ///
@@ -1105,6 +1147,36 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'ДАТА'**
   String get routeFormDate;
+
+  /// No description provided for @routeFormPurpose.
+  ///
+  /// In ru, this message translates to:
+  /// **'ЦЕЛЬ МАРШРУТА'**
+  String get routeFormPurpose;
+
+  /// No description provided for @routeFormPurposeHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цель по умолчанию для всех точек'**
+  String get routeFormPurposeHint;
+
+  /// No description provided for @routeFormAssignLater.
+  ///
+  /// In ru, this message translates to:
+  /// **'Назначить позже'**
+  String get routeFormAssignLater;
+
+  /// No description provided for @routeFormAssignLaterHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут останется новым, пока водителя нет'**
+  String get routeFormAssignLaterHint;
+
+  /// No description provided for @routeFormStopPurpose.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цель точки'**
+  String get routeFormStopPurpose;
 
   /// No description provided for @routeFormDriver.
   ///
@@ -1189,6 +1261,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'капсул доставлено'**
   String get stopCapsulesDelivered;
+
+  /// No description provided for @stopBulkBottles.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count} × {liters} л'**
+  String stopBulkBottles(int count, int liters);
+
+  /// No description provided for @stopNothingTaken.
+  ///
+  /// In ru, this message translates to:
+  /// **'ничего не забрали'**
+  String get stopNothingTaken;
 
   /// No description provided for @stopPaid.
   ///
@@ -1369,6 +1453,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'поездок сегодня'**
   String get driverTripsToday;
+
+  /// No description provided for @driverReportTile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчёт по водителю'**
+  String get driverReportTile;
+
+  /// No description provided for @driverReportTileHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказы и расходы в Excel за период'**
+  String get driverReportTileHint;
 
   /// No description provided for @driverCreatedAt.
   ///
@@ -1838,6 +1934,42 @@ abstract class AppLocalizations {
   /// **'Аккаунт'**
   String get profileAccountLabel;
 
+  /// No description provided for @profileStatsSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'СТАТИСТИКА'**
+  String get profileStatsSection;
+
+  /// No description provided for @profileStatsCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продано капсул'**
+  String get profileStatsCapsules;
+
+  /// No description provided for @profileStatsBulk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опт 5 л / 10 л'**
+  String get profileStatsBulk;
+
+  /// No description provided for @profileStatsExpenses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расходы за период'**
+  String get profileStatsExpenses;
+
+  /// No description provided for @profileStatsFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось посчитать статистику'**
+  String get profileStatsFailed;
+
+  /// No description provided for @profileStatsBulkValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'{five} / {ten}'**
+  String profileStatsBulkValue(int five, int ten);
+
   /// No description provided for @profileAccountSection.
   ///
   /// In ru, this message translates to:
@@ -2114,6 +2246,84 @@ abstract class AppLocalizations {
   /// **'Отчёты'**
   String get reportsTitle;
 
+  /// No description provided for @reportExportTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выгрузка в Excel'**
+  String get reportExportTitle;
+
+  /// No description provided for @reportExportKind.
+  ///
+  /// In ru, this message translates to:
+  /// **'ТИП ОТЧЁТА'**
+  String get reportExportKind;
+
+  /// No description provided for @reportKindGeneral.
+  ///
+  /// In ru, this message translates to:
+  /// **'Общий'**
+  String get reportKindGeneral;
+
+  /// No description provided for @reportKindGeneralHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Строка на каждую доставку'**
+  String get reportKindGeneralHint;
+
+  /// No description provided for @reportKindCustomers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказчики'**
+  String get reportKindCustomers;
+
+  /// No description provided for @reportKindCustomersHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Итог по каждому заказчику за период'**
+  String get reportKindCustomersHint;
+
+  /// No description provided for @reportKindDrivers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водители'**
+  String get reportKindDrivers;
+
+  /// No description provided for @reportKindDriversHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказы и расходы по водителям'**
+  String get reportKindDriversHint;
+
+  /// No description provided for @reportExportDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'ВОДИТЕЛЬ'**
+  String get reportExportDriver;
+
+  /// No description provided for @reportExportAllDrivers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все водители'**
+  String get reportExportAllDrivers;
+
+  /// No description provided for @reportExportPeriod.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПЕРИОД'**
+  String get reportExportPeriod;
+
+  /// No description provided for @reportExportAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выгрузить'**
+  String get reportExportAction;
+
+  /// No description provided for @reportExportDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчёт выгружен'**
+  String get reportExportDone;
+
   /// No description provided for @reportsExport.
   ///
   /// In ru, this message translates to:
@@ -2234,6 +2444,12 @@ abstract class AppLocalizations {
   /// **'Водитель'**
   String get desktopAddDriver;
 
+  /// No description provided for @desktopAddRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут'**
+  String get desktopAddRoute;
+
   /// No description provided for @desktopAddCustomer.
   ///
   /// In ru, this message translates to:
@@ -2306,6 +2522,78 @@ abstract class AppLocalizations {
   /// **'ОПЛАТА'**
   String get desktopColPayment;
 
+  /// No description provided for @navCash.
+  ///
+  /// In ru, this message translates to:
+  /// **'Касса'**
+  String get navCash;
+
+  /// No description provided for @cashDesktopTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Касса и расходы'**
+  String get cashDesktopTitle;
+
+  /// No description provided for @cashDesktopTotal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расходы за период'**
+  String get cashDesktopTotal;
+
+  /// No description provided for @cashDesktopEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расходов за период нет'**
+  String get cashDesktopEmpty;
+
+  /// No description provided for @cashDesktopEmptyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Попробуйте другой период или категорию'**
+  String get cashDesktopEmptyHint;
+
+  /// No description provided for @cashDesktopFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить расходы'**
+  String get cashDesktopFailed;
+
+  /// No description provided for @desktopColCategory.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАТЕГОРИЯ'**
+  String get desktopColCategory;
+
+  /// No description provided for @desktopColComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'КОММЕНТАРИЙ'**
+  String get desktopColComment;
+
+  /// No description provided for @desktopColDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'ДАТА'**
+  String get desktopColDate;
+
+  /// No description provided for @desktopColNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'№'**
+  String get desktopColNumber;
+
+  /// No description provided for @desktopColPurpose.
+  ///
+  /// In ru, this message translates to:
+  /// **'ЦЕЛЬ'**
+  String get desktopColPurpose;
+
+  /// No description provided for @desktopColDamaged.
+  ///
+  /// In ru, this message translates to:
+  /// **'БРАК'**
+  String get desktopColDamaged;
+
   /// No description provided for @desktopColStatus.
   ///
   /// In ru, this message translates to:
@@ -2323,6 +2611,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'В долг за день'**
   String get desktopKpiDebt;
+
+  /// No description provided for @desktopKpiCashBalance.
+  ///
+  /// In ru, this message translates to:
+  /// **'Остаток кассы'**
+  String get desktopKpiCashBalance;
+
+  /// No description provided for @desktopKpiExpenses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расходы за день'**
+  String get desktopKpiExpenses;
 
   /// No description provided for @desktopKpiCapsules.
   ///
@@ -2593,6 +2893,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Вывоз'**
   String get orderPurposePickup;
+
+  /// No description provided for @orderPurposeDeliveryShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'19 л'**
+  String get orderPurposeDeliveryShort;
+
+  /// No description provided for @orderPurposePickupShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вывоз'**
+  String get orderPurposePickupShort;
+
+  /// No description provided for @orderPurposeBulkShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опт'**
+  String get orderPurposeBulkShort;
 
   /// No description provided for @orderPurposeBulk.
   ///
@@ -2929,6 +3247,18 @@ abstract class AppLocalizations {
   /// **'Все заказы за всё время'**
   String get ordersTileHint;
 
+  /// No description provided for @ordersDateRange.
+  ///
+  /// In ru, this message translates to:
+  /// **'Период…'**
+  String get ordersDateRange;
+
+  /// No description provided for @ordersDateRangeValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'{from} — {to}'**
+  String ordersDateRangeValue(String from, String to);
+
   /// No description provided for @ordersSearch.
   ///
   /// In ru, this message translates to:
@@ -2964,6 +3294,60 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Водитель не назначен'**
   String get orderNoDriver;
+
+  /// No description provided for @orderBulk5l.
+  ///
+  /// In ru, this message translates to:
+  /// **'Бутыли 5 л'**
+  String get orderBulk5l;
+
+  /// No description provided for @orderBulk10l.
+  ///
+  /// In ru, this message translates to:
+  /// **'Бутыли 10 л'**
+  String get orderBulk10l;
+
+  /// No description provided for @orderPickedCoolers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кулеров забрано'**
+  String get orderPickedCoolers;
+
+  /// No description provided for @orderPickedBottles.
+  ///
+  /// In ru, this message translates to:
+  /// **'Капсул забрано'**
+  String get orderPickedBottles;
+
+  /// No description provided for @orderBulkTotal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опт, сумма'**
+  String get orderBulkTotal;
+
+  /// No description provided for @orderSectionPayments.
+  ///
+  /// In ru, this message translates to:
+  /// **'ИСТОРИЯ ПЛАТЕЖЕЙ'**
+  String get orderSectionPayments;
+
+  /// No description provided for @orderPaymentsEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Платежей по заказу нет'**
+  String get orderPaymentsEmpty;
+
+  /// No description provided for @orderPaymentRefund.
+  ///
+  /// In ru, this message translates to:
+  /// **'Возврат'**
+  String get orderPaymentRefund;
+
+  /// No description provided for @orderUnpaid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Осталось получить'**
+  String get orderUnpaid;
 
   /// No description provided for @orderSectionComposition.
   ///

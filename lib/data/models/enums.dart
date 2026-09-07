@@ -1,4 +1,5 @@
 import '../../l10n/l10n.dart';
+import 'json.dart';
 
 /// Статус доставки (остановки маршрута). Значения совпадают с API.
 enum DeliveryStatus {
@@ -62,10 +63,18 @@ enum RouteStatus {
 /// здесь, а не сравнивают статусы каждый у себя — иначе «можно» и «нельзя»
 /// однажды разъедутся, и разойдутся они молча.
 extension RouteEditRules on RouteStatus {
-  /// Дату и водителя меняем только до выхода в рейс: начатый маршрут
-  /// водитель уже везёт, и смена исполнителя или дня под ним означает, что
-  /// он приедет не туда и не тогда.
+  /// Дату меняем только до выхода в рейс: начатый маршрут водитель уже
+  /// везёт, и смена дня под ним означает, что он приедет не тогда.
   bool get canReschedule => this == RouteStatus.created;
+
+  /// Водителя переназначаем, пока маршрут не закрыт и не отменён.
+  ///
+  /// Отдельно от [canReschedule]: сервер снял ограничение «только created» —
+  /// маршрут-заготовку собирают заранее и без исполнителя, а назначают его
+  /// уже сегодняшнему маршруту, который к тому времени `in_progress`.
+  /// У завершённого и отменённого менять некого: доставки состоялись.
+  bool get canAssignDriver =>
+      this == RouteStatus.created || this == RouteStatus.inProgress;
 
   /// Точку можно досыпать и в начатый маршрут — обычный случай, когда заказ
   /// поступил, пока водитель в пути.
@@ -77,7 +86,7 @@ extension RouteEditRules on RouteStatus {
   bool get canRemoveCustomers => this == RouteStatus.created;
 
   /// Есть ли вообще что менять — этим включается кнопка «Изменить».
-  bool get isEditable => canReschedule || canAddCustomers;
+  bool get isEditable => canReschedule || canAddCustomers || canAssignDriver;
 
   /// Отменяем только то, что ещё не доехало. У завершённого маршрута отменять
   /// нечего: доставки выполнены, оплаты приняты — кнопка предлагала бы стереть
@@ -181,6 +190,17 @@ enum OrderPurpose {
         OrderPurpose.bulkWater => l10n.orderPurposeBulk,
       };
 
+  /// Короткая подпись — для плотных мест: колонка таблицы, бейдж в строке.
+  ///
+  /// «Доставка 19 л» в ячейку не помещается и обрезается многоточием, а
+  /// обрезанная цель перестаёт отличать доставку от вывоза — то есть ровно
+  /// то, ради чего колонка и заведена.
+  String shortLabel(AppLocalizations l10n) => switch (this) {
+        OrderPurpose.delivery19l => l10n.orderPurposeDeliveryShort,
+        OrderPurpose.pickup => l10n.orderPurposePickupShort,
+        OrderPurpose.bulkWater => l10n.orderPurposeBulkShort,
+      };
+
   /// Незнакомая цель с сервера не должна ронять список: показываем заказ как
   /// обычную доставку — это верно для всех заказов, заведённых до релиза.
   static OrderPurpose fromJson(String value) => OrderPurpose.values.firstWhere(
@@ -253,4 +273,16 @@ enum PaymentMethod {
   bool get needsPhoto => this == PaymentMethod.card;
 
   String toJson() => wire;
+
+  /// Способ оплаты из ответа сервера; `null` — поля нет или оно незнакомое.
+  ///
+  /// Незнакомый способ не повод терять запись: сумму и статус показать
+  /// всё ещё можно, а подпись способа просто не появится. Живёт у самого
+  /// перечисления, потому что разбирают его четыре модели — заказ, платёж,
+  /// точка маршрута и строка отчёта.
+  static PaymentMethod? tryFromJson(Object? value) {
+    final wire = optionalString(value);
+    if (wire == null) return null;
+    return PaymentMethod.values.where((e) => e.wire == wire).firstOrNull;
+  }
 }

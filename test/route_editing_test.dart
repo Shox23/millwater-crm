@@ -97,7 +97,10 @@ void main() {
     Future<RouteDetail> freshRoute() => repo.createRoute(
           driverId: 'd1',
           date: DateTime(2026, 7, 6),
-          customerIds: ['c1', 'c2'],
+          orders: const [
+            RouteOrderInput(customerId: 'c1'),
+            RouteOrderInput(customerId: 'c2'),
+          ],
         );
 
     test('перенос даты не трогает состав точек', () async {

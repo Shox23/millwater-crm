@@ -170,6 +170,12 @@ class MockDriverRepository implements DriverRepository {
         deliveredCapsules: capsules,
         returnedCapsules: returnedCapsules,
         damagedCapsules: damagedCapsules,
+        // Вывоз и опт сервер запоминает у точки так же, как доставку, —
+        // иначе закрытая точка вывоза выглядела бы пустой.
+        pickedCoolers: pickedCoolers,
+        pickedBottles: pickedBottles,
+        bulk5lCount: bulk5lCount,
+        bulk10lCount: bulk10lCount,
         paymentAmount: amount,
         paymentMethod: method,
         paymentPhoto: photoPath,

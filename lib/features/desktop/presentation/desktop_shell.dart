@@ -29,6 +29,15 @@ import 'desktop_section.dart';
 import 'desktop_sidebar.dart';
 import 'pages/customers_desktop_page.dart';
 import 'pages/drivers_desktop_page.dart';
+import '../../../core/utils/money_formatter.dart';
+import '../../../data/models/order.dart';
+import '../../orders/bloc/orders_bloc.dart';
+import '../../routes/presentation/route_form_page.dart';
+import '../../orders/bloc/orders_source.dart';
+import '../../orders/presentation/order_detail_page.dart';
+import '../bloc/expenses_bloc.dart';
+import 'pages/cash_desktop_page.dart';
+import 'pages/orders_desktop_page.dart';
 import 'pages/reports_desktop_page.dart';
 import 'pages/routes_desktop_page.dart';
 
@@ -60,6 +69,18 @@ class DesktopShell extends StatelessWidget {
               notifications: context.notificationEvents,
               price: context.read<CapsulePrice>(),
             )..add(const DayDeliveriesRequested()),
+          ),
+          BlocProvider(
+            // Блок общий с мобильным списком: источник приходит интерфейсом,
+            // и на десктопе он админский.
+            create: (context) => OrdersBloc(
+              AdminOrdersSource(repository),
+              notifications: context.notificationEvents?.cast(),
+            )..add(const OrdersRequested()),
+          ),
+          BlocProvider(
+            create: (_) => ExpensesBloc(repository)
+              ..add(const ExpensesRequested()),
           ),
           BlocProvider(
             create: (context) => ReportsBloc(
@@ -130,6 +151,9 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
         context.read<CustomersBloc>().add(CustomersSearchChanged(query));
       case DesktopSection.routes:
         context.read<DayDeliveriesBloc>().add(DayDeliveriesSearchChanged(query));
+      case DesktopSection.orders:
+        context.read<OrdersBloc>().add(OrdersSearchChanged(query));
+      case DesktopSection.cash:
       case DesktopSection.reports:
         break;
     }
@@ -143,6 +167,35 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
       context,
       builder: (_) => DeliveryDrawer(row: row),
     );
+  }
+
+  /// Создание маршрута.
+  ///
+  /// Открывает ту же форму, что и телефон, в десктопной шторке: в ней уже
+  /// есть и цель маршрута, и «назначить позже», и своя цель у точки —
+  /// вторая её копия под десктоп разошлась бы с первой на первой же правке.
+  Future<void> _createRoute() async {
+    final saved = await showDesktopDrawer<bool>(
+      context,
+      builder: (_) => const RouteFormPage(),
+    );
+    if (saved != true || !mounted) return;
+    context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
+    showDesktopToast(context, context.l10n.routesCreated);
+  }
+
+  /// Карточка заказа: состав, расчёт, история платежей, перенос и правка
+  /// оплаты. Экран общий с телефоном — заводить вторую его копию под десктоп
+  /// значило бы вести два описания одного заказа.
+  Future<void> _openOrder(Order order) async {
+    final changed = await showDesktopDrawer<bool>(
+      context,
+      builder: (_) => OrderDetailPage(order: order, canManage: true),
+    );
+    if (changed != true || !mounted) return;
+    // Перенос и правка оплаты меняют и заказ, и день маршрутов.
+    context.read<OrdersBloc>().add(const OrdersRequested());
+    context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
   }
 
   /// Карточка водителя: из неё же открываются правка и удаление.
@@ -271,6 +324,10 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
         context.read<CustomersBloc>().add(const CustomersRequested());
       case DesktopSection.routes:
         context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
+      case DesktopSection.orders:
+        context.read<OrdersBloc>().add(const OrdersRequested());
+      case DesktopSection.cash:
+        context.read<ExpensesBloc>().add(const ExpensesRequested());
       case DesktopSection.reports:
         break;
     }
@@ -281,10 +338,14 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
     final l10n = context.l10n;
     return switch (_section) {
       DesktopSection.routes => _routesSubtitle(context),
+      DesktopSection.orders =>
+        l10n.ordersCount(context.watch<OrdersBloc>().state.total),
       DesktopSection.drivers =>
         l10n.driversCount(context.watch<DriversBloc>().state.drivers.length),
       DesktopSection.customers => l10n
           .customersCount(context.watch<CustomersBloc>().state.customers.length),
+      DesktopSection.cash => MoneyFormatter.sum(
+          l10n, context.watch<ExpensesBloc>().state.total),
       DesktopSection.reports => l10n.reportsLabel,
     };
   }
@@ -324,6 +385,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
                   onRefresh: _refresh,
                   hasFreshEvents: _freshEvents,
                   onAdd: switch (_section) {
+                    DesktopSection.routes => _createRoute,
                     DesktopSection.drivers => () => _editDriver(null),
                     DesktopSection.customers => () => _editCustomer(null),
                     _ => null,
@@ -349,6 +411,8 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
                       child: switch (_section) {
                         DesktopSection.routes =>
                           RoutesDesktopPage(onRowTap: _openDelivery),
+                        DesktopSection.orders =>
+                          OrdersDesktopPage(onOpen: _openOrder),
                         DesktopSection.drivers => DriversDesktopPage(
                             onOpen: _openDriver,
                             onEdit: _editDriver,
@@ -359,6 +423,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
                             onEdit: _editCustomer,
                             onDelete: _deleteCustomer,
                           ),
+                        DesktopSection.cash => const CashDesktopPage(),
                         DesktopSection.reports => const ReportsDesktopPage(),
                       },
                     ),

@@ -10,7 +10,7 @@ import '../models/enums.dart';
 import '../models/order.dart';
 import '../models/price_settings.dart';
 import '../models/report_export.dart';
-import '../models/reports_summary.dart';
+import '../models/report_rows.dart';
 import '../models/route_expense.dart';
 import '../models/route_models.dart';
 import 'crm_repository.dart';
@@ -355,9 +355,9 @@ class MockCrmRepository implements CrmRepository {
 
   @override
   Future<RouteDetail> createRoute({
-    required String driverId,
     required DateTime date,
-    required List<String> customerIds,
+    required List<RouteOrderInput> orders,
+    String? driverId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     String? idempotencyKey,
   }) async {
@@ -367,8 +367,8 @@ class MockCrmRepository implements CrmRepository {
 
     final driver = _drivers.where((d) => d.id == driverId).firstOrNull;
     final stops = <RouteStop>[];
-    for (final cid in customerIds) {
-      final c = _customers.where((x) => x.id == cid).firstOrNull;
+    for (final (i, order) in orders.indexed) {
+      final c = _customers.where((x) => x.id == order.customerId).firstOrNull;
       if (c == null) continue;
       stops.add(RouteStop(
         id: store.nextId('s'),
@@ -377,14 +377,20 @@ class MockCrmRepository implements CrmRepository {
         customerAddress: c.address,
         customerPhone: c.phone,
         status: DeliveryStatus.pending,
+        // Своя цель точки перебивает цель маршрута — как на сервере.
+        purpose: order.purpose ?? purpose,
+        sequence: order.sequence ?? i + 1,
+        customerCoolerCount: c.coolerCount,
       ));
     }
     final route = RouteDetail(
       id: store.nextId('r'),
       date: date,
       status: RouteStatus.created,
+      // Водителя может не быть: маршрут-заготовку собирают заранее. Пустая
+      // строка вместо `null` рисовалась бы как безымянный водитель.
       driverId: driverId,
-      driverFullName: driver?.fullName ?? '',
+      driverFullName: driver?.fullName,
       completedCount: 0,
       totalCustomers: stops.length,
       stops: stops,
@@ -626,43 +632,157 @@ class MockCrmRepository implements CrmRepository {
   }
 
   // ---- Отчёты ----
-  @override
-  Future<SummaryReport> getSummaryReport({
-    DateTime? dateFrom,
-    DateTime? dateTo,
-  }) async {
-    await _tick();
-    // Сводка считается по тем же маршрутам, что вернул бы getRoutes за этот
-    // период: экран маршрутов показывает её рядом со списком, и разойтись они
-    // не должны.
-    final routes = _inRange(_routes, dateFrom, dateTo);
-    final stops = routes.expand((r) => r.stops).toList();
-    final done = stops.where((s) => s.isCompleted).length;
-
-    return SummaryReport(
-      routesCount: routes.length,
-      completedDeliveries: done,
-      // Сервер считает «всего» как completed + failed, поэтому незавершённые
-      // остановки сида попадают сюда — иначе итог разошёлся бы с боевым.
-      failedDeliveries: stops.length - done,
-      totalRevenue: stops.fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0)),
-      totalDebt: _customers.fold<int>(0, (sum, c) => sum + c.debt),
-    );
-  }
+  //
+  // Считаются по тем же маршрутам, что вернул бы getRoutes за этот период:
+  // экран маршрутов показывает выручку рядом со списком, и разойтись они
+  // не должны.
 
   @override
-  Future<ReportExport> exportSummaryReport({
+  Future<List<GeneralReportRow>> getGeneralReport({
     required DateTime dateFrom,
     required DateTime dateTo,
     String? driverId,
   }) async {
     await _tick();
-    // Настоящий xlsx здесь не нужен: экран проверяет, что файл дошёл и ушёл
-    // в «Поделиться», а не его содержимое. Первые байты — сигнатура ZIP,
-    // с которой начинается любой xlsx.
+    return [
+      for (final route in _reportRoutes(dateFrom, dateTo, driverId))
+        for (final stop in route.stops)
+          if (stop.isCompleted)
+            GeneralReportRow(
+              date: route.date,
+              driverName: route.driverFullName ?? '',
+              customer: stop.customerName,
+              deliveredCapsules: stop.deliveredCapsules ?? 0,
+              returnedCapsules: stop.returnedCapsules ?? 0,
+              damagedCapsules: stop.damagedCapsules ?? 0,
+              coolerCount: stop.customerCoolerCount,
+              orderAmount: stop.paymentAmount ?? 0,
+            ),
+    ];
+  }
+
+  @override
+  Future<List<CustomerReportRow>> getCustomersReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) async {
+    await _tick();
+    final routes = _reportRoutes(dateFrom, dateTo, driverId);
+    // Сервер отдаёт строку на заказчика, а не на доставку, — сводим сами.
+    final byCustomer = <String, List<RouteStop>>{};
+    for (final route in routes) {
+      for (final stop in route.stops) {
+        if (!stop.isCompleted) continue;
+        byCustomer.putIfAbsent(stop.customerId, () => []).add(stop);
+      }
+    }
+
+    return [
+      for (final entry in byCustomer.entries)
+        if (_customers.where((c) => c.id == entry.key).firstOrNull
+            case final Customer c)
+          CustomerReportRow(
+            customerId: c.id,
+            name: c.name,
+            address: c.address,
+            phone: c.phone,
+            capsulesPurchased: entry.value
+                .fold<int>(0, (sum, s) => sum + (s.deliveredCapsules ?? 0)),
+            bulkLiters: entry.value.fold<int>(
+                0,
+                (sum, s) =>
+                    sum + (s.bulk5lCount ?? 0) * 5 + (s.bulk10lCount ?? 0) * 10),
+            damagedCapsules: entry.value
+                .fold<int>(0, (sum, s) => sum + (s.damagedCapsules ?? 0)),
+            // Остаток, кулеры и баланс — на момент выгрузки, как на сервере.
+            capsuleBalance: c.capsuleBalance,
+            coolerCount: c.coolerCount,
+            debt: c.debt,
+            prepayment: c.prepayment,
+            total: entry.value
+                .fold<int>(0, (sum, s) => sum + (s.paymentAmount ?? 0)),
+          ),
+    ];
+  }
+
+  @override
+  Future<List<DriverReportRow>> getDriversReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) async {
+    await _tick();
+    return [
+      for (final route in _reportRoutes(dateFrom, dateTo, driverId))
+        for (final stop in route.stops)
+          if (stop.isCompleted)
+            DriverReportRow(
+              routeId: route.id,
+              date: route.date,
+              driverId: route.driverId ?? '',
+              driverName: route.driverFullName ?? '',
+              customer: stop.customerName,
+              purpose: stop.purpose,
+              deliveredCapsules: stop.deliveredCapsules ?? 0,
+              returnedCapsules: stop.returnedCapsules ?? 0,
+              capsuleBalanceAfter: stop.capsuleBalanceAfter,
+              paymentMethod: stop.paymentMethod,
+              orderAmount: stop.paymentAmount ?? 0,
+              bulkLiters:
+                  (stop.bulk5lCount ?? 0) * 5 + (stop.bulk10lCount ?? 0) * 10,
+              bulkAmount: (stop.bulk5lCount ?? 0) * (stop.bulk5lPrice ?? 0) +
+                  (stop.bulk10lCount ?? 0) * (stop.bulk10lPrice ?? 0),
+              // Расход маршрута повторяется в каждой его строке — как у сервера.
+              routeExpenses: store.expenses
+                  .where((e) => e.routeId == route.id)
+                  .fold<int>(0, (sum, e) => sum + e.amount),
+            ),
+    ];
+  }
+
+  /// Маршруты периода, при необходимости суженные до одного водителя.
+  List<RouteDetail> _reportRoutes(
+    DateTime dateFrom,
+    DateTime dateTo,
+    String? driverId,
+  ) =>
+      _inRange(_routes, dateFrom, dateTo)
+          .where((r) => driverId == null || r.driverId == driverId)
+          .toList();
+
+  @override
+  Future<ReportExport> exportGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _export('general');
+
+  @override
+  Future<ReportExport> exportCustomersReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _export('customers');
+
+  @override
+  Future<ReportExport> exportDriversReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) =>
+      _export('drivers');
+
+  /// Настоящий xlsx здесь не нужен: экран проверяет, что файл дошёл и ушёл
+  /// в «Поделиться», а не его содержимое. Первые байты — сигнатура ZIP,
+  /// с которой начинается любой xlsx.
+  Future<ReportExport> _export(String kind) async {
+    await _tick();
     return ReportExport(
       bytes: Uint8List.fromList([0x50, 0x4B, 0x03, 0x04, ...List.filled(60, 0)]),
-      filename: 'millwater-report.xlsx',
+      filename: 'millwater-$kind.xlsx',
     );
   }
 }

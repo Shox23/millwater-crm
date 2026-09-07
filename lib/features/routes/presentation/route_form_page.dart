@@ -17,6 +17,7 @@ import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/initials_avatar.dart';
 import '../../../core/widgets/search_field.dart';
+import '../../../core/widgets/segmented_toggle.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/driver.dart';
 import '../../../data/models/enums.dart';
@@ -50,6 +51,13 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   late DateTime _date;
   final Set<String> _customerIds = {};
 
+  /// Цель маршрута — она же цель по умолчанию для его точек.
+  OrderPurpose _purpose = OrderPurpose.delivery19l;
+
+  /// Своя цель точки; в карте лежат только те, кто от [_purpose] отличается.
+  /// Маршрут бывает смешанным: по дороге и капсулы завезли, и кулер забрали.
+  final Map<String, OrderPurpose> _stopPurposes = {};
+
   /// Точки, с которыми маршрут был открыт, — база для вычисления правок.
   late final Set<String> _initialCustomerIds =
       widget.route?.stops.map((s) => s.customerId).toSet() ?? const {};
@@ -58,6 +66,10 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
 
   /// В создании ограничений нет, в правке их задаёт статус.
   bool get _canReschedule => !widget.isEdit || _status.canReschedule;
+
+  /// Водителя сервер разрешает менять и в начатом маршруте — правило живёт
+  /// в `RouteEditRules`, здесь только поправка на создание.
+  bool get _canAssignDriver => !widget.isEdit || _status.canAssignDriver;
   bool get _canRemoveCustomers =>
       !widget.isEdit || _status.canRemoveCustomers;
 
@@ -133,8 +145,9 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
         _removedCustomers.isNotEmpty;
   }
 
-  bool get _valid =>
-      _driverId != null && _customerIds.isNotEmpty && _hasChanges;
+  /// Водителя в условии нет: маршрут без исполнителя — законное состояние,
+  /// сервер оставляет такой маршрут в `created`, пока водителя не назначат.
+  bool get _valid => _customerIds.isNotEmpty && _hasChanges;
 
   /// Можно ли тронуть этого заказчика: снять галочку с уже стоящей точки
   /// разрешено не всегда, поставить новую — почти всегда.
@@ -176,9 +189,15 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   }
 
   Future<void> _create(CrmRepository repo) => repo.createRoute(
-        driverId: _driverId!,
+        // Водителя можно не назначать: маршрут-заготовку собирают заранее,
+        // а исполнителя ставят, когда станет ясно, кто свободен.
+        driverId: _driverId,
         date: _date,
-        customerIds: _customerIds.toList(),
+        purpose: _purpose,
+        orders: [
+          for (final id in _customerIds)
+            RouteOrderInput(customerId: id, purpose: _stopPurposes[id]),
+        ],
         idempotencyKey: _idempotencyKey,
       );
 
@@ -197,13 +216,15 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
     final route = widget.route!;
     final id = route.id;
 
-    if (_canReschedule) {
-      if (!DateUtils.isSameDay(_date, route.date)) {
-        await repo.updateRouteDate(routeId: id, date: _date);
-      }
-      if (_driverId != route.driverId) {
-        await repo.assignDriver(routeId: id, driverId: _driverId!);
-      }
+    if (_canReschedule && !DateUtils.isSameDay(_date, route.date)) {
+      await repo.updateRouteDate(routeId: id, date: _date);
+    }
+
+    // Снять водителя сервер не умеет — есть только назначение. Поэтому
+    // переход «был водитель → нет водителя» не отправляем вовсе.
+    final driverId = _driverId;
+    if (_canAssignDriver && driverId != null && driverId != route.driverId) {
+      await repo.assignDriver(routeId: id, driverId: driverId);
     }
 
     if (_canRemoveCustomers) {
@@ -284,6 +305,41 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                   ),
                 ),
                 _Section(
+                  label: context.l10n.routeFormPurpose,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: AppSpacing.sm,
+                    children: [
+                      SegmentedToggle<OrderPurpose>(
+                        options: [
+                          for (final p in OrderPurpose.values)
+                            SegmentOption(
+                                value: p, label: p.label(context.l10n)),
+                        ],
+                        value: _purpose,
+                        columns: 3,
+                        onChanged: submitting
+                            ? (_) {}
+                            : (p) => setState(() {
+                                  _purpose = p;
+                                  // Своя цель точки имеет смысл только как
+                                  // отличие от цели маршрута: сменили
+                                  // маршрут — отличия пересчитываются от
+                                  // новой.
+                                  _stopPurposes.removeWhere((_, v) => v == p);
+                                }),
+                      ),
+                      // Под переключателем, а не в шапке секции: в шапке
+                      // подпись стоит в одной строке с заголовком и на
+                      // узком экране выдавливала её за край.
+                      Text(
+                        context.l10n.routeFormPurposeHint,
+                        style: AppTypography.secondary.copyWith(color: t.text3),
+                      ),
+                    ],
+                  ),
+                ),
+                _Section(
                   label: context.l10n.routeFormDriver,
                   child: _drivers.isEmpty
                       ? Text(context.l10n.routeFormNoDrivers,
@@ -292,17 +348,30 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                       : Column(
                           spacing: AppSpacing.sm,
                           children: [
+                            // Отдельной строкой, а не отсутствием выбора:
+                            // пустой список без единой отметки читается как
+                            // «форма не догрузилась», а не как решение.
+                            if (_canAssignDriver)
+                              _SelectableRow(
+                                selected: _driverId == null,
+                                leading: Icon(Icons.person_off_outlined,
+                                    color: t.text2),
+                                title: context.l10n.routeFormAssignLater,
+                                subtitle:
+                                    context.l10n.routeFormAssignLaterHint,
+                                onTap: () => setState(() => _driverId = null),
+                              ),
                             for (final d in _drivers)
                               // В начатом маршруте показываем только его
                               // водителя: остальные строки были бы мёртвыми.
-                              if (_canReschedule || _driverId == d.id)
+                              if (_canAssignDriver || _driverId == d.id)
                                 _SelectableRow(
                                   selected: _driverId == d.id,
                                   leading: InitialsAvatar(
                                       name: d.fullName, size: 40),
                                   title: d.fullName,
                                   subtitle: d.phone,
-                                  onTap: _canReschedule
+                                  onTap: _canAssignDriver
                                       ? () => setState(() => _driverId = d.id)
                                       : null,
                                 ),
@@ -332,7 +401,7 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                     style: AppTypography.secondary
                                         .copyWith(color: t.text2)),
                               ),
-                            for (final c in _visibleCustomers)
+                            for (final c in _visibleCustomers) ...[
                               _SelectableRow(
                                 selected: _customerIds.contains(c.id),
                                 multi: true,
@@ -342,10 +411,58 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                     ? () => setState(() {
                                           if (!_customerIds.remove(c.id)) {
                                             _customerIds.add(c.id);
+                                          } else {
+                                            // Точку убрали — её отличие от
+                                            // цели маршрута больше ничего
+                                            // не значит.
+                                            _stopPurposes.remove(c.id);
                                           }
                                         })
                                     : null,
                               ),
+                              // Цель показываем только у выбранных: у
+                              // остальных выбирать нечему, и список из сотни
+                              // заказчиков превратился бы в сотню селекторов.
+                              if (_customerIds.contains(c.id))
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: AppSpacing.xl,
+                                      bottom: AppSpacing.sm),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    spacing: AppSpacing.xs,
+                                    children: [
+                                      Text(
+                                        context.l10n.routeFormStopPurpose,
+                                        style: AppTypography.fieldLabel
+                                            .copyWith(color: t.text3),
+                                      ),
+                                      SegmentedToggle<OrderPurpose>(
+                                        options: [
+                                          for (final p in OrderPurpose.values)
+                                            SegmentOption(
+                                                value: p,
+                                                label: p.label(context.l10n)),
+                                        ],
+                                        value: _stopPurposes[c.id] ?? _purpose,
+                                        columns: 3,
+                                        onChanged: (p) => setState(() {
+                                          // В карте держим только отличия:
+                                          // совпало с целью маршрута — запись
+                                          // не нужна, и точка поедет за целью
+                                          // маршрута, если ту потом сменят.
+                                          if (p == _purpose) {
+                                            _stopPurposes.remove(c.id);
+                                          } else {
+                                            _stopPurposes[c.id] = p;
+                                          }
+                                        }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ],
                         ),
                 ),

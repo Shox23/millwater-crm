@@ -73,15 +73,14 @@ class _Brand extends StatelessWidget {
     return Row(
       spacing: AppSpacing.md,
       children: [
-        Container(
+        // Только горы, без слова «mill»: в плитке 40×40 оно нечитаемо, а
+        // название и так стоит рядом. Подложки нет — знак синий и читается
+        // и на светлой панели, и на тёмной, а цветной квадрат под ним был бы
+        // лишней рамкой вокруг логотипа.
+        SizedBox(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(
-            color: t.primary,
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: const Icon(Icons.water_drop_rounded,
-              color: Colors.white, size: 21),
+          child: Image.asset('assets/images/logo_peaks.png'),
         ),
         Expanded(
           child: Column(

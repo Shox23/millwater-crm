@@ -1,18 +1,7 @@
 part of 'reports_bloc.dart';
 
-/// Период отчёта (селектор в шапке).
-enum ReportPeriod {
-  today,
-  week,
-  month;
-
-  /// Подпись периода на языке интерфейса.
-  String label(AppLocalizations l10n) => switch (this) {
-        ReportPeriod.today => l10n.periodToday,
-        ReportPeriod.week => l10n.periodWeek,
-        ReportPeriod.month => l10n.periodMonth,
-      };
-}
+/// Период отчёта (селектор в шапке) — общий с профилем водителя.
+typedef ReportPeriod = StatsPeriod;
 
 sealed class ReportsEvent extends Equatable {
   const ReportsEvent();

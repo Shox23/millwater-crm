@@ -77,6 +77,13 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Логотип. Лежит с прозрачным фоном и без подложки: экран входа тёмный,
+  # а боковая панель десктопа рисует свою — иначе знак пришлось бы держать
+  # в двух вариантах под светлую и тёмную тему.
+  assets:
+    - assets/images/logo.png
+    - assets/images/logo_peaks.png
+
   # Шрифты лежат в сборке, а не качаются в рантайме.
   #
   # Раньше их тянул google_fonts с fonts.gstatic.com при первом запуске:

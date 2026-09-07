@@ -93,6 +93,7 @@ class DesktopHeader extends StatelessWidget {
           if (onAdd != null)
             DesktopButton(
               label: switch (section) {
+                DesktopSection.routes => context.l10n.desktopAddRoute,
                 DesktopSection.drivers => context.l10n.desktopAddDriver,
                 _ => context.l10n.desktopAddCustomer,
               },

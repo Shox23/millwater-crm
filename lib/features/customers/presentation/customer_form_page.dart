@@ -22,13 +22,9 @@ import '../../../core/widgets/quantity_stepper.dart';
 import '../../../core/widgets/segmented_toggle.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/network/api_envelope.dart';
+import '../../../core/forms/balance_kind.dart';
 import '../../../data/repositories/crm_repository.dart';
 
-/// Чем задан стартовый баланс заказчика.
-///
-/// Отдельное перечисление, а не два поля суммы: сервер держит инвариант
-/// «либо долг, либо предоплата», и в форме он должен быть виден глазом.
-enum _BalanceKind { none, debt, prepayment }
 
 /// Форма создания/редактирования заказчика.
 class CustomerFormPage extends StatefulWidget {
@@ -78,7 +74,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// Одно поле суммы, а не два: сервер запрещает ненулевой долг вместе с
   /// ненулевой предоплатой (422 `BOTH_BALANCES_SET`), и форма не должна
   /// давать собрать состояние, которое он отвергнет.
-  late _BalanceKind _balanceKind;
+  late BalanceKind _balanceKind;
   late final TextEditingController _balance;
 
   /// Цена капсулы для этого заказчика; выключено — считаем по общему прайсу.
@@ -124,14 +120,14 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _isActive = customer?.isActive ?? true;
 
     _balanceKind = switch (customer) {
-      Customer(debt: > 0) => _BalanceKind.debt,
-      Customer(prepayment: > 0) => _BalanceKind.prepayment,
-      _ => _BalanceKind.none,
+      Customer(debt: > 0) => BalanceKind.debt,
+      Customer(prepayment: > 0) => BalanceKind.prepayment,
+      _ => BalanceKind.none,
     };
     _balance = TextEditingController(text: switch (_balanceKind) {
-      _BalanceKind.debt => '${customer!.debt}',
-      _BalanceKind.prepayment => '${customer!.prepayment}',
-      _BalanceKind.none => '',
+      BalanceKind.debt => '${customer!.debt}',
+      BalanceKind.prepayment => '${customer!.prepayment}',
+      BalanceKind.none => '',
     });
 
     _customPrice = customer?.hasIndividualPrice ?? false;
@@ -175,9 +171,9 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// Введённая сумма баланса; 0 — поле пустое или не число.
   int get _balanceAmount => int.tryParse(_balance.text.trim()) ?? 0;
 
-  int get _debt => _balanceKind == _BalanceKind.debt ? _balanceAmount : 0;
+  int get _debt => _balanceKind == BalanceKind.debt ? _balanceAmount : 0;
   int get _prepayment =>
-      _balanceKind == _BalanceKind.prepayment ? _balanceAmount : 0;
+      _balanceKind == BalanceKind.prepayment ? _balanceAmount : 0;
 
   /// Индивидуальная цена; `null` — считать по общему прайсу.
   int? get _customWaterPrice {
@@ -237,7 +233,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// Сумма баланса обязательна, когда выбран долг или предоплата: «Долг» с
   /// пустым полем — это не ноль, а недозаполненная форма.
   String? _balanceRule(String? value) {
-    if (_balanceKind == _BalanceKind.none) return null;
+    if (_balanceKind == BalanceKind.none) return null;
     final amount = int.tryParse((value ?? '').trim()) ?? 0;
     return amount > 0 ? null : context.l10n.customerFormBalanceEmpty;
   }
@@ -423,7 +419,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                   // «Нет» стирает сумму: иначе она осталась бы в поле и
                   // вернулась бы при следующем переключении, а на сервер
                   // ушёл бы ноль — расхождение видимого и отправленного.
-                  if (kind == _BalanceKind.none) _balance.clear();
+                  if (kind == BalanceKind.none) _balance.clear();
                 }),
               ),
               _PriceBlock(
@@ -532,12 +528,12 @@ class _BalanceBlock extends StatelessWidget {
     required this.onKindChanged,
   });
 
-  final _BalanceKind kind;
+  final BalanceKind kind;
   final TextEditingController controller;
   final FocusNode focusNode;
   final FormFieldValidator<String> validator;
   final bool enabled;
-  final ValueChanged<_BalanceKind> onKindChanged;
+  final ValueChanged<BalanceKind> onKindChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -551,29 +547,33 @@ class _BalanceBlock extends StatelessWidget {
             l10n.customerFormBalance,
             style: AppTypography.bodyStrong.copyWith(color: context.tokens.text),
           ),
-          SegmentedToggle<_BalanceKind>(
+          SegmentedToggle<BalanceKind>(
             value: kind,
             onChanged: enabled ? onKindChanged : (_) {},
             columns: 3,
             options: [
               SegmentOption(
-                value: _BalanceKind.none,
+                value: BalanceKind.none,
                 label: l10n.customerFormBalanceNone,
               ),
               SegmentOption(
-                value: _BalanceKind.debt,
+                value: BalanceKind.debt,
                 label: l10n.customerFormBalanceDebt,
               ),
               SegmentOption(
-                value: _BalanceKind.prepayment,
+                value: BalanceKind.prepayment,
                 label: l10n.customerFormBalancePrepayment,
               ),
             ],
           ),
-          if (kind != _BalanceKind.none)
+          if (kind != BalanceKind.none)
             LabeledTextField(
               label: l10n.customerFormBalanceAmount,
               helper: l10n.customerFormBalanceHint,
+              // Подсказка объясняет запрет сервера (422 BOTH_BALANCES_SET) —
+              // обрезанная одной строкой, она обрывалась на «невозмо…» и
+              // переставала объяснять, почему полей не два, а одно.
+              helperMaxLines: 2,
               controller: controller,
               focusNode: focusNode,
               validator: validator,

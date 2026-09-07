@@ -9,12 +9,12 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/export/file_sharer.dart';
 import '../../../core/utils/money_formatter.dart';
-import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../data/models/reports_summary.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../bloc/reports_bloc.dart';
+import 'report_export_page.dart';
 import 'widgets/debtors_card.dart';
 import 'widgets/stat_card.dart';
 
@@ -112,9 +112,6 @@ class _ReportsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final deliveryPct = summary.deliveriesTotal == 0
-        ? 0
-        : (summary.deliveriesDone / summary.deliveriesTotal * 100).round();
 
     return RefreshIndicator(
       onRefresh: () {
@@ -146,9 +143,11 @@ class _ReportsBody extends StatelessWidget {
                 child: StatCard(
                   icon: Icons.local_shipping_outlined,
                   iconColor: t.success,
-                  aux: '$deliveryPct%',
-                  value:
-                      '${summary.deliveriesDone} / ${summary.deliveriesTotal}',
+                  // Доли «сделано из запланированных» больше нет: общий отчёт
+                  // отдаёт только состоявшиеся доставки. Рядом с их числом
+                  // полезнее показать капсулы, чем проценты от самого себя.
+                  aux: context.l10n.capsulesCount(summary.capsulesDelivered),
+                  value: '${summary.deliveries}',
                   label: context.l10n.reportsDeliveries,
                 ),
               ),
@@ -189,64 +188,29 @@ class _ReportsBody extends StatelessWidget {
   }
 }
 
-/// Кнопка выгрузки отчёта в Excel.
+/// Кнопка выгрузки: открывает выбор отчёта.
 ///
-/// Период берётся тот же, что показан на экране: границы считает
-/// [ReportsBloc.rangeFor], одна на оба пути.
-class _ExportButton extends StatefulWidget {
+/// Раньше она отправляла единственную выгрузку сразу. Отчётов стало три, и
+/// период с водителем выбираются на отдельном экране — [ReportExportPage].
+class _ExportButton extends StatelessWidget {
   const _ExportButton({required this.period, required this.fileSharer});
 
   final ReportPeriod period;
   final FileSharer fileSharer;
 
   @override
-  State<_ExportButton> createState() => _ExportButtonState();
-}
-
-class _ExportButtonState extends State<_ExportButton> {
-  bool _busy = false;
-
-  Future<void> _export() async {
-    setState(() => _busy = true);
-    final repo = context.read<CrmRepository>();
-    final l10n = context.l10n;
-    final (from, to) = ReportsBloc.rangeFor(widget.period);
-
-    try {
-      final export = await repo.exportSummaryReport(dateFrom: from, dateTo: to);
-      await widget.fileSharer.share(
-        bytes: export.bytes,
-        filename: export.filename,
-        subject: l10n.reportsExportSubject,
-      );
-    } catch (_) {
-      // Молча гасить нельзя: админ нажал кнопку и ждёт файл.
-      if (mounted) showAppSnackBar(context, l10n.reportsExportFailed);
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final t = context.tokens;
 
-    if (_busy) {
-      return const SizedBox(
-        width: 36,
-        height: 36,
-        child: Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
+    return IconButton(
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ReportExportPage(
+            period: period,
+            fileSharer: fileSharer,
           ),
         ),
-      );
-    }
-
-    return IconButton(
-      onPressed: _export,
+      ),
       icon: Icon(Icons.file_download_outlined, color: t.text2),
       tooltip: context.l10n.reportsExport,
       visualDensity: VisualDensity.compact,

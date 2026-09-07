@@ -5,7 +5,7 @@ import '../models/order.dart';
 import '../models/price_settings.dart';
 import '../models/result_page.dart';
 import '../models/report_export.dart';
-import '../models/reports_summary.dart';
+import '../models/report_rows.dart';
 import '../models/route_expense.dart';
 import '../models/route_models.dart';
 
@@ -129,15 +129,19 @@ abstract class CrmRepository {
 
   /// Создаёт маршрут (`POST /admin/routes`).
   ///
-  /// [purpose] — цель всех заказов маршрута. Отдельной цели у каждой точки
-  /// форма пока не спрашивает, но тело запроса её уже несёт: сервер ждёт
-  /// `customer_orders: [{customer_id, order_purpose}]`, а прежний плоский
-  /// `customer_ids` он молча игнорирует — маршрут при этом создавался пустым.
+  /// [purpose] — цель маршрута и цель по умолчанию для его точек; своя цель
+  /// точки живёт в [RouteOrderInput.purpose].
+  /// [driverId] необязателен: маршрут-заготовку собирают заранее, а водителя
+  /// назначают потом. Без водителя сервер оставляет маршрут в `created` —
+  /// «в работе» маршрут, который некому везти, быть не может.
+  /// Тело запроса — `customer_orders: [{customer_id, order_purpose}]`; прежний
+  /// плоский `customer_ids` сервер молча игнорирует, и маршрут при этом
+  /// создавался пустым.
   /// [idempotencyKey] — см. [addDriver].
   Future<RouteDetail> createRoute({
-    required String driverId,
     required DateTime date,
-    required List<String> customerIds,
+    required List<RouteOrderInput> orders,
+    String? driverId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     String? idempotencyKey,
   });
@@ -263,20 +267,59 @@ abstract class CrmRepository {
   Future<void> deleteExpense(String expenseId);
 
   // ---- Отчёты ----
-  /// Сводка за период (`GET /admin/reports/summary`) — как её отдал сервер.
+  //
+  // Сервер заменил `GET /admin/reports/summary` и `/export` тремя разрезами:
+  // общий, по заказчикам и по водителям. У всех троих один набор параметров
+  // и по паре путей — данные и выгрузка в xlsx. Готовой сводки больше нет:
+  // числа для экрана считает [ReportsSummary.from] из строк общего отчёта и
+  // отчёта по заказчикам.
+
+  /// Общий отчёт (`GET /admin/reports/general`) — строка на доставку.
   ///
-  /// Должников и остаток капсул сводка не содержит; числа для экрана
-  /// собирает [ReportsSummary.from] из этого ответа и списка заказчиков.
-  Future<SummaryReport> getSummaryReport({
-    DateTime? dateFrom,
-    DateTime? dateTo,
+  /// Границы обязательны: сервер без них отвечает 422. [driverId] сужает
+  /// отчёт до одного водителя.
+  Future<List<GeneralReportRow>> getGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
   });
 
-  /// Выгружает отчёт за период в Excel (`GET /admin/reports/export`).
+  /// Отчёт по заказчикам (`GET /admin/reports/customers`) — строка на заказчика.
   ///
-  /// Границы обязательны — сервер без них отвечает 422. [driverId] сужает
-  /// выгрузку до одного водителя.
-  Future<ReportExport> exportSummaryReport({
+  /// Им же закрывается давняя проблема экрана отчётов: должников и остаток
+  /// капсул больше не нужно выводить из полного справочника заказчиков —
+  /// долг, предоплата и остаток приходят готовыми.
+  Future<List<CustomerReportRow>> getCustomersReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  });
+
+  /// Отчёт по водителям (`GET /admin/reports/drivers`) — строка на заказ.
+  ///
+  /// Сводку по водителю собирает экран: сервер отдаёт разрез по заказам, а не
+  /// по людям. Внимание к `routeExpenses` — оно про маршрут целиком, см.
+  /// [DriverReportRow.routeExpenses].
+  Future<List<DriverReportRow>> getDriversReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  });
+
+  /// Выгрузки тех же трёх отчётов в xlsx (`.../export`).
+  Future<ReportExport> exportGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  });
+
+  Future<ReportExport> exportCustomersReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  });
+
+  Future<ReportExport> exportDriversReport({
     required DateTime dateFrom,
     required DateTime dateTo,
     String? driverId,

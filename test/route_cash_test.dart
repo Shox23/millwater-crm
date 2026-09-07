@@ -132,4 +132,65 @@ void main() {
       expect(expense.comment, isNull);
     });
   });
+
+  group('Выручка маршрута', () {
+    RouteDetail route({int? cash, int? cashless, List<RouteStop> stops = const []}) =>
+        RouteDetail(
+          id: 'r-1',
+          date: DateTime(2026, 9, 4),
+          status: RouteStatus.completed,
+          completedCount: stops.length,
+          totalCustomers: stops.length,
+          stops: stops,
+          cashCollected: cash,
+          cashlessCollected: cashless,
+        );
+
+    test('складывает наличные с безналом', () {
+      // Шапка маршрута подписана «Собрано»: одними наличными она занижала
+      // день на весь безнал — карта и перевод тоже выручка, просто ушли
+      // на счёт компании.
+      final r = route(cash: 15000, cashless: 96000);
+
+      expect(r.revenue, 111000);
+      // Сдать водителю при этом надо только наличные.
+      expect(r.collected, 15000);
+    });
+
+    test('без кассы с сервера считает по точкам', () {
+      // Старый стенд блока кассы не отдаёт: способа оплаты там не разобрать,
+      // а принятые деньги и есть вся выручка.
+      final r = route(stops: [
+        RouteStop(
+          id: 's-1',
+          customerId: 'c-1',
+          customerName: 'Кафе',
+          customerAddress: 'Адрес',
+          customerPhone: '+998901234567',
+          status: DeliveryStatus.delivered,
+          paymentAmount: 60000,
+        ),
+      ]);
+
+      expect(r.revenue, 60000);
+    });
+
+    test('нулевая касса — это ноль, а не подсчёт по точкам', () {
+      // Сервер сказал «наличных ноль, безнала ноль» — верим ему, а не
+      // складываем точки заново.
+      final r = route(cash: 0, cashless: 0, stops: [
+        RouteStop(
+          id: 's-1',
+          customerId: 'c-1',
+          customerName: 'Кафе',
+          customerAddress: 'Адрес',
+          customerPhone: '+998901234567',
+          status: DeliveryStatus.delivered,
+          paymentAmount: 60000,
+        ),
+      ]);
+
+      expect(r.revenue, 0);
+    });
+  });
 }

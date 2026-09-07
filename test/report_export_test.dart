@@ -4,10 +4,12 @@ import 'dart:typed_data';
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/core/export/file_sharer.dart';
 import 'package:crm_millwater/data/models/customer.dart';
+import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/data/models/report_export.dart';
 import 'package:crm_millwater/data/repositories/api_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
+import 'package:crm_millwater/features/drivers/presentation/driver_detail_page.dart';
 import 'package:crm_millwater/features/reports/presentation/reports_page.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:dio/dio.dart';
@@ -51,15 +53,31 @@ class _ExportAdapter implements HttpClientAdapter {
 /// Экспорт всегда падает — проверяем, что экран об этом сообщает.
 class _FailingExportRepository extends MockCrmRepository {
   @override
-  Future<ReportExport> exportSummaryReport({
+  Future<ReportExport> exportGeneralReport({
     required DateTime dateFrom,
     required DateTime dateTo,
     String? driverId,
   }) async =>
       throw DioException(
-        requestOptions: RequestOptions(path: '/admin/reports/export'),
+        requestOptions: RequestOptions(path: '/admin/reports/general/export'),
         type: DioExceptionType.connectionError,
       );
+}
+
+/// Запоминает `driver_id`, с которым запросили отчёт по водителям.
+class _DriverExportRepository extends MockCrmRepository {
+  String? driverId;
+
+  @override
+  Future<ReportExport> exportDriversReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) {
+    this.driverId = driverId;
+    return super.exportDriversReport(
+        dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+  }
 }
 
 void main() {
@@ -70,7 +88,7 @@ void main() {
     test('границы периода уходят в query как даты', () async {
       final adapter = _ExportAdapter();
 
-      await repoWith(adapter).exportSummaryReport(
+      await repoWith(adapter).exportGeneralReport(
         dateFrom: DateTime(2026, 8, 1),
         dateTo: DateTime(2026, 8, 17),
       );
@@ -84,7 +102,7 @@ void main() {
     test('фильтр по водителю передаётся', () async {
       final adapter = _ExportAdapter();
 
-      await repoWith(adapter).exportSummaryReport(
+      await repoWith(adapter).exportGeneralReport(
         dateFrom: DateTime(2026, 8, 1),
         dateTo: DateTime(2026, 8, 17),
         driverId: 'd1',
@@ -98,7 +116,7 @@ void main() {
         disposition: 'attachment; filename="report-august.xlsx"',
       );
 
-      final export = await repoWith(adapter).exportSummaryReport(
+      final export = await repoWith(adapter).exportGeneralReport(
         dateFrom: DateTime(2026, 8, 1),
         dateTo: DateTime(2026, 8, 17),
       );
@@ -113,7 +131,7 @@ void main() {
         disposition: "attachment; filename*=UTF-8''$name",
       );
 
-      final export = await repoWith(adapter).exportSummaryReport(
+      final export = await repoWith(adapter).exportGeneralReport(
         dateFrom: DateTime(2026, 8, 1),
         dateTo: DateTime(2026, 8, 17),
       );
@@ -122,13 +140,13 @@ void main() {
     });
 
     test('без заголовка имя собирается из периода', () async {
-      final export = await repoWith(_ExportAdapter()).exportSummaryReport(
+      final export = await repoWith(_ExportAdapter()).exportGeneralReport(
         dateFrom: DateTime(2026, 8, 1),
         dateTo: DateTime(2026, 8, 17),
       );
 
       // Расширение обязательно: без него Excel файл не откроет.
-      expect(export.filename, 'millwater-2026-08-01_2026-08-17.xlsx');
+      expect(export.filename, 'millwater-general-2026-08-01_2026-08-17.xlsx');
     });
   });
 
@@ -160,19 +178,32 @@ void main() {
       }
     }
 
-    testWidgets('файл уходит в «Поделиться» с именем от сервера',
-        (tester) async {
-      final sharer = RecordingFileSharer();
-      await pumpReports(tester, MockCrmRepository(), sharer);
-
+    /// Кнопка теперь не выгружает сразу, а открывает выбор отчёта: их стало
+    /// три. Отсюда лишний шаг — нажать «Выгрузить» на открывшемся экране.
+    Future<void> openExportAndSubmit(WidgetTester tester) async {
       await tester.tap(find.byIcon(Icons.file_download_outlined));
       await tester.pump();
       for (var i = 0; i < 4; i++) {
         await tester.pump(const Duration(milliseconds: 200));
       }
 
+      await tester.tap(find.widgetWithText(AppButton, 'Выгрузить'));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    testWidgets('файл уходит в «Поделиться» с именем от сервера',
+        (tester) async {
+      final sharer = RecordingFileSharer();
+      await pumpReports(tester, MockCrmRepository(), sharer);
+
+      await openExportAndSubmit(tester);
+
       expect(sharer.shared, hasLength(1));
-      expect(sharer.shared.single.filename, 'millwater-report.xlsx');
+      // По умолчанию выбран общий отчёт — имя файла называет разрез.
+      expect(sharer.shared.single.filename, 'millwater-general.xlsx');
       expect(sharer.shared.single.size, greaterThan(0));
     });
 
@@ -181,16 +212,68 @@ void main() {
       final sharer = RecordingFileSharer();
       await pumpReports(tester, _FailingExportRepository(), sharer);
 
-      await tester.tap(find.byIcon(Icons.file_download_outlined));
+      await openExportAndSubmit(tester);
+
+      expect(sharer.shared, isEmpty);
+      expect(find.text('Не удалось выгрузить отчёт.'), findsOneWidget);
+      // Кнопка вернулась в рабочее состояние — экран не превратился в тупик.
+      expect(find.widgetWithText(AppButton, 'Выгрузить'), findsOneWidget);
+    });
+  });
+
+  group('Отчёт по одному водителю', () {
+    /// Запоминает, с чем позвали выгрузку по водителям.
+    late _DriverExportRepository repo;
+
+    setUp(() => repo = _DriverExportRepository());
+
+    Future<void> pumpDriver(WidgetTester tester, FileSharer sharer) async {
+      tester.view.physicalSize = const Size(1290, 2796);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        RepositoryProvider<CrmRepository>.value(
+          value: repo,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
+            home: DriverDetailPage(
+              driver: repo.store.drivers.first,
+              fileSharer: sharer,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    testWidgets('выгрузка уходит с этим водителем, а не по всем',
+        (tester) async {
+      final sharer = RecordingFileSharer();
+      await pumpDriver(tester, sharer);
+
+      await tester.tap(find.text('Отчёт по водителю'));
       await tester.pump();
       for (var i = 0; i < 4; i++) {
         await tester.pump(const Duration(milliseconds: 200));
       }
 
-      expect(sharer.shared, isEmpty);
-      expect(find.text('Не удалось выгрузить отчёт.'), findsOneWidget);
-      // Кнопка вернулась в рабочее состояние.
-      expect(find.byIcon(Icons.file_download_outlined), findsOneWidget);
+      // Разрез и водитель предвыбраны — админу остаётся только нажать.
+      await tester.tap(find.widgetWithText(AppButton, 'Выгрузить'));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(repo.driverId, repo.store.drivers.first.id);
+      expect(sharer.shared, hasLength(1));
+      expect(sharer.shared.single.filename, contains('drivers'));
     });
   });
 

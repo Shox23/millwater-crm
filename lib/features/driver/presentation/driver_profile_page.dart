@@ -12,6 +12,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/section_block.dart';
+import 'widgets/driver_stats_card.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../settings/presentation/widgets/change_password_tile.dart';
@@ -120,6 +121,11 @@ class _DriverProfilePageState extends State<DriverProfilePage> {
                   const SessionDiagnosticsTile(),
                 ],
               ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            SectionBlock(
+              label: context.l10n.profileStatsSection,
+              child: const DriverStatsCard(),
             ),
             const SizedBox(height: AppSpacing.lg),
             SectionBlock(

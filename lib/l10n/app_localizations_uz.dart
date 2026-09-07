@@ -518,6 +518,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeCancelAction => 'Marshrutni bekor qilish';
 
   @override
+  String get routeCancelShort => 'Bekor qilish';
+
+  @override
   String get routeCancelFailed => 'Marshrutni bekor qilib bo‘lmadi.';
 
   @override
@@ -531,6 +534,25 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get routeStatCollected => 'YIG‘ILDI';
+
+  @override
+  String get routeNoDriver => 'Haydovchi tayinlanmagan';
+
+  @override
+  String get routeNoDriverHint =>
+      'Haydovchi yo‘q ekan, marshrutni hech kim olib ketmaydi';
+
+  @override
+  String get routeAssignDriver => 'Tayinlash';
+
+  @override
+  String get routeCashSection => 'MARSHRUT KASSASI';
+
+  @override
+  String get routeExpensesSection => 'HAYDOVCHI XARAJATLARI';
+
+  @override
+  String get routeNoExpenses => 'Marshrut bo‘yicha xarajatlar yo‘q';
 
   @override
   String get routeStops => 'MARSHRUT NUQTALARI';
@@ -581,6 +603,22 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeFormDate => 'SANA';
 
   @override
+  String get routeFormPurpose => 'MARSHRUT MAQSADI';
+
+  @override
+  String get routeFormPurposeHint => 'Barcha nuqtalar uchun standart maqsad';
+
+  @override
+  String get routeFormAssignLater => 'Keyinroq tayinlash';
+
+  @override
+  String get routeFormAssignLaterHint =>
+      'Haydovchi yo‘q ekan, marshrut yangi bo‘lib qoladi';
+
+  @override
+  String get routeFormStopPurpose => 'Nuqta maqsadi';
+
+  @override
   String get routeFormDriver => 'HAYDOVCHI';
 
   @override
@@ -624,6 +662,14 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get stopCapsulesDelivered => 'kapsula yetkazildi';
+
+  @override
+  String stopBulkBottles(int count, int liters) {
+    return '$count × $liters l';
+  }
+
+  @override
+  String get stopNothingTaken => 'hech narsa olinmadi';
 
   @override
   String get stopPaid => 'to‘landi';
@@ -724,6 +770,13 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get driverTripsToday => 'bugungi reyslar';
+
+  @override
+  String get driverReportTile => 'Haydovchi bo‘yicha hisobot';
+
+  @override
+  String get driverReportTileHint =>
+      'Davr uchun buyurtma va xarajatlar Excelda';
 
   @override
   String get driverCreatedAt => 'Yaratilgan sana';
@@ -983,6 +1036,26 @@ class AppLocalizationsUz extends AppLocalizations {
   String get profileAccountLabel => 'Hisob';
 
   @override
+  String get profileStatsSection => 'STATISTIKA';
+
+  @override
+  String get profileStatsCapsules => 'Sotilgan kapsulalar';
+
+  @override
+  String get profileStatsBulk => 'Ulgurji 5 l / 10 l';
+
+  @override
+  String get profileStatsExpenses => 'Davr xarajatlari';
+
+  @override
+  String get profileStatsFailed => 'Statistikani hisoblab bo‘lmadi';
+
+  @override
+  String profileStatsBulkValue(int five, int ten) {
+    return '$five / $ten';
+  }
+
+  @override
   String get profileAccountSection => 'HISOB';
 
   @override
@@ -1133,6 +1206,47 @@ class AppLocalizationsUz extends AppLocalizations {
   String get reportsTitle => 'Hisobotlar';
 
   @override
+  String get reportExportTitle => 'Excelga yuklash';
+
+  @override
+  String get reportExportKind => 'HISOBOT TURI';
+
+  @override
+  String get reportKindGeneral => 'Umumiy';
+
+  @override
+  String get reportKindGeneralHint => 'Har bir yetkazib berish uchun qator';
+
+  @override
+  String get reportKindCustomers => 'Mijozlar';
+
+  @override
+  String get reportKindCustomersHint =>
+      'Davr uchun har bir mijoz bo‘yicha jami';
+
+  @override
+  String get reportKindDrivers => 'Haydovchilar';
+
+  @override
+  String get reportKindDriversHint =>
+      'Haydovchilar bo‘yicha buyurtma va xarajatlar';
+
+  @override
+  String get reportExportDriver => 'HAYDOVCHI';
+
+  @override
+  String get reportExportAllDrivers => 'Barcha haydovchilar';
+
+  @override
+  String get reportExportPeriod => 'DAVR';
+
+  @override
+  String get reportExportAction => 'Yuklash';
+
+  @override
+  String get reportExportDone => 'Hisobot yuklandi';
+
+  @override
   String get reportsExport => 'Excelga yuklash';
 
   @override
@@ -1223,6 +1337,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get desktopAddDriver => 'Haydovchi';
 
   @override
+  String get desktopAddRoute => 'Marshrut';
+
+  @override
   String get desktopAddCustomer => 'Mijoz';
 
   @override
@@ -1276,6 +1393,42 @@ class AppLocalizationsUz extends AppLocalizations {
   String get desktopColPayment => 'TO‘LOV';
 
   @override
+  String get navCash => 'Kassa';
+
+  @override
+  String get cashDesktopTitle => 'Kassa va xarajatlar';
+
+  @override
+  String get cashDesktopTotal => 'Davr xarajatlari';
+
+  @override
+  String get cashDesktopEmpty => 'Davr uchun xarajatlar yo‘q';
+
+  @override
+  String get cashDesktopEmptyHint => 'Boshqa davr yoki toifani tanlang';
+
+  @override
+  String get cashDesktopFailed => 'Xarajatlarni yuklab bo‘lmadi';
+
+  @override
+  String get desktopColCategory => 'TOIFA';
+
+  @override
+  String get desktopColComment => 'IZOH';
+
+  @override
+  String get desktopColDate => 'SANA';
+
+  @override
+  String get desktopColNumber => '№';
+
+  @override
+  String get desktopColPurpose => 'MAQSAD';
+
+  @override
+  String get desktopColDamaged => 'BRAK';
+
+  @override
   String get desktopColStatus => 'HOLAT';
 
   @override
@@ -1283,6 +1436,12 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get desktopKpiDebt => 'Kun davomida qarzga';
+
+  @override
+  String get desktopKpiCashBalance => 'Kassa qoldig‘i';
+
+  @override
+  String get desktopKpiExpenses => 'Kunlik xarajatlar';
 
   @override
   String get desktopKpiCapsules => 'Berilgan kapsulalar';
@@ -1434,6 +1593,15 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get orderPurposePickup => 'Olib ketish';
+
+  @override
+  String get orderPurposeDeliveryShort => '19 l';
+
+  @override
+  String get orderPurposePickupShort => 'Olib ketish';
+
+  @override
+  String get orderPurposeBulkShort => 'Ulgurji';
 
   @override
   String get orderPurposeBulk => 'Ulgurji 5/10 l';
@@ -1632,6 +1800,14 @@ class AppLocalizationsUz extends AppLocalizations {
   String get ordersTileHint => 'Butun davr uchun barcha buyurtmalar';
 
   @override
+  String get ordersDateRange => 'Davr…';
+
+  @override
+  String ordersDateRangeValue(String from, String to) {
+    return '$from — $to';
+  }
+
+  @override
   String get ordersSearch => 'Mijoz, telefon, manzil';
 
   @override
@@ -1657,6 +1833,33 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get orderNoDriver => 'Haydovchi tayinlanmagan';
+
+  @override
+  String get orderBulk5l => '5 l butilkalar';
+
+  @override
+  String get orderBulk10l => '10 l butilkalar';
+
+  @override
+  String get orderPickedCoolers => 'Kulerlar olindi';
+
+  @override
+  String get orderPickedBottles => 'Kapsulalar olindi';
+
+  @override
+  String get orderBulkTotal => 'Ulgurji, summa';
+
+  @override
+  String get orderSectionPayments => 'TO‘LOVLAR TARIXI';
+
+  @override
+  String get orderPaymentsEmpty => 'Buyurtma bo‘yicha to‘lovlar yo‘q';
+
+  @override
+  String get orderPaymentRefund => 'Qaytarish';
+
+  @override
+  String get orderUnpaid => 'Olish qoldi';
 
   @override
   String get orderSectionComposition => 'TARKIBI';

@@ -4,7 +4,7 @@ import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/core/widgets/date_tabs.dart';
 import 'package:crm_millwater/data/mock/seed_data.dart';
 import 'package:crm_millwater/data/models/enums.dart';
-import 'package:crm_millwater/data/models/reports_summary.dart';
+import 'package:crm_millwater/data/models/report_rows.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
@@ -37,12 +37,13 @@ class _RecordingRepository extends MockCrmRepository {
   }
 
   @override
-  Future<SummaryReport> getSummaryReport({
-    DateTime? dateFrom,
-    DateTime? dateTo,
+  Future<List<GeneralReportRow>> getGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
   }) {
     reportRanges.add((dateFrom, dateTo));
-    return super.getSummaryReport(dateFrom: dateFrom, dateTo: dateTo);
+    return super.getGeneralReport(dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
   }
 }
 
@@ -268,20 +269,22 @@ void main() {
       expect(await repo.getRoutes(), hasLength(onSeedDay.length));
     });
 
-    test('сводка считается по маршрутам того же периода', () async {
+    test('отчёт считается по маршрутам того же периода', () async {
       final repo = MockCrmRepository();
       final dayAfter = SeedData.today.add(const Duration(days: 1));
 
       final empty =
-          await repo.getSummaryReport(dateFrom: dayAfter, dateTo: dayAfter);
-      final seeded = await repo.getSummaryReport(
+          await repo.getGeneralReport(dateFrom: dayAfter, dateTo: dayAfter);
+      final seeded = await repo.getGeneralReport(
         dateFrom: SeedData.today,
         dateTo: SeedData.today,
       );
 
-      expect(empty.routesCount, 0);
-      expect(empty.totalRevenue, 0);
-      expect(seeded.routesCount, greaterThan(0));
+      // Строка общего отчёта — одна состоявшаяся доставка: в пустом дне их
+      // нет вовсе, а выручка складывается из строк.
+      expect(empty, isEmpty);
+      expect(empty.fold<int>(0, (sum, r) => sum + r.orderAmount), 0);
+      expect(seeded, isNotEmpty);
     });
   });
 
@@ -318,7 +321,7 @@ void main() {
 
       await pumpDetail(tester, repo, completed.id);
 
-      expect(find.widgetWithText(AppButton, 'Отменить маршрут'), findsNothing);
+      expect(find.widgetWithText(AppButton, 'Отменить'), findsNothing);
       expect(find.widgetWithText(AppButton, 'Редактировать'), findsNothing);
     });
 
@@ -329,7 +332,7 @@ void main() {
 
       await pumpDetail(tester, repo, created.id);
 
-      expect(find.widgetWithText(AppButton, 'Отменить маршрут'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Отменить'), findsOneWidget);
       expect(find.widgetWithText(AppButton, 'Редактировать'), findsOneWidget);
     });
 
@@ -340,7 +343,7 @@ void main() {
 
       await pumpDetail(tester, repo, inProgress.id);
 
-      expect(find.widgetWithText(AppButton, 'Отменить маршрут'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Отменить'), findsOneWidget);
     });
   });
 }

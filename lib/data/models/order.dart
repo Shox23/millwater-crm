@@ -77,20 +77,12 @@ class OrderPayment extends Equatable {
   factory OrderPayment.fromJson(Map<String, dynamic> json) => OrderPayment(
         id: requireString(json['id'], 'id'),
         amount: MoneyParser.toSum(json['amount']),
-        method: _method(json['payment_method']),
+        method: PaymentMethod.tryFromJson(json['payment_method']),
         note: optionalString(json['note']),
         photoUrl: optionalString(json['photo_url']),
         recordedByUserId: optionalString(json['recorded_by_user_id']),
         createdAt: dateOr(json['created_at'], epoch),
       );
-
-  static PaymentMethod? _method(Object? value) {
-    final wire = optionalString(value);
-    if (wire == null) return null;
-    return PaymentMethod.values
-        .where((e) => e.wire == wire)
-        .firstOrNull;
-  }
 
   @override
   List<Object?> get props =>
@@ -229,6 +221,35 @@ class Order extends Equatable {
   /// У заказа маршрут без назначенного водителя.
   bool get hasNoDriver => driverId == null;
 
+  /// Заказчику посчитали капсулы не по общему прайсу.
+  ///
+  /// Сравниваем снимок цены с действующей для этого заказчика: у закрытого
+  /// заказа врать может любая из них по отдельности — прайс с тех пор мог
+  /// смениться, — а вот их расхождение означает ровно одно, индивидуальную
+  /// цену. Пока цены не пришли обе, признака нет: показать «своя цена» по
+  /// одной половине данных значило бы гадать.
+  bool get hasIndividualPrice {
+    final applied = waterPriceApplied;
+    final effective = effectiveWaterPrice;
+    if (applied == null || effective == null) return false;
+    return applied != effective;
+  }
+
+  /// Стоимость опта в заказе, сум: 5 л и 10 л по договорной цене.
+  int get bulkTotal =>
+      (bulk5lCount ?? 0) * (bulk5lPrice ?? 0) +
+      (bulk10lCount ?? 0) * (bulk10lPrice ?? 0);
+
+  /// Сколько по заказу осталось получить, сум.
+  ///
+  /// Отрицательным не бывает: переплата — это предоплата заказчика, а не
+  /// «минус долг по заказу», и показывать её здесь значило бы считать одни
+  /// и те же деньги дважды.
+  int get unpaid {
+    final due = (orderAmount ?? 0) - (paidAmount ?? 0);
+    return due > 0 ? due : 0;
+  }
+
   /// Разбор терпим: обязателен только `id`. Незнакомая цель, отсутствующие
   /// деньги (заказ ещё не закрыт) и старый плоский ответ не должны стоить
   /// строки в списке.
@@ -250,7 +271,7 @@ class Order extends Equatable {
       sequence: optionalInt(json['sequence']) ?? optionalInt(json['order']),
       status: DeliveryStatus.fromJson(stringOr(json['status'])),
       purpose: OrderPurpose.fromJson(stringOr(json['purpose'])),
-      paymentMethod: _method(json['payment_method']),
+      paymentMethod: PaymentMethod.tryFromJson(json['payment_method']),
       deliveredCapsules: optionalInt(json['delivered_bottles']),
       returnedCapsules: optionalInt(json['returned_bottles']),
       damagedCapsules: optionalInt(json['damaged_bottles']),
@@ -334,15 +355,6 @@ class Order extends Equatable {
   /// и показывать её нулём значило бы «привезли бесплатно».
   static int? _money(Object? value) =>
       value == null ? null : MoneyParser.toSum(value);
-
-  static PaymentMethod? _method(Object? value) {
-    final wire = optionalString(value);
-    if (wire == null) return null;
-    for (final method in PaymentMethod.values) {
-      if (method.wire == wire) return method;
-    }
-    return null;
-  }
 
   @override
   List<Object?> get props => [

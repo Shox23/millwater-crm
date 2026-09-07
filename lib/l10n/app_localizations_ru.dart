@@ -525,6 +525,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeCancelAction => 'Отменить маршрут';
 
   @override
+  String get routeCancelShort => 'Отменить';
+
+  @override
   String get routeCancelFailed => 'Не удалось отменить маршрут.';
 
   @override
@@ -538,6 +541,24 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get routeStatCollected => 'СОБРАНО';
+
+  @override
+  String get routeNoDriver => 'Водитель не назначен';
+
+  @override
+  String get routeNoDriverHint => 'Маршрут никто не повезёт, пока водителя нет';
+
+  @override
+  String get routeAssignDriver => 'Назначить';
+
+  @override
+  String get routeCashSection => 'КАССА МАРШРУТА';
+
+  @override
+  String get routeExpensesSection => 'РАСХОДЫ ВОДИТЕЛЯ';
+
+  @override
+  String get routeNoExpenses => 'Расходов по маршруту нет';
 
   @override
   String get routeStops => 'ТОЧКИ МАРШРУТА';
@@ -592,6 +613,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeFormDate => 'ДАТА';
 
   @override
+  String get routeFormPurpose => 'ЦЕЛЬ МАРШРУТА';
+
+  @override
+  String get routeFormPurposeHint => 'Цель по умолчанию для всех точек';
+
+  @override
+  String get routeFormAssignLater => 'Назначить позже';
+
+  @override
+  String get routeFormAssignLaterHint =>
+      'Маршрут останется новым, пока водителя нет';
+
+  @override
+  String get routeFormStopPurpose => 'Цель точки';
+
+  @override
   String get routeFormDriver => 'ВОДИТЕЛЬ';
 
   @override
@@ -635,6 +672,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get stopCapsulesDelivered => 'капсул доставлено';
+
+  @override
+  String stopBulkBottles(int count, int liters) {
+    return '$count × $liters л';
+  }
+
+  @override
+  String get stopNothingTaken => 'ничего не забрали';
 
   @override
   String get stopPaid => 'оплачено';
@@ -735,6 +780,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get driverTripsToday => 'поездок сегодня';
+
+  @override
+  String get driverReportTile => 'Отчёт по водителю';
+
+  @override
+  String get driverReportTileHint => 'Заказы и расходы в Excel за период';
 
   @override
   String get driverCreatedAt => 'Дата создания';
@@ -993,6 +1044,26 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileAccountLabel => 'Аккаунт';
 
   @override
+  String get profileStatsSection => 'СТАТИСТИКА';
+
+  @override
+  String get profileStatsCapsules => 'Продано капсул';
+
+  @override
+  String get profileStatsBulk => 'Опт 5 л / 10 л';
+
+  @override
+  String get profileStatsExpenses => 'Расходы за период';
+
+  @override
+  String get profileStatsFailed => 'Не удалось посчитать статистику';
+
+  @override
+  String profileStatsBulkValue(int five, int ten) {
+    return '$five / $ten';
+  }
+
+  @override
   String get profileAccountSection => 'АККАУНТ';
 
   @override
@@ -1142,6 +1213,45 @@ class AppLocalizationsRu extends AppLocalizations {
   String get reportsTitle => 'Отчёты';
 
   @override
+  String get reportExportTitle => 'Выгрузка в Excel';
+
+  @override
+  String get reportExportKind => 'ТИП ОТЧЁТА';
+
+  @override
+  String get reportKindGeneral => 'Общий';
+
+  @override
+  String get reportKindGeneralHint => 'Строка на каждую доставку';
+
+  @override
+  String get reportKindCustomers => 'Заказчики';
+
+  @override
+  String get reportKindCustomersHint => 'Итог по каждому заказчику за период';
+
+  @override
+  String get reportKindDrivers => 'Водители';
+
+  @override
+  String get reportKindDriversHint => 'Заказы и расходы по водителям';
+
+  @override
+  String get reportExportDriver => 'ВОДИТЕЛЬ';
+
+  @override
+  String get reportExportAllDrivers => 'Все водители';
+
+  @override
+  String get reportExportPeriod => 'ПЕРИОД';
+
+  @override
+  String get reportExportAction => 'Выгрузить';
+
+  @override
+  String get reportExportDone => 'Отчёт выгружен';
+
+  @override
   String get reportsExport => 'Выгрузить в Excel';
 
   @override
@@ -1239,6 +1349,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get desktopAddDriver => 'Водитель';
 
   @override
+  String get desktopAddRoute => 'Маршрут';
+
+  @override
   String get desktopAddCustomer => 'Заказчик';
 
   @override
@@ -1296,6 +1409,42 @@ class AppLocalizationsRu extends AppLocalizations {
   String get desktopColPayment => 'ОПЛАТА';
 
   @override
+  String get navCash => 'Касса';
+
+  @override
+  String get cashDesktopTitle => 'Касса и расходы';
+
+  @override
+  String get cashDesktopTotal => 'Расходы за период';
+
+  @override
+  String get cashDesktopEmpty => 'Расходов за период нет';
+
+  @override
+  String get cashDesktopEmptyHint => 'Попробуйте другой период или категорию';
+
+  @override
+  String get cashDesktopFailed => 'Не удалось загрузить расходы';
+
+  @override
+  String get desktopColCategory => 'КАТЕГОРИЯ';
+
+  @override
+  String get desktopColComment => 'КОММЕНТАРИЙ';
+
+  @override
+  String get desktopColDate => 'ДАТА';
+
+  @override
+  String get desktopColNumber => '№';
+
+  @override
+  String get desktopColPurpose => 'ЦЕЛЬ';
+
+  @override
+  String get desktopColDamaged => 'БРАК';
+
+  @override
   String get desktopColStatus => 'СТАТУС';
 
   @override
@@ -1303,6 +1452,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get desktopKpiDebt => 'В долг за день';
+
+  @override
+  String get desktopKpiCashBalance => 'Остаток кассы';
+
+  @override
+  String get desktopKpiExpenses => 'Расходы за день';
 
   @override
   String get desktopKpiCapsules => 'Выдано капсул';
@@ -1455,6 +1610,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get orderPurposePickup => 'Вывоз';
+
+  @override
+  String get orderPurposeDeliveryShort => '19 л';
+
+  @override
+  String get orderPurposePickupShort => 'Вывоз';
+
+  @override
+  String get orderPurposeBulkShort => 'Опт';
 
   @override
   String get orderPurposeBulk => 'Опт 5/10 л';
@@ -1651,6 +1815,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ordersTileHint => 'Все заказы за всё время';
 
   @override
+  String get ordersDateRange => 'Период…';
+
+  @override
+  String ordersDateRangeValue(String from, String to) {
+    return '$from — $to';
+  }
+
+  @override
   String get ordersSearch => 'Заказчик, телефон, адрес';
 
   @override
@@ -1678,6 +1850,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get orderNoDriver => 'Водитель не назначен';
+
+  @override
+  String get orderBulk5l => 'Бутыли 5 л';
+
+  @override
+  String get orderBulk10l => 'Бутыли 10 л';
+
+  @override
+  String get orderPickedCoolers => 'Кулеров забрано';
+
+  @override
+  String get orderPickedBottles => 'Капсул забрано';
+
+  @override
+  String get orderBulkTotal => 'Опт, сумма';
+
+  @override
+  String get orderSectionPayments => 'ИСТОРИЯ ПЛАТЕЖЕЙ';
+
+  @override
+  String get orderPaymentsEmpty => 'Платежей по заказу нет';
+
+  @override
+  String get orderPaymentRefund => 'Возврат';
+
+  @override
+  String get orderUnpaid => 'Осталось получить';
 
   @override
   String get orderSectionComposition => 'СОСТАВ';

@@ -48,13 +48,16 @@ class RoutesBloc extends Bloc<RoutesEvent, RoutesState> {
     emit(state.copyWith(status: RoutesStatus.loading));
     final day = state.date;
     try {
-      // Выручки нет в списке маршрутов — берём её из сводного отчёта.
+      // Выручки нет в списке маршрутов — складываем её из строк общего
+      // отчёта за тот же день. Прежняя сводка (`/admin/reports/summary`)
+      // с сервера удалена: она отдавала выручку одним числом, теперь его
+      // приходится считать самим.
       // Обоим запросам отдаём один и тот же день: иначе подписи экрана
       // («Собрано», «Выполнено доставок») говорили бы про разные периоды.
       // Запросы независимы, поэтому идут параллельно.
-      final (routes, report) = await (
+      final (routes, rows) = await (
         _repository.getRoutes(dateFrom: day, dateTo: day),
-        _repository.getSummaryReport(dateFrom: day, dateTo: day),
+        _repository.getGeneralReport(dateFrom: day, dateTo: day),
       ).wait;
       // Пока запрос был в пути, могли переключить день — тогда ответ уже не
       // про то, что на экране, и класть его в состояние нельзя.
@@ -62,7 +65,7 @@ class RoutesBloc extends Bloc<RoutesEvent, RoutesState> {
       emit(state.copyWith(
         status: RoutesStatus.ready,
         routes: routes,
-        collected: report.totalRevenue,
+        collected: rows.fold<int>(0, (sum, r) => sum + r.orderAmount),
       ));
     } catch (_) {
       if (state.date != day) return;

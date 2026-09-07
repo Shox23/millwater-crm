@@ -264,6 +264,9 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                               hint: '20000',
                               helper: context.l10n.pricesCapsuleHelper(
                                   ProductConfig.capsuleVolumeLiters),
+                              // Узбекские подписи единиц длиннее русских и в
+                              // одну строку уже не помещаются.
+                              helperMaxLines: 2,
                               controller: _capsule,
                               focusNode: _capsuleFocus,
                               validator: _capsuleRule,
@@ -294,6 +297,7 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                               label: context.l10n.pricesDamagedFine,
                               hint: '40000',
                               helper: context.l10n.pricesDamagedFineHelper,
+                              helperMaxLines: 2,
                               controller: _fine,
                               focusNode: _fineFocus,
                               validator: _priceRule,

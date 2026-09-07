@@ -246,6 +246,10 @@ class _DriverFormPageState extends State<DriverFormPage> with SubmitState {
                   // его нечем (эндпоинта в API нет), поэтому подсказка требует
                   // передать его водителю, а не объясняет заготовку.
                   helper: context.l10n.driverFormPasswordHelper,
+                  // В одну строку требование обрывалось на «восстановить
+                  // его…» — ровно на той половине, ради которой подсказка
+                  // и написана.
+                  helperMaxLines: 2,
                   controller: _password,
                   focusNode: _passwordFocus,
                   validator: _passwordRule,

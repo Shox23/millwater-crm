@@ -6,6 +6,7 @@ import '../models/json.dart';
 import '../models/order.dart';
 import '../models/result_page.dart';
 import '../models/route_expense.dart';
+import '../models/route_from_orders.dart';
 import '../models/route_models.dart';
 import '../network/api_envelope.dart';
 import 'driver_repository.dart';
@@ -29,13 +30,55 @@ class ApiDriverRepository implements DriverRepository {
     final res = await _dio.get('/driver/routes');
     // Маршрут, который не разобрался, пропускается — остальные водитель
     // должен увидеть. См. `parseList`.
-    return parseList(unwrapData(res.data), RouteListItem.fromJson);
+    final live = parseList(unwrapData(res.data), RouteListItem.fromJson);
+
+    // `/driver/routes` отдаёт только `in_progress`: закрыв последнюю точку,
+    // водитель терял весь день вместе с кассой. Историю достраиваем из его
+    // заказов — они видны за всё время. См. `route_from_orders.dart`.
+    final known = live.map((r) => r.id).toSet();
+    final history = <RouteListItem>[];
+    try {
+      for (final group in groupByRoute(await _allMyOrders())) {
+        final item = routeListItemFromOrders(group);
+        if (known.add(item.id)) history.add(item);
+      }
+    } catch (_) {
+      // История — дополнение, а не замена: её провал не должен стоить
+      // водителю сегодняшнего маршрута, ради которого он и открыл экран.
+    }
+
+    return [...live, ...history];
   }
 
   @override
   Future<RouteDetail?> getMyRoute(String id) async {
-    final res = await _dio.get('/driver/routes/$id');
-    return RouteDetail.fromJson(asMap(res.data));
+    try {
+      final res = await _dio.get('/driver/routes/$id');
+      return RouteDetail.fromJson(asMap(res.data));
+    } on DioException catch (e) {
+      // 404 у своего же маршрута означает не «нет такого», а «уже не
+      // `in_progress`». Собираем карточку из заказов и расходов: расходы
+      // сервер по завершённому маршруту отдаёт, в отличие от него самого.
+      if (e.response?.statusCode != 404) rethrow;
+
+      final orders = await _allMyOrders(routeId: id);
+      if (orders.isEmpty) return null;
+
+      final expenses = await getRouteExpenses(id)
+          .catchError((_) => const <RouteExpense>[]);
+      return routeDetailFromOrders(orders, expenses: expenses);
+    }
+  }
+
+  /// Все заказы водителя, обходя страницы.
+  Future<List<Order>> _allMyOrders({String? routeId}) async {
+    final all = <Order>[];
+    for (var page = 1; page <= 20; page++) {
+      final chunk = await getMyOrders(page: page, routeId: routeId);
+      all.addAll(chunk.items);
+      if (!chunk.hasMore) break;
+    }
+    return all;
   }
 
   @override

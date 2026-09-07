@@ -28,8 +28,11 @@ class WeekRevenueBloc extends Bloc<WeekRevenueEvent, WeekRevenueState> {
 
     try {
       final days = WeekRevenueState.week();
+      // По запросу на день: сводки за период с разбивкой по дням сервер не
+      // отдаёт, а общий отчёт за неделю пришлось бы группировать по датам
+      // самим — и день без доставок из него просто выпал бы.
       final reports = await Future.wait(
-        days.map((day) => _repository.getSummaryReport(
+        days.map((day) => _repository.getGeneralReport(
               dateFrom: day,
               dateTo: day,
             )),
@@ -38,8 +41,11 @@ class WeekRevenueBloc extends Bloc<WeekRevenueEvent, WeekRevenueState> {
       emit(state.copyWith(
         status: WeekRevenueStatus.ready,
         bars: [
-          for (final (i, report) in reports.indexed)
-            RevenueBar(day: days[i], revenue: report.totalRevenue),
+          for (final (i, rows) in reports.indexed)
+            RevenueBar(
+              day: days[i],
+              revenue: rows.fold<int>(0, (sum, r) => sum + r.orderAmount),
+            ),
         ],
       ));
     } catch (_) {

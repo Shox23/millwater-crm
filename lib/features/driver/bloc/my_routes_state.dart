@@ -36,6 +36,11 @@ class MyRoutesState extends Equatable {
   }
 
   /// Показатели главного экрана водителя (ТЗ, раздел 5).
+  ///
+  /// Считается по всем маршрутам, а не по сегодняшним, — так подписана сама
+  /// плитка («всего маршрутов»). До того как список стал достраиваться
+  /// историей из `/driver/orders`, это число всё равно показывало только
+  /// сегодняшний `in_progress`, то есть подпись врала.
   int get routesCount => routes.length;
 
   int get stopsTotal => routes.fold<int>(0, (sum, r) => sum + r.totalCustomers);

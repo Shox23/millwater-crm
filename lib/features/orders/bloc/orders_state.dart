@@ -9,6 +9,7 @@ class OrdersState extends Equatable {
     this.query = '',
     this.statusFilter,
     this.purposeFilter,
+    this.dateFilter = const OrdersAnyDate(),
     this.page = 1,
     this.hasMore = false,
     this.total = 0,
@@ -24,6 +25,10 @@ class OrdersState extends Equatable {
 
   /// Отбор по цели заказа; `null` — «Все».
   final OrderPurpose? purposeFilter;
+
+  /// Отбор по дате. По умолчанию — за всё время: список заказов тем и
+  /// отличается от экрана маршрутов, что не привязан ко дню.
+  final OrdersDateFilter dateFilter;
 
   /// Номер последней загруженной страницы.
   final int page;
@@ -41,7 +46,10 @@ class OrdersState extends Equatable {
 
   /// Отбор задан хоть чем-то, кроме поиска, — по этому признаку в пустом
   /// состоянии предлагается сбросить фильтры, а не очистить запрос.
-  bool get hasFilters => statusFilter != null || purposeFilter != null;
+  bool get hasFilters =>
+      statusFilter != null ||
+      purposeFilter != null ||
+      dateFilter is! OrdersAnyDate;
 
   /// Список пуст из-за поиска, а не потому что заказов нет вовсе.
   bool get isEmptySearch => orders.isEmpty && query.trim().isNotEmpty;
@@ -57,6 +65,7 @@ class OrdersState extends Equatable {
     bool clearStatus = false,
     OrderPurpose? purposeFilter,
     bool clearPurpose = false,
+    OrdersDateFilter? dateFilter,
     int? page,
     bool? hasMore,
     int? total,
@@ -69,6 +78,7 @@ class OrdersState extends Equatable {
       statusFilter: clearStatus ? statusFilter : (statusFilter ?? this.statusFilter),
       purposeFilter:
           clearPurpose ? purposeFilter : (purposeFilter ?? this.purposeFilter),
+      dateFilter: dateFilter ?? this.dateFilter,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       total: total ?? this.total,
@@ -83,6 +93,7 @@ class OrdersState extends Equatable {
         query,
         statusFilter,
         purposeFilter,
+        dateFilter,
         page,
         hasMore,
         total,

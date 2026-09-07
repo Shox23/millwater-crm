@@ -44,3 +44,12 @@ class OrdersPurposeChanged extends OrdersEvent {
 class OrdersNextPageRequested extends OrdersEvent {
   const OrdersNextPageRequested();
 }
+
+/// Сменился отбор по дате: период, диапазон или «за всё время».
+class OrdersDateChanged extends OrdersEvent {
+  const OrdersDateChanged(this.filter);
+  final OrdersDateFilter filter;
+
+  @override
+  List<Object?> get props => [filter];
+}

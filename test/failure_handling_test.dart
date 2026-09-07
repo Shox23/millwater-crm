@@ -1,7 +1,7 @@
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/data/models/driver.dart';
-import 'package:crm_millwater/data/models/reports_summary.dart';
+import 'package:crm_millwater/data/models/report_rows.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/features/customers/presentation/customer_form_page.dart';
@@ -104,11 +104,12 @@ class _FailingRepository extends MockCrmRepository {
       ));
 
   @override
-  Future<SummaryReport> getSummaryReport({
-    DateTime? dateFrom,
-    DateTime? dateTo,
+  Future<List<GeneralReportRow>> getGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
   }) =>
-      _read(() => super.getSummaryReport(dateFrom: dateFrom, dateTo: dateTo));
+      _read(() => super.getGeneralReport(dateFrom: dateFrom, dateTo: dateTo, driverId: driverId));
 }
 
 void main() {

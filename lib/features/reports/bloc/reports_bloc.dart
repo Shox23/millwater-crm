@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../l10n/l10n.dart';
+import '../../../core/utils/stats_period.dart';
 import '../../../core/utils/throttle.dart';
 import '../../../data/models/notification_event.dart';
 import '../../../data/models/reports_summary.dart';
@@ -19,9 +19,9 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     on<ReportsPeriodChanged>(_onPeriodChanged);
 
     // Выручка и число доставок меняются ровно теми же событиями, что и
-    // список маршрутов, — см. `RoutesBloc`. Пересчёт здесь дороже: вместе со
-    // сводкой заново тянется весь справочник заказчиков (должников и остаток
-    // капсул сводка не отдаёт), поэтому склеивать всплески тем более нужно.
+    // список маршрутов, — см. `RoutesBloc`. Пересчёт здесь дороже: вместе с
+    // отчётом заново тянется весь справочник заказчиков, поэтому склеивать
+    // всплески тем более нужно.
     _notifications = notifications?.listen(
       (_) => _reload(() {
         if (!isClosed) add(const ReportsRequested());
@@ -54,17 +54,20 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     final id = ++_requestId;
     emit(state.copyWith(status: ReportsStatus.loading));
     try {
-      final (from, to) = _rangeFor(state.period);
-      // Должников и остаток капсул сводка не отдаёт — их приходится выводить
-      // из справочника заказчиков. Запросы независимы, поэтому параллельно.
-      final (report, customers) = await (
-        _repository.getSummaryReport(dateFrom: from, dateTo: to),
+      final (from, to) = rangeFor(state.period);
+      // Долг и остаток капсул — показатели «на сейчас» по всей базе, и ни
+      // один отчёт их не отдаёт: отчёт по заказчикам ограничен теми, у кого
+      // в периоде была активность, и за пустой день показал бы ноль
+      // должников при непустом долге. Поэтому справочник по-прежнему нужен.
+      // Запросы независимы, поэтому параллельно.
+      final (rows, customers) = await (
+        _repository.getGeneralReport(dateFrom: from, dateTo: to),
         _repository.getCustomers(),
       ).wait;
       if (id != _requestId) return;
       emit(state.copyWith(
         status: ReportsStatus.ready,
-        summary: ReportsSummary.from(report, customers),
+        summary: ReportsSummary.from(rows, customers),
       ));
     } catch (_) {
       if (id != _requestId) return;
@@ -83,20 +86,11 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     add(const ReportsRequested());
   }
 
-  (DateTime, DateTime) _rangeFor(ReportPeriod period) => rangeFor(period);
-
   /// Границы периода для запроса отчёта.
   ///
   /// Публичная, потому что теми же границами выгружается Excel: посчитай их
   /// кнопка экспорта сама — и однажды выгрузила бы не тот период, который
-  /// показан на экране.
-  static (DateTime, DateTime) rangeFor(ReportPeriod period) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return switch (period) {
-      ReportPeriod.today => (today, today),
-      ReportPeriod.week => (today.subtract(const Duration(days: 6)), today),
-      ReportPeriod.month => (DateTime(now.year, now.month, 1), today),
-    };
-  }
+  /// показан на экране. Сам расчёт живёт в [StatsPeriod.range].
+  static (DateTime, DateTime) rangeFor(ReportPeriod period) => period.range;
+
 }

@@ -8,6 +8,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../data/models/enums.dart';
 import '../../../../data/models/route_models.dart';
 import 'route_card.dart';
 
@@ -28,6 +29,41 @@ class StopCard extends StatelessWidget {
 
   /// Дополнительный элемент в шапке (например, меню смены статуса).
   final Widget? trailing;
+
+  /// Чем закончилась точка — одной строкой и по её цели.
+  ///
+  /// Раньше строка всегда собиралась из доставленных капсул, и закрытый вывоз
+  /// показывался как «0 капсул»: вся работа водителя — забранные кулеры и
+  /// капсулы — из карточки пропадала, а у опта пропадали проданные бутыли.
+  String _summary(BuildContext context) {
+    final l10n = context.l10n;
+
+    // Нули не пишем: «0 кулеров» рядом с «3 капсулы» — шум, а не факт.
+    List<String> nonZero(List<(int?, String Function(int))> parts) => [
+          for (final (count, label) in parts)
+            if ((count ?? 0) > 0) label(count!),
+        ];
+
+    final parts = switch (stop.purpose) {
+      OrderPurpose.pickup => nonZero([
+          (stop.pickedCoolers, l10n.coolersCount),
+          (stop.pickedBottles, l10n.stopCapsules),
+        ]),
+      OrderPurpose.bulkWater => nonZero([
+          (stop.bulk5lCount, (n) => l10n.stopBulkBottles(n, 5)),
+          (stop.bulk10lCount, (n) => l10n.stopBulkBottles(n, 10)),
+        ]),
+      // У доставки ноль осмыслен: привезли ноль — это тоже результат.
+      OrderPurpose.delivery19l => [
+          l10n.stopCapsules(stop.deliveredCapsules ?? 0),
+        ],
+    };
+
+    // Вывоз, закрытый одним браком, и опт без позиций остались бы с пустой
+    // строкой — а точка закрыта, и молчать об этом нельзя.
+    if (parts.isEmpty) return l10n.stopNothingTaken;
+    return parts.join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +115,7 @@ class StopCard extends StatelessWidget {
             const Divider(),
             Row(
               children: [
-                Text(context.l10n.stopCapsules(stop.deliveredCapsules ?? 0),
+                Text(_summary(context),
                     style: AppTypography.secondary.copyWith(color: t.text2)),
                 const Spacer(),
                 if (stop.paymentPhoto != null) ...[

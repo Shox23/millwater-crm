@@ -146,6 +146,27 @@ class _Summary extends StatelessWidget {
                 label: l10n.desktopKpiCapsules,
               ),
             ),
+            // Касса дня: наличные минус расходы водителей. Числа серверные —
+            // на стенде без этих полей карточка покажет ноль, а не мусор.
+            Expanded(
+              flex: 100,
+              child: DesktopKpiCard(
+                icon: Icons.account_balance_wallet_outlined,
+                color: state.cashBalance < 0 ? t.danger : t.success,
+                value: MoneyFormatter.sum(l10n, state.cashBalance),
+                label: l10n.desktopKpiCashBalance,
+                hint: l10n.cashBalanceHint,
+              ),
+            ),
+            Expanded(
+              flex: 90,
+              child: DesktopKpiCard(
+                icon: Icons.local_gas_station_outlined,
+                color: t.warn,
+                value: MoneyFormatter.sum(l10n, state.expensesTotal),
+                label: l10n.desktopKpiExpenses,
+              ),
+            ),
           ],
         ],
       ),
@@ -204,10 +225,12 @@ class _Table extends StatelessWidget {
 
     return DesktopTable(
       columns: [
-        DesktopColumn(l10n.desktopColCustomer, flex: 21),
-        DesktopColumn(l10n.desktopColDriver, flex: 15),
-        DesktopColumn(l10n.desktopColCapsules, flex: 7),
-        DesktopColumn(l10n.desktopColSum, flex: 10),
+        DesktopColumn(l10n.desktopColCustomer, flex: 19),
+        DesktopColumn(l10n.desktopColDriver, flex: 13),
+        DesktopColumn(l10n.desktopColPurpose, flex: 10),
+        DesktopColumn(l10n.desktopColCapsules, flex: 6),
+        DesktopColumn(l10n.desktopColDamaged, flex: 6),
+        DesktopColumn(l10n.desktopColSum, flex: 9),
         DesktopColumn(l10n.desktopColPayment, flex: 10),
         DesktopColumn(l10n.desktopColStatus, flex: 9),
         const DesktopColumn('', width: 44),
@@ -247,9 +270,25 @@ class _Table extends StatelessWidget {
               ),
             ],
           ),
+          // Цель заказа: маршрут бывает смешанным, и без неё «0 капсул» у
+          // вывоза читается как невыполненная доставка.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: DesktopBadge(
+              text: stop.purpose.shortLabel(l10n),
+              color: t.text2,
+            ),
+          ),
           Text(
             stop.deliveredCapsules == null ? '—' : '${stop.deliveredCapsules}',
             style: DesktopTypography.tableCell.copyWith(color: t.text),
+          ),
+          // Брак: за него заказчику начисляют штраф, и в разборе дня он
+          // нужен рядом с капсулами, а не в карточке точки.
+          Text(
+            (stop.damagedCapsules ?? 0) == 0 ? '—' : '${stop.damagedCapsules}',
+            style: DesktopTypography.tableCell.copyWith(
+                color: (stop.damagedCapsules ?? 0) > 0 ? t.danger : t.text3),
           ),
           Text(
             stop.paymentAmount == null || stop.paymentAmount == 0
@@ -359,8 +398,12 @@ class _PaymentCell extends StatelessWidget {
         style: DesktopTypography.tableCell.copyWith(color: t.danger),
       );
     }
+    // Способ приходит с сервера — называем его прямо. Прежнее «Оплачено»
+    // одинаково подписывало наличные, карту и перевод, а это разные деньги:
+    // наличные водитель везёт в кассе, остальное уходит на счёт компании.
+    final method = row.stop.paymentMethod;
     return Text(
-      context.l10n.deliveryPaid,
+      method?.label(context.l10n) ?? context.l10n.deliveryPaid,
       style: DesktopTypography.tableCell.copyWith(color: t.text),
     );
   }

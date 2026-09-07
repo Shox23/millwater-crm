@@ -104,18 +104,17 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: AppSpacing.lg,
                   children: [
+                    // Логотип целиком, без плитки-подложки: у знака свой
+                    // фирменный контур, и квадрат под ним читался бы как
+                    // чужая рамка. Прозрачный PNG ложится и на тёмный фон,
+                    // и на светлый.
                     Center(
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: t.primary,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          boxShadow: t.accentShadow,
-                        ),
-                        child: const Icon(Icons.water_drop_rounded,
-                            color: Colors.white, size: 32),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 220,
+                        // Логотип — не иллюстрация, а название продукта:
+                        // без подписи экран входа перестал бы называть себя.
+                        semanticLabel: context.l10n.appTitle,
                       ),
                     ),
                     Column(
