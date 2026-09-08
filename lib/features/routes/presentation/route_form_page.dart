@@ -14,6 +14,8 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/detail_scaffold.dart';
+import '../../../core/widgets/labeled_card.dart';
+import '../../../core/widgets/quantity_stepper.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/initials_avatar.dart';
 import '../../../core/widgets/search_field.dart';
@@ -55,9 +57,37 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   /// Маршрут бывает смешанным: по дороге и капсулы завезли, и кулер забрали.
   final Map<String, OrderPurpose> _stopPurposes = {};
 
+  /// Задание водителю: сколько капсул везти каждому заказчику.
+  /// Ноль — задания ещё не поставили, и форма такую точку не отпустит.
+  final Map<String, int> _bottleCounts = {};
+
   /// Точки, с которыми маршрут был открыт, — база для вычисления правок.
   late final Set<String> _initialCustomerIds =
       widget.route?.stops.map((s) => s.customerId).toSet() ?? const {};
+
+  /// Задания точек, с которыми маршрут открыли. Менять их нечем: у сервера
+  /// есть только добавление, удаление и правка порядка объезда.
+  late final Map<String, int?> _initialBottleCounts = {
+    for (final stop in widget.route?.stops ?? const <RouteStop>[])
+      stop.customerId: stop.bottleSellCount,
+  };
+
+  /// Точку добавляют сейчас — значит задание ещё можно задать.
+  bool _isNewStop(String customerId) =>
+      !_initialCustomerIds.contains(customerId);
+
+  /// Заданию место только у доставки: вывозу и опту везти нечего.
+  bool _needsBottleCount(String customerId) =>
+      (_stopPurposes[customerId] ?? OrderPurpose.delivery19l) ==
+      OrderPurpose.delivery19l;
+
+  int _bottleCountOf(String customerId) => _bottleCounts[customerId] ?? 0;
+
+  /// Доставка без задания уйти не должна: водитель не узнает, сколько везти.
+  /// У точек, которые уже в маршруте, задание не спрашиваем — изменить его
+  /// всё равно нечем.
+  bool get _bottleCountsFilled => _customerIds.every((id) =>
+      !_isNewStop(id) || !_needsBottleCount(id) || _bottleCountOf(id) > 0);
 
   RouteStatus get _status => widget.route?.status ?? RouteStatus.created;
 
@@ -144,7 +174,8 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
 
   /// Водителя в условии нет: маршрут без исполнителя — законное состояние,
   /// сервер оставляет такой маршрут в `created`, пока водителя не назначат.
-  bool get _valid => _customerIds.isNotEmpty && _hasChanges;
+  bool get _valid =>
+      _customerIds.isNotEmpty && _hasChanges && _bottleCountsFilled;
 
   /// Можно ли тронуть этого заказчика: снять галочку с уже стоящей точки
   /// разрешено не всегда, поставить новую — почти всегда.
@@ -193,8 +224,13 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
         orders: [
           for (final id in _customerIds)
             RouteOrderInput(
-                customerId: id,
-                purpose: _stopPurposes[id] ?? OrderPurpose.delivery19l),
+              customerId: id,
+              purpose: _stopPurposes[id] ?? OrderPurpose.delivery19l,
+              // Только у доставки: у вывоза и опта число капсул к доставке
+              // смысла не имеет, и сервер получит поле пустым.
+              bottleSellCount:
+                  _needsBottleCount(id) ? _bottleCountOf(id) : null,
+            ),
         ],
         idempotencyKey: _idempotencyKey,
       );
@@ -233,7 +269,14 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
 
     if (_status.canAddCustomers) {
       for (final customerId in _addedCustomers) {
-        await repo.addRouteCustomer(routeId: id, customerId: customerId);
+        await repo.addRouteCustomer(
+          routeId: id,
+          customerId: customerId,
+          purpose: _stopPurposes[customerId] ?? OrderPurpose.delivery19l,
+          bottleSellCount: _needsBottleCount(customerId)
+              ? _bottleCountOf(customerId)
+              : null,
+        );
       }
     }
   }
@@ -415,6 +458,21 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                           _stopPurposes[c.id] = p;
                                         }),
                                       ),
+                                      // Задание водителю — сколько капсул
+                                      // везти. Только у доставки: вывозу и
+                                      // опту везти нечего.
+                                      if (_needsBottleCount(c.id))
+                                        _BottleSellField(
+                                          count: _bottleCountOf(c.id),
+                                          // Изменить задание у точки, которая
+                                          // уже в маршруте, сервер не умеет —
+                                          // показываем как есть и объясняем.
+                                          editable: _isNewStop(c.id),
+                                          savedValue:
+                                              _initialBottleCounts[c.id],
+                                          onChanged: (value) => setState(
+                                              () => _bottleCounts[c.id] = value),
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -574,6 +632,78 @@ class _SelectableRow extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+/// Задание водителю: сколько капсул везти заказчику.
+///
+/// Оформлено карточкой со счётчиком — так же, как водитель отмечает капсулы
+/// на завершении доставки: одно и то же число, названное одинаково с обеих
+/// сторон, читается без перевода.
+///
+/// У новой точки счётчик рабочий, у уже добавленной — только число: изменить
+/// `bottle_sell_count` сервер не умеет, у него есть лишь добавление точки,
+/// удаление и правка порядка объезда. Пустой счётчик, который некуда
+/// отправить, обещал бы правку, которой нет.
+class _BottleSellField extends StatelessWidget {
+  const _BottleSellField({
+    required this.count,
+    required this.editable,
+    required this.savedValue,
+    required this.onChanged,
+  });
+
+  final int count;
+
+  /// Точку добавляют сейчас — задание ещё можно задать. У точки, которая уже
+  /// в маршруте, это `false`, даже когда задания у неё нет.
+  final bool editable;
+
+  /// Задание, с которым точка пришла с сервера; `null` — его не ставили.
+  final int? savedValue;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: LabeledCard(
+        label: l10n.routeFormBottleSell,
+        child: editable
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppSpacing.sm,
+                children: [
+                  QuantityStepper(
+                    value: count,
+                    onChanged: onChanged,
+                    caption: l10n.routeFormBottleSellHint,
+                  ),
+                  // Ноль — это не «везти ноль капсул», а незаполненное
+                  // задание: форма такую точку не отпускает.
+                  if (count == 0)
+                    Text(l10n.routeFormBottleSellRequired,
+                        style:
+                            AppTypography.secondary.copyWith(color: t.danger)),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  // Прочерк, а не ноль: задания не ставили.
+                  Text('${savedValue ?? '—'}',
+                      style: AppTypography.statNumber.copyWith(color: t.text)),
+                  Text(l10n.routeFormBottleSellLocked,
+                      style: AppTypography.secondary.copyWith(color: t.text3)),
+                ],
+              ),
       ),
     );
   }

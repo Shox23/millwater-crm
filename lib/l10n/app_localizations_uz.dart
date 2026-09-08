@@ -619,6 +619,43 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeFormStopPurpose => 'Nuqta maqsadi';
 
   @override
+  String get routeFormBottleSell => 'YETKAZILADIGAN KAPSULALAR';
+
+  @override
+  String get routeFormBottleSellHint => 'Bu buyurtmachiga qancha olib boriladi';
+
+  @override
+  String get routeFormBottleSellRequired =>
+      'Qancha kapsula olib borishni kiriting';
+
+  @override
+  String get routeFormBottleSellLocked =>
+      'Nuqta qo‘shilganda belgilangan — server uni o‘zgartira olmaydi';
+
+  @override
+  String stopBottleSell(int count) {
+    return '$count kapsula olib boramiz';
+  }
+
+  @override
+  String get completionBottleSell => 'YETKAZISHGA BELGILANGAN';
+
+  @override
+  String completionBottleSellValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kapsula',
+      one: '$count kapsula',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get completionBottleSellHint =>
+      'Admin shuncha belgilagan. Quyida haqiqatda qancha olib kelganingizni belgilang';
+
+  @override
   String get routeFormDriver => 'HAYDOVCHI';
 
   @override

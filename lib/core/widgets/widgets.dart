@@ -10,6 +10,7 @@ export 'detail_scaffold.dart';
 export 'error_retry_view.dart';
 export 'filter_chips.dart';
 export 'initials_avatar.dart';
+export 'labeled_card.dart';
 export 'labeled_text_field.dart';
 export 'money_text.dart';
 export 'photo_attach_tile.dart';

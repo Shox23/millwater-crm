@@ -111,6 +111,19 @@ class StopCard extends StatelessWidget {
               ),
             ],
           ),
+          // Задание к доставке: сколько капсул везти. Показываем, пока точка
+          // не закрыта, — после закрытия важнее факт, а не план.
+          if (!stop.isCompleted && (stop.bottleSellCount ?? 0) > 0)
+            Row(
+              spacing: 4,
+              children: [
+                Icon(Icons.water_drop_outlined, size: 16, color: t.primary),
+                Text(
+                  context.l10n.stopBottleSell(stop.bottleSellCount!),
+                  style: AppTypography.secondary.copyWith(color: t.primary),
+                ),
+              ],
+            ),
           if (stop.isCompleted) ...[
             const Divider(),
             Row(

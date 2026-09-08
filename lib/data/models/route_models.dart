@@ -87,7 +87,12 @@ class RouteListItem extends Equatable {
 /// `customer_orders: [{customer_id, order_purpose, sequence}]`, и маршрут
 /// может быть смешанным — по дороге и капсулы завезли, и кулер забрали.
 class RouteOrderInput extends Equatable {
-  const RouteOrderInput({required this.customerId, this.purpose, this.sequence});
+  const RouteOrderInput({
+    required this.customerId,
+    this.purpose,
+    this.sequence,
+    this.bottleSellCount,
+  });
 
   final String customerId;
 
@@ -98,8 +103,13 @@ class RouteOrderInput extends Equatable {
   /// Порядок объезда. `null` — сервер поставит следующим номером.
   final int? sequence;
 
+  /// Сколько капсул везти этому заказчику — задание водителю, а не факт.
+  /// Осмысленно только у доставки 19 л: вывозу и опту везти нечего.
+  final int? bottleSellCount;
+
   @override
-  List<Object?> get props => [customerId, purpose, sequence];
+  List<Object?> get props =>
+      [customerId, purpose, sequence, bottleSellCount];
 }
 
 /// Остановка маршрута — доставка конкретному заказчику (RouteCustomerResponse).
@@ -133,6 +143,7 @@ class RouteStop extends Equatable {
     this.capsuleBalanceAfter,
     this.effectiveWaterPrice,
     this.damagedBottleFine,
+    this.bottleSellCount,
   });
 
   /// Идентификатор остановки (route_customer_id) — им оперируют driver-эндпоинты.
@@ -209,6 +220,13 @@ class RouteStop extends Equatable {
   final int? effectiveWaterPrice;
   final int? damagedBottleFine;
 
+  /// Сколько капсул админ назначил к доставке (`bottle_sell_count`).
+  ///
+  /// Это задание, а не факт: сколько привезли на самом деле, водитель
+  /// отмечает сам при завершении. `null` — задание не ставили (так у всех
+  /// заказов, заведённых до появления поля).
+  final int? bottleSellCount;
+
   /// Доставка выполнена. `failed` сюда не входит: точка закрыта, но привезти
   /// не удалось, и в «выполнено N из M» ей не место.
   bool get isCompleted => status == DeliveryStatus.delivered;
@@ -279,6 +297,7 @@ class RouteStop extends Equatable {
       purpose: purpose,
       effectiveWaterPrice: effectiveWaterPrice,
       damagedBottleFine: damagedBottleFine,
+      bottleSellCount: bottleSellCount,
     );
   }
 
@@ -363,6 +382,7 @@ class RouteStop extends Equatable {
         capsuleBalanceAfter: optionalInt(json['bottle_balance_after']),
         effectiveWaterPrice: _money(json['effective_water_price']),
         damagedBottleFine: _money(json['damaged_bottle_fine']),
+        bottleSellCount: optionalInt(json['bottle_sell_count']),
       );
   }
 
@@ -424,6 +444,7 @@ class RouteStop extends Equatable {
         capsuleBalanceAfter,
         effectiveWaterPrice,
         damagedBottleFine,
+        bottleSellCount,
       ];
 }
 

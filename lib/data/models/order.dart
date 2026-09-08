@@ -121,6 +121,7 @@ class Order extends Equatable {
     this.bulk10lPrice,
     this.pickedCoolers,
     this.pickedBottles,
+    this.bottleSellCount,
     this.payments = const [],
     this.completedAt,
     required this.createdAt,
@@ -189,6 +190,11 @@ class Order extends Equatable {
   /// Вывоз: сколько кулеров и капсул забрали у заказчика.
   final int? pickedCoolers;
   final int? pickedBottles;
+
+  /// Сколько капсул назначено к доставке (`bottle_sell_count`) — задание
+  /// водителю от админа. Что привезли на самом деле, живёт в
+  /// [deliveredCapsules].
+  final int? bottleSellCount;
 
   /// История платежей по заказу.
   final List<OrderPayment> payments;
@@ -288,6 +294,7 @@ class Order extends Equatable {
       bulk10lPrice: _money(json['bulk_10l_price']),
       pickedCoolers: optionalInt(json['picked_coolers']),
       pickedBottles: optionalInt(json['picked_bottles']),
+      bottleSellCount: optionalInt(json['bottle_sell_count']),
       // Строка без `id` пропускается, а не роняет заказ: история платежей —
       // справка, из-за неё терять карточку незачем.
       payments: parseList(json['payments'], OrderPayment.fromJson),
@@ -380,6 +387,7 @@ class Order extends Equatable {
         bulk10lPrice,
         pickedCoolers,
         pickedBottles,
+        bottleSellCount,
         payments,
         completedAt,
         createdAt,

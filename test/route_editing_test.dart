@@ -37,12 +37,17 @@ class _RecordingRepository extends MockCrmRepository {
     required String routeId,
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
+    int? bottleSellCount,
   }) {
-    calls.add('add:$customerId');
+    // Задание к доставке пишем в след вызова: экран обязан отправить его
+    // вместе с точкой — изменить это число потом сервер не даст.
+    calls.add('add:$customerId'
+        '${bottleSellCount == null ? '' : ':$bottleSellCount'}');
     return super.addRouteCustomer(
       routeId: routeId,
       customerId: customerId,
       purpose: purpose,
+      bottleSellCount: bottleSellCount,
     );
   }
 
@@ -206,6 +211,21 @@ void main() {
       await tester.pump();
     }
 
+    /// Задание к доставке у только что добавленной точки.
+    ///
+    /// Без него форма не отпускает: доставка без числа капсул оставила бы
+    /// водителя без ответа на вопрос «сколько везти», а изменить его потом
+    /// сервер не даст.
+    Future<void> setBottleCount(WidgetTester tester, int count) async {
+      final plus = find.byIcon(Icons.add);
+      for (var i = 0; i < count; i++) {
+        await tester.ensureVisible(plus);
+        await tester.pump();
+        await tester.tap(plus);
+        await tester.pump();
+      }
+    }
+
     Future<void> save(WidgetTester tester) async {
       final button = find.widgetWithText(AppButton, 'Сохранить');
       await tester.ensureVisible(button);
@@ -243,11 +263,12 @@ void main() {
 
       await tapRow(tester, removed.name);
       await tapRow(tester, added.name);
+      await setBottleCount(tester, 3);
       await save(tester);
 
       // Ни даты, ни водителя не трогали — лишних запросов быть не должно,
       // и удаление обязано уйти раньше добавления.
-      expect(repo.calls, ['remove:${removed.id}', 'add:${added.id}']);
+      expect(repo.calls, ['remove:${removed.id}', 'add:${added.id}:3']);
 
       final updated = current(repo, route.id);
       expect(updated.stops.any((s) => s.customerId == removed.id), isFalse);
@@ -269,9 +290,10 @@ void main() {
       // Тап по уже входящей точке заблокирован правилом статуса.
       await tapRow(tester, existing.name);
       await tapRow(tester, added.name);
+      await setBottleCount(tester, 2);
       await save(tester);
 
-      expect(repo.calls, ['add:${added.id}']);
+      expect(repo.calls, ['add:${added.id}:2']);
 
       final updated = current(repo, route.id);
       expect(updated.stops.any((s) => s.customerId == existing.id), isTrue);

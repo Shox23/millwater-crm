@@ -19,6 +19,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/detail_scaffold.dart';
+import '../../../core/widgets/labeled_card.dart';
 import '../../../core/widgets/photo_attach_tile.dart';
 import '../../../core/widgets/quantity_stepper.dart';
 import '../../../core/widgets/segmented_toggle.dart';
@@ -336,7 +337,12 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// фото) остаётся снаружи.
   List<Widget> _purposeSections(BuildContext context) => switch (_purpose) {
         OrderPurpose.delivery19l => [
-            _LabeledCard(
+            // Задание админа — над счётчиками: водитель сперва видит, сколько
+            // должен привезти, и лишь потом отмечает, сколько привёз. Это
+            // только показ: менять задание с его стороны нечем.
+            if ((widget.stop.bottleSellCount ?? 0) > 0)
+              _BottleSellCard(count: widget.stop.bottleSellCount!),
+            LabeledCard(
               label: context.l10n.completionCapsules,
               child: QuantityStepper(
                 value: _capsules,
@@ -348,7 +354,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                     ProductConfig.capsuleVolumeLiters),
               ),
             ),
-            _LabeledCard(
+            LabeledCard(
               label: context.l10n.completionReturned,
               child: QuantityStepper(
                 value: _returned,
@@ -357,7 +363,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 caption: context.l10n.completionReturnedCaption,
               ),
             ),
-            _LabeledCard(
+            LabeledCard(
               label: context.l10n.completionDamaged,
               child: QuantityStepper(
                 value: _damaged,
@@ -370,7 +376,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 caption: context.l10n.completionDamagedCaption,
               ),
             ),
-            _LabeledCard(
+            LabeledCard(
               label: context.l10n.completionBalance,
               child: _BalanceSummary(
                 before: _balanceBefore,
@@ -379,7 +385,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             ),
           ],
         OrderPurpose.pickup => [
-            _LabeledCard(
+            LabeledCard(
               label: context.l10n.completionPickedCoolers,
               child: QuantityStepper(
                 value: _pickedCoolers,
@@ -388,7 +394,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 caption: context.l10n.completionPickedCoolersCaption,
               ),
             ),
-            _LabeledCard(
+            LabeledCard(
               label: context.l10n.completionPickedBottles,
               child: QuantityStepper(
                 value: _pickedBottles,
@@ -397,7 +403,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 caption: context.l10n.completionPickedBottlesCaption,
               ),
             ),
-            _LabeledCard(
+            LabeledCard(
               label: context.l10n.completionDamaged,
               child: QuantityStepper(
                 value: _damaged,
@@ -464,7 +470,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             ),
           ),
           if (widget.location != null)
-            _LabeledCard(
+            LabeledCard(
               label: context.l10n.completionCoordinates,
               child: _LocationRow(
                 fix: _fix,
@@ -473,7 +479,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               ),
             ),
           ..._purposeSections(context),
-          _LabeledCard(
+          LabeledCard(
             label: context.l10n.completionMethod,
             child: SegmentedToggle<PaymentMethod>(
               value: _method,
@@ -486,7 +492,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               ],
             ),
           ),
-          _LabeledCard(
+          LabeledCard(
             label: context.l10n.completionAmount,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -811,27 +817,6 @@ class _AmountHint extends StatelessWidget {
 }
 
 /// Карточка с капс-подписью сверху и произвольным содержимым.
-class _LabeledCard extends StatelessWidget {
-  const _LabeledCard({required this.label, required this.child});
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AppSpacing.md,
-        children: [
-          Text(label, style: AppTypography.fieldLabel.copyWith(color: t.text2)),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
 /// Строка опта: сколько бутылей и по какой цене.
 ///
 /// Цену вводит водитель, а не подставляет прайс: у пятилитровок и
@@ -856,7 +841,7 @@ class _BulkCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
 
-    return _LabeledCard(
+    return LabeledCard(
       label: label,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -893,6 +878,52 @@ class _BulkCard extends StatelessWidget {
               Text(context.l10n.commonSum,
                   style: AppTypography.secondary.copyWith(color: t.text2)),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Задание к доставке: сколько капсул назначил админ.
+///
+/// Отдельной карточкой над счётчиками, а не подписью у поля: это не то же
+/// самое, что «привезено». Число из заказа, водитель его не правит — если
+/// повезёт другое количество, он отметит факт ниже, и сервер увидит
+/// расхождение.
+class _BottleSellCard extends StatelessWidget {
+  const _BottleSellCard({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: t.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        spacing: AppSpacing.md,
+        children: [
+          Icon(Icons.assignment_outlined, size: 20, color: t.primary),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(l10n.completionBottleSell,
+                    style: AppTypography.fieldLabel.copyWith(color: t.primary)),
+                Text(l10n.completionBottleSellValue(count),
+                    style: AppTypography.bodyStrong.copyWith(color: t.text)),
+                Text(l10n.completionBottleSellHint,
+                    style: AppTypography.secondary.copyWith(color: t.text2)),
+              ],
+            ),
           ),
         ],
       ),

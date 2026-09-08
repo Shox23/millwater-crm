@@ -1178,6 +1178,54 @@ abstract class AppLocalizations {
   /// **'Цель точки'**
   String get routeFormStopPurpose;
 
+  /// No description provided for @routeFormBottleSell.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАПСУЛ К ДОСТАВКЕ'**
+  String get routeFormBottleSell;
+
+  /// No description provided for @routeFormBottleSellHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько везти этому заказчику'**
+  String get routeFormBottleSellHint;
+
+  /// No description provided for @routeFormBottleSellRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите, сколько капсул везти'**
+  String get routeFormBottleSellRequired;
+
+  /// No description provided for @routeFormBottleSellLocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Задано при добавлении точки — сервер менять его не умеет'**
+  String get routeFormBottleSellLocked;
+
+  /// No description provided for @stopBottleSell.
+  ///
+  /// In ru, this message translates to:
+  /// **'Везём {count} капсул'**
+  String stopBottleSell(int count);
+
+  /// No description provided for @completionBottleSell.
+  ///
+  /// In ru, this message translates to:
+  /// **'НАЗНАЧЕНО К ДОСТАВКЕ'**
+  String get completionBottleSell;
+
+  /// No description provided for @completionBottleSellValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} капсула} few{{count} капсулы} other{{count} капсул}}'**
+  String completionBottleSellValue(int count);
+
+  /// No description provided for @completionBottleSellHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Столько назначил админ. Ниже отметьте, сколько привезли на самом деле'**
+  String get completionBottleSellHint;
+
   /// No description provided for @routeFormDriver.
   ///
   /// In ru, this message translates to:

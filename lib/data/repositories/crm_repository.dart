@@ -173,10 +173,16 @@ abstract class CrmRepository {
   /// Заказчик теперь передаётся ещё и телом запроса вместе с целью заказа:
   /// сервер читает его оттуда, а не из пути. Ответ 204 — см. оговорку у
   /// [assignDriver].
+  ///
+  /// [bottleSellCount] — сколько капсул везти этому заказчику. Изменить это
+  /// число у **уже добавленной** точки нечем: у сервера есть только создание,
+  /// удаление и правка порядка объезда, поэтому задание ставится в момент
+  /// добавления.
   Future<void> addRouteCustomer({
     required String routeId,
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
+    int? bottleSellCount,
   });
 
   /// Убирает заказчика из маршрута

@@ -381,6 +381,7 @@ class MockCrmRepository implements CrmRepository {
         purpose: order.purpose ?? purpose,
         sequence: order.sequence ?? i + 1,
         customerCoolerCount: c.coolerCount,
+        bottleSellCount: order.bottleSellCount,
       ));
     }
     final route = RouteDetail(
@@ -446,6 +447,7 @@ class MockCrmRepository implements CrmRepository {
     required String routeId,
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
+    int? bottleSellCount,
   }) async {
     await _tick();
     final customer = _customers.where((c) => c.id == customerId).firstOrNull;
@@ -463,6 +465,8 @@ class MockCrmRepository implements CrmRepository {
           customerAddress: customer.address,
           customerPhone: customer.phone,
           status: DeliveryStatus.pending,
+          purpose: purpose,
+          bottleSellCount: bottleSellCount,
         ),
       ]);
     });

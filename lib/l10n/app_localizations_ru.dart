@@ -629,6 +629,43 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeFormStopPurpose => 'Цель точки';
 
   @override
+  String get routeFormBottleSell => 'КАПСУЛ К ДОСТАВКЕ';
+
+  @override
+  String get routeFormBottleSellHint => 'Сколько везти этому заказчику';
+
+  @override
+  String get routeFormBottleSellRequired => 'Укажите, сколько капсул везти';
+
+  @override
+  String get routeFormBottleSellLocked =>
+      'Задано при добавлении точки — сервер менять его не умеет';
+
+  @override
+  String stopBottleSell(int count) {
+    return 'Везём $count капсул';
+  }
+
+  @override
+  String get completionBottleSell => 'НАЗНАЧЕНО К ДОСТАВКЕ';
+
+  @override
+  String completionBottleSellValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count капсул',
+      few: '$count капсулы',
+      one: '$count капсула',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get completionBottleSellHint =>
+      'Столько назначил админ. Ниже отметьте, сколько привезли на самом деле';
+
+  @override
   String get routeFormDriver => 'ВОДИТЕЛЬ';
 
   @override

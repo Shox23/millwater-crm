@@ -396,6 +396,9 @@ class ApiCrmRepository implements CrmRepository {
               // Своя цель точки перебивает цель маршрута.
               'order_purpose': (order.purpose ?? purpose).toJson(),
               'sequence': ?order.sequence,
+              // Задание водителю: сколько капсул везти. Только у доставки —
+              // см. `RouteOrderInput.bottleSellCount`.
+              'bottle_sell_count': ?order.bottleSellCount,
             },
         ],
       },
@@ -434,6 +437,7 @@ class ApiCrmRepository implements CrmRepository {
     required String routeId,
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
+    int? bottleSellCount,
   }) =>
       // Заказчик остаётся и в пути — ради старых сборок, — но сервер читает
       // его из тела вместе с целью заказа.
@@ -442,6 +446,9 @@ class ApiCrmRepository implements CrmRepository {
         data: {
           'customer_id': customerId,
           'order_purpose': purpose.toJson(),
+          // Ключа нет вовсе, когда задания не ставили: у вывоза и опта везти
+          // нечего, и ноль там значил бы «привезти ноль капсул».
+          'bottle_sell_count': ?bottleSellCount,
         },
       );
 
