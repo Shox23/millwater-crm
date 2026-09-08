@@ -135,7 +135,23 @@ abstract class GeoLink {
 
   /// Яндекс: порядок обратный — «долгота, широта».
   static GeoPoint? _yandex(Uri uri) {
-    for (final key in ['ll', 'pt', 'whatshere[point]', 'rtext']) {
+    // `rtext` — исключение из яндексовского порядка: в нём координаты идут
+    // как «широта, долгота», в отличие от `ll`, `pt` и `whatshere`. Прочитав
+    // его наравне с ними, мы получали точку с широтой 69° — она не проходила
+    // рамку правдоподобия, и ссылка молча оставалась текстом.
+    final route = _numbersIn(uri.queryParameters['rtext']);
+    if (route.length >= 2) {
+      // Из маршрута берём **конец**: ссылку присылают с построенным до
+      // заказчика маршрутом, и он в ней — точка назначения, а начало это
+      // место, где стоял отправитель.
+      return _point(
+        route[route.length - 2],
+        route[route.length - 1],
+        GeoLinkSource.yandex,
+      );
+    }
+
+    for (final key in ['ll', 'pt', 'whatshere[point]']) {
       final pair = _pair(uri.queryParameters[key]);
       // Меняем местами: у Яндекса первой идёт долгота.
       if (pair != null) {
@@ -144,6 +160,14 @@ abstract class GeoLink {
     }
     return null;
   }
+
+  /// Все числа значения параметра, по порядку.
+  static List<String> _numbersIn(String? value) => value == null
+      ? const []
+      : RegExp(r'-?\d+(?:\.\d+)?')
+          .allMatches(value)
+          .map((m) => m.group(0)!)
+          .toList();
 
   /// `geo:41.31,69.24` либо андроидовское `geo:0,0?q=41.31,69.24(Метка)`.
   static GeoPoint? _geoUri(Uri uri) {

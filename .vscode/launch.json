@@ -1,0 +1,39 @@
+{
+  // Запуск из VS Code с параметрами сборки. Без них приложение стартует, но
+  // без Sentry и с запасным геокодером вместо Яндекса — а заметно это станет
+  // уже у пользователя, поэтому флаг вшит в конфигурации.
+  //
+  // toolArgs уходят самой команде `flutter run`; args продублированы для
+  // старых версий расширения Dart, где параметры передавались так. Лишний из
+  // двух приложение игнорирует.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "CRM Millwater (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": ["--dart-define-from-file=dart_defines.json"],
+      "args": ["--dart-define-from-file=dart_defines.json"]
+    },
+    {
+      "name": "CRM Millwater (profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "profile",
+      "toolArgs": ["--dart-define-from-file=dart_defines.json"],
+      "args": ["--dart-define-from-file=dart_defines.json"]
+    },
+    {
+      "name": "CRM Millwater (release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "release",
+      "toolArgs": ["--dart-define-from-file=dart_defines.json"],
+      "args": ["--dart-define-from-file=dart_defines.json"]
+    }
+  ]
+}

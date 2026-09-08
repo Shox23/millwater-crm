@@ -70,6 +70,26 @@ void main() {
       );
     });
 
+    test('rtext читается как «широта, долгота» — не как ll', () {
+      // Ссылка навигатора с уже построенным маршрутом: менеджеры присылают
+      // именно такие. В `rtext` порядок прямой, в отличие от `ll` — прочитав
+      // его наравне с ll, получаем широту 69° и теряем точку.
+      expectTashkent(
+        GeoLink.tryParse('https://yandex.ru/navi?rtext=$lat,$lon&rtt=auto'),
+        from: GeoLinkSource.yandex,
+      );
+    });
+
+    test('из маршрута берётся точка назначения', () {
+      // Первая пара — где стоял отправитель, вторая — куда он ехал, то есть
+      // заказчик.
+      final point = GeoLink.tryParse(
+        'https://yandex.ru/navi?rtext=41.359684,69.206596~$lat,$lon&rtt=auto',
+      );
+
+      expectTashkent(point, from: GeoLinkSource.yandex);
+    });
+
     test('whatshere тоже несёт точку', () {
       expectTashkent(
         GeoLink.tryParse(
