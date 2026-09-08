@@ -715,6 +715,26 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mapOpenFailed => 'Не удалось открыть Яндекс.Карты';
 
   @override
+  String get mapAllStopsDone =>
+      'Все точки маршрута уже закрыты — вести некуда.';
+
+  @override
+  String mapStopsWithoutPoint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'У $count адресов нет точки на карте',
+      few: 'У $count адресов нет точки на карте',
+      one: 'У $count адреса нет точки на карте',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mapAddMapLinkHint =>
+      'Такой маршрут откроется в браузере. Чтобы он открывался в Яндекс.Картах, вставьте в адрес заказчика ссылку с карты.';
+
+  @override
   String get driversTitle => 'Водители';
 
   @override
@@ -927,13 +947,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get myRoutesTitle => 'Мои маршруты';
 
   @override
-  String get myRoutesStatRoutes => 'всего маршрутов';
+  String get myRoutesStatRoutes => 'маршрутов за день';
 
   @override
-  String get myRoutesStatDeliveredToday => 'доставлено сегодня';
+  String get myRoutesStatDeliveredToday => 'доставлено';
 
   @override
-  String get myRoutesStatOrders => 'всего заказов';
+  String get myRoutesStatOrders => 'заказов за день';
 
   @override
   String get myRoutesEmptyHint =>
@@ -971,12 +991,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get completionBalance => 'КАПСУЛ У КЛИЕНТА';
 
   @override
-  String get completionBalanceCaption =>
-      'станет остатком у клиента вместо прежнего';
-
-  @override
-  String get completionBalanceUnchecked =>
-      'Подставлено число привезённых. Сверьте со складом клиента — это значение заменит прежний остаток.';
+  String completionBalanceFormula(int before, int delivered) {
+    return 'было $before + привезено $delivered';
+  }
 
   @override
   String get completionMethod => 'СПОСОБ ОПЛАТЫ';

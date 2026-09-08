@@ -318,6 +318,16 @@
     }
   },
   "mapOpenFailed": "Yandex.Xaritani ochib bo‘lmadi",
+  "mapAllStopsDone": "Marshrutning barcha nuqtalari yopilgan — boradigan joy yo‘q.",
+  "mapStopsWithoutPoint": "{count, plural, other{{count} ta manzilning xaritada nuqtasi yo‘q}}",
+  "@mapStopsWithoutPoint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapAddMapLinkHint": "Bunday marshrut brauzerda ochiladi. Yandex.Xaritada ochilishi uchun mijoz manziliga xaritadagi havolani qo‘ying.",
   "driversTitle": "Haydovchilar",
   "driversHeader": "Jamoa · {count}",
   "@driversHeader": {
@@ -432,9 +442,9 @@
   "customerFormCommentHint": "Masalan, tuman yoki mo‘ljal",
   "customerFormSaveFailed": "Mijozni saqlab bo‘lmadi.",
   "myRoutesTitle": "Mening marshrutlarim",
-  "myRoutesStatRoutes": "jami marshrut",
-  "myRoutesStatDeliveredToday": "bugun yetkazildi",
-  "myRoutesStatOrders": "jami buyurtma",
+  "myRoutesStatRoutes": "kunlik marshrut",
+  "myRoutesStatDeliveredToday": "yetkazildi",
+  "myRoutesStatOrders": "kunlik buyurtma",
   "myRoutesEmptyHint": "Dispetcher marshrut biriktirsa, u shu yerda paydo bo‘ladi",
   "myRouteTitle": "Marshrut",
   "myRouteStatusFailed": "Holatni o‘zgartirib bo‘lmadi.",
@@ -459,8 +469,17 @@
     }
   },
   "completionBalance": "MIJOZDAGI KAPSULALAR",
-  "completionBalanceCaption": "avvalgi qoldiq o‘rniga shu son yoziladi",
-  "completionBalanceUnchecked": "Olib kelingan soni qo‘yildi. Mijoz omborini tekshiring — bu qiymat avvalgi qoldiqni almashtiradi.",
+  "completionBalanceFormula": "avval {before} + keltirildi {delivered}",
+  "@completionBalanceFormula": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "delivered": {
+        "type": "int"
+      }
+    }
+  },
   "completionMethod": "TO‘LOV USULI",
   "completionAmount": "TO‘LOV SUMMASI",
   "completionAmountRequired": "Summani kiriting. To‘lov bo‘lmagan bo‘lsa — nol",

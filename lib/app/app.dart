@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../l10n/l10n.dart';
 import '../core/observability/session_log.dart';
+import '../core/widgets/dismiss_keyboard.dart';
 import '../core/pricing/capsule_price.dart';
 import '../data/models/user_role.dart';
 import '../data/network/dio_client.dart';
@@ -144,6 +145,10 @@ class _CrmAppState extends State<CrmApp> {
                   AppLocalizations.localizationsDelegates,
               localeResolutionCallback: (system, _) =>
                   LocaleCubit.resolve(locale, system),
+              // Тап мимо поля убирает клавиатуру — на всех экранах сразу.
+              // Раньше фокус снимался только по кнопке отправки.
+              builder: (context, child) =>
+                  DismissKeyboardOnTapOutside(child: child ?? const SizedBox()),
               home: _rootFor(auth),
             );
           },

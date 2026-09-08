@@ -7,7 +7,9 @@ import '../../../l10n/l10n.dart';
 import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/utils/day.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/date_tabs.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/filter_chips.dart';
@@ -44,14 +46,14 @@ class _MyRoutesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = DateFormat('dd.MM.yy').format(DateTime.now());
-
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: BlocBuilder<MyRoutesBloc, MyRoutesState>(
           builder: (context, state) {
             final bloc = context.read<MyRoutesBloc>();
+            final isToday = state.date == dayOnly(DateTime.now());
+            final dateLabel = DateFormat('dd.MM.yy').format(state.date);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: AppSpacing.lg,
@@ -64,7 +66,11 @@ class _MyRoutesView extends StatelessWidget {
                     0,
                   ),
                   child: ScreenHeader(
-                    label: context.l10n.routesHeaderToday(dateLabel),
+                    // Подпись идёт за лентой: «Сегодня · 14.08.26» только
+                    // когда выбран сегодняшний день.
+                    label: isToday
+                        ? context.l10n.routesHeaderToday(dateLabel)
+                        : context.l10n.routesHeaderOn(dateLabel),
                     title: context.l10n.myRoutesTitle,
                     // Список маршрутов показывает сегодняшний день, а история
                     // за всё время теперь есть у сервера — открываем её
@@ -87,6 +93,10 @@ class _MyRoutesView extends StatelessWidget {
                     ),
                   ),
                 ),
+                DateTabs(
+                  selected: state.date,
+                  onSelected: (date) => bloc.add(MyRoutesDateChanged(date)),
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.page,
@@ -96,10 +106,10 @@ class _MyRoutesView extends StatelessWidget {
                     children: [
                       // Денег здесь нет намеренно: сводный отчёт — админский
                       // эндпоинт, да и в ТЗ на экране водителя выручки нет.
-                      // Прогресс — за сегодня, как и подпись в шапке.
+                      // Прогресс — за выбранный день, как и подпись в шапке.
                       HeroProgressCard(
-                        done: state.deliveredToday,
-                        total: state.stopsToday,
+                        done: state.deliveredCount,
+                        total: state.stopsCount,
                       ),
                       // IntrinsicHeight: подпись «доставлено сегодня» длиннее
                       // соседних и переносится на две строки — без этого
@@ -118,14 +128,14 @@ class _MyRoutesView extends StatelessWidget {
                             ),
                             Expanded(
                               child: StatTile(
-                                value: '${state.deliveredToday}',
+                                value: '${state.deliveredCount}',
                                 label: context.l10n.myRoutesStatDeliveredToday,
                                 alignment: CrossAxisAlignment.center,
                               ),
                             ),
                             Expanded(
                               child: StatTile(
-                                value: '${state.stopsTotal}',
+                                value: '${state.stopsCount}',
                                 label: context.l10n.myRoutesStatOrders,
                                 alignment: CrossAxisAlignment.center,
                               ),
@@ -189,14 +199,22 @@ class _MyRoutesList extends StatelessWidget {
 
     final items = state.visible;
     if (items.isEmpty) {
+      final isToday = state.date == dayOnly(DateTime.now());
       return EmptyStateView(
         icon: Icons.route_outlined,
         title: state.filter == RouteFilter.all
             ? context.l10n.routesEmptyTitle
             : context.l10n.filterEmptyTitle,
-        hint: state.filter == RouteFilter.all
-            ? context.l10n.myRoutesEmptyHint
-            : context.l10n.filterEmptyHint,
+        // На прошедшем дне ждать назначения нечего — там подсказка админского
+        // экрана про конкретную дату, а обещание «маршрут появится здесь»
+        // остаётся сегодняшнему дню, где оно и правда сбудется.
+        hint: state.filter != RouteFilter.all
+            ? context.l10n.filterEmptyHint
+            : isToday
+                ? context.l10n.myRoutesEmptyHint
+                : context.l10n.routesEmptyDayHint(
+                    DateFormat('dd.MM.yy').format(state.date),
+                  ),
       );
     }
 

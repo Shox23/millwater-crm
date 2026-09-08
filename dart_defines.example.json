@@ -1,5 +1,6 @@
 {
   "SENTRY_DSN": "",
   "API_BASE_URL": "https://crm.millwater.uz",
-  "CAPSULE_PRICE": "20000"
+  "CAPSULE_PRICE": "20000",
+  "YANDEX_GEOCODER_KEY": ""
 }

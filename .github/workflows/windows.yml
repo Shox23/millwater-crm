@@ -1,0 +1,68 @@
+# Сборка Windows-версии. На Маке её собрать нельзя — нужен MSVC,
+# поэтому единственный способ получить exe, не заводя машину с Windows.
+#
+# Запускается вручную (Actions → Windows build → Run workflow) либо
+# по тегу вида v1.0.0. Результат — zip в артефактах прогона, лежит 90 дней.
+name: Windows build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Версия закреплена: на другой сборка может разойтись с локальной.
+          flutter-version: '3.44.6'
+          channel: stable
+          cache: true
+
+      # dart_defines.json в .gitignore — на раннере его нет.
+      # Собираем из секретов репозитория (Settings → Secrets → Actions).
+      # Адрес и запасная цена не секретны и продублированы значениями по
+      # умолчанию: без этого незаведённый секрет дал бы пустой API_BASE_URL,
+      # и сборка молча вышла бы без связи с бэкендом. Секретен только DSN,
+      # пустой он просто выключает Sentry.
+      - name: Собрать dart_defines.json
+        shell: pwsh
+        run: |
+          @{
+            API_BASE_URL  = "${{ secrets.API_BASE_URL || 'https://crm.millwater.uz' }}"
+            CAPSULE_PRICE = "${{ secrets.CAPSULE_PRICE || '20000' }}"
+            SENTRY_DSN    = "${{ secrets.SENTRY_DSN }}"
+          } | ConvertTo-Json | Set-Content -Path dart_defines.json -Encoding utf8
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      - run: flutter test
+
+      - name: Собрать exe
+        run: flutter build windows --release --dart-define-from-file=dart_defines.json
+
+      # Flutter не кладёт рантайм Visual C++ рядом с exe, а на чистой Windows
+      # его может не быть — приложение тогда не стартует вовсе, без внятного
+      # сообщения. Забираем DLL прямо с раннера.
+      - name: Доложить рантайм Visual C++
+        shell: pwsh
+        run: |
+          $release = "build\windows\x64\runner\Release"
+          $crt = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio\2022\*\VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT" -Directory -ErrorAction Stop |
+                 Sort-Object FullName | Select-Object -Last 1
+          Write-Host "Беру рантайм из: $($crt.FullName)"
+          Copy-Item "$($crt.FullName)\*.dll" -Destination $release -Force
+          Get-ChildItem $release -Filter *.dll | Select-Object Name, Length | Format-Table
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: crm-millwater-windows
+          path: build/windows/x64/runner/Release/
+          if-no-files-found: error

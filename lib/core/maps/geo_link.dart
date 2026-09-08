@@ -66,14 +66,40 @@ abstract class GeoLink {
     return Uri.tryParse(match.group(0)!);
   }
 
+  /// Ссылка на карту, из которой координат на месте не достать: они появятся
+  /// только после перехода по редиректу. Такие разворачивает
+  /// `GeoLinkResolver` — здесь только опознание.
+  ///
+  /// `null` — в строке нет ссылки или ссылка не картографическая.
+  static Uri? shortLinkIn(String text) {
+    final uri = _firstUri(text.trim());
+    if (uri == null || uri.scheme == 'geo') return null;
+    return _isMapHost(uri.host.toLowerCase()) ? uri : null;
+  }
+
   static GeoPoint? _fromUri(Uri uri) {
     if (uri.scheme == 'geo') return _geoUri(uri);
 
     final host = uri.host.toLowerCase();
-    if (host.contains('yandex.')) return _yandex(uri);
-    if (host.contains('google.') || host.endsWith('goo.gl')) return _google(uri);
+    if (_isYandexHost(host)) return _yandex(uri);
+    if (_isGoogleHost(host)) return _google(uri);
     return null;
   }
+
+  static bool _isMapHost(String host) =>
+      _isYandexHost(host) || _isGoogleHost(host);
+
+  static bool _isYandexHost(String host) => host.contains('yandex.');
+
+  /// `share.google` — тоже гугловский хост, но `contains('google.')` его не
+  /// ловит: точки после «google» в нём нет. Именно такую ссылку и вставляют
+  /// в поле адреса чаще всего, и из-за этой проверки она уходила в геокодер
+  /// текстом.
+  static bool _isGoogleHost(String host) =>
+      host.contains('google.') ||
+      host.endsWith('.google') ||
+      host == 'google' ||
+      host.endsWith('goo.gl');
 
   /// Google: порядок всегда «широта, долгота».
   ///

@@ -47,6 +47,9 @@ dependencies:
   shared_preferences: ^2.5.5
   path_provider: ^2.1.6
   share_plus: ^13.3.0
+  # Только для веб-выгрузки отчётов: у `path_provider` веб-реализации нет,
+  # и файл там отдаётся браузеру ссылкой на Blob. См. core/export/.
+  web: ^1.1.1
   sentry_flutter: ^9.0.0
 
 dev_dependencies:

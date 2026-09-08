@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'file_sharer_io.dart'
+    if (dart.library.js_interop) 'file_sharer_web.dart' as platform;
 
 /// Отдаёт полученный файл системе: сохраняет и открывает «Поделиться».
 ///
@@ -19,7 +19,10 @@ abstract class FileSharer {
   });
 }
 
-/// Боевая реализация: временный каталог + системный лист «Поделиться».
+/// Боевая реализация. Способ отдать файл зависит от платформы и живёт в
+/// `file_sharer_io.dart` / `file_sharer_web.dart`: на телефоне это временный
+/// файл и системный лист «Поделиться», в браузере — скачивание по ссылке на
+/// Blob, потому что веб-реализации `path_provider` не существует.
 class PlatformFileSharer implements FileSharer {
   const PlatformFileSharer();
 
@@ -28,27 +31,12 @@ class PlatformFileSharer implements FileSharer {
     required Uint8List bytes,
     required String filename,
     String? subject,
-  }) async {
-    // Временный каталог, а не «Документы»: файл нужен ровно до того момента,
-    // как пользователь выберет, куда его отправить. Система вычистит сама.
-    final dir = await getTemporaryDirectory();
-    final file = XFile.fromData(
-      bytes,
-      name: filename,
-      mimeType: _xlsxMimeType,
-      // Без пути share_plus на iOS отдаёт файл без имени, и в «Файлах» он
-      // сохраняется как безымянный.
-      path: '${dir.path}/$filename',
-    );
-    await file.saveTo('${dir.path}/$filename');
-
-    await SharePlus.instance.share(
-      ShareParams(files: [file], subject: subject),
-    );
-  }
-
-  static const _xlsxMimeType =
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  }) =>
+      platform.shareFile(
+        bytes: bytes,
+        filename: filename,
+        subject: subject,
+      );
 }
 
 /// Реализация для тестов: запоминает, что просили отдать.

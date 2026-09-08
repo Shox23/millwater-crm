@@ -705,6 +705,24 @@ class AppLocalizationsUz extends AppLocalizations {
   String get mapOpenFailed => 'Yandex.Xaritani ochib bo‘lmadi';
 
   @override
+  String get mapAllStopsDone =>
+      'Marshrutning barcha nuqtalari yopilgan — boradigan joy yo‘q.';
+
+  @override
+  String mapStopsWithoutPoint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ta manzilning xaritada nuqtasi yo‘q',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mapAddMapLinkHint =>
+      'Bunday marshrut brauzerda ochiladi. Yandex.Xaritada ochilishi uchun mijoz manziliga xaritadagi havolani qo‘ying.';
+
+  @override
   String get driversTitle => 'Haydovchilar';
 
   @override
@@ -918,13 +936,13 @@ class AppLocalizationsUz extends AppLocalizations {
   String get myRoutesTitle => 'Mening marshrutlarim';
 
   @override
-  String get myRoutesStatRoutes => 'jami marshrut';
+  String get myRoutesStatRoutes => 'kunlik marshrut';
 
   @override
-  String get myRoutesStatDeliveredToday => 'bugun yetkazildi';
+  String get myRoutesStatDeliveredToday => 'yetkazildi';
 
   @override
-  String get myRoutesStatOrders => 'jami buyurtma';
+  String get myRoutesStatOrders => 'kunlik buyurtma';
 
   @override
   String get myRoutesEmptyHint =>
@@ -962,12 +980,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get completionBalance => 'MIJOZDAGI KAPSULALAR';
 
   @override
-  String get completionBalanceCaption =>
-      'avvalgi qoldiq o‘rniga shu son yoziladi';
-
-  @override
-  String get completionBalanceUnchecked =>
-      'Olib kelingan soni qo‘yildi. Mijoz omborini tekshiring — bu qiymat avvalgi qoldiqni almashtiradi.';
+  String completionBalanceFormula(int before, int delivered) {
+    return 'avval $before + keltirildi $delivered';
+  }
 
   @override
   String get completionMethod => 'TO‘LOV USULI';

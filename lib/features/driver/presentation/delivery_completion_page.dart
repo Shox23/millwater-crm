@@ -75,13 +75,14 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   late final TextEditingController _bulk5Price;
   late final TextEditingController _bulk10Price;
 
-  /// Сколько капсул остаётся у заказчика после доставки. Сервер перезаписывает
-  /// им остаток, а водительские эндпоинты текущего остатка не отдают —
-  /// поэтому число вводит водитель, который видит склад клиента.
-  late int _bottleBalance;
+  /// Сколько капсул числится за заказчиком до этой доставки (серверное
+  /// `bottle_balance` заказчика).
+  int get _balanceBefore => widget.stop.customerBottleBalance ?? 0;
 
-  /// Остаток правили вручную — перестаём тянуть его за количеством.
-  bool _balanceLocked = false;
+  /// Сколько капсул останется у заказчика: прежний остаток плюс привезённое.
+  /// Сервер этим числом **перезаписывает** склад клиента, поэтому считаем его
+  /// сами и руками не даём править — расхождение уходило бы прямо в учёт.
+  int get _bottleBalance => _balanceBefore + _capsules;
 
   /// Сумму правили вручную — расчёт за водителем её больше не перебивает.
   /// Так закрываются частичная оплата и долг: цифра остаётся его.
@@ -113,7 +114,6 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     _capsules = widget.stop.deliveredCapsules ?? 1;
     _returned = widget.stop.returnedCapsules ?? 0;
     _damaged = widget.stop.damagedCapsules ?? 0;
-    _bottleBalance = _capsules;
     _bulk5Price = TextEditingController();
     _bulk10Price = TextEditingController();
     // Ранее введённая сумма важнее расчёта: значит, доставку уже проводили.
@@ -205,9 +205,6 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   void _onCapsulesChanged(int value) {
     setState(() {
       _capsules = value;
-      // Обычный случай — привезли и столько же оставили; если водитель
-      // поправил остаток сам, его значение больше не трогаем.
-      if (!_balanceLocked) _bottleBalance = value;
       // Сумма идёт за количеством, пока водитель не назначил свою.
       _recalculate();
     });
@@ -375,26 +372,9 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             ),
             _LabeledCard(
               label: context.l10n.completionBalance,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: AppSpacing.md,
-                children: [
-                  QuantityStepper(
-                    value: _bottleBalance,
-                    min: 0,
-                    onChanged: (value) => setState(() {
-                      _bottleBalance = value;
-                      _balanceLocked = true;
-                    }),
-                    caption: context.l10n.completionBalanceCaption,
-                  ),
-                  // Сервер этим числом ЗАМЕНЯЕТ остаток заказчика, а
-                  // подставлено сюда количество привезённых — правильного
-                  // значения взять негде, водительские эндпоинты остатка не
-                  // отдают. Пока счётчик не трогали, предупреждаем: не тронув
-                  // его, водитель молча затрёт склад клиента.
-                  if (!_balanceLocked) const _BalanceWarning(),
-                ],
+              child: _BalanceSummary(
+                before: _balanceBefore,
+                delivered: _capsules,
               ),
             ),
           ],
@@ -742,33 +722,30 @@ class _LocationRow extends StatelessWidget {
   }
 }
 
-/// Предупреждение под счётчиком остатка.
+/// Остаток заказчика после доставки: прежний склад плюс привезённое.
 ///
-/// Висит, пока водитель не подтвердил число своей рукой: значение по умолчанию
-/// равно привезённому количеству, а уходит оно на сервер как новый остаток
-/// заказчика — не сверив со складом, легко стереть то, что там уже было.
-class _BalanceWarning extends StatelessWidget {
-  const _BalanceWarning();
+/// Показывается числом, а не счётчиком: сервер этим значением **заменяет**
+/// склад клиента, и правка рукой уходила бы прямо в учёт. Слагаемые под
+/// числом — чтобы водитель видел, из чего оно сложилось.
+class _BalanceSummary extends StatelessWidget {
+  const _BalanceSummary({required this.before, required this.delivered});
+
+  final int before;
+  final int delivered;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: t.warnBg,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Row(
-        spacing: AppSpacing.sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        spacing: 2,
         children: [
-          Icon(Icons.info_outline, size: 18, color: t.warn),
-          Expanded(
-            child: Text(
-              context.l10n.completionBalanceUnchecked,
-              style: AppTypography.secondary.copyWith(color: t.warn),
-            ),
+          Text('${before + delivered}',
+              style: AppTypography.statNumber.copyWith(color: t.text)),
+          Text(
+            context.l10n.completionBalanceFormula(before, delivered),
+            style: AppTypography.secondary.copyWith(color: t.text2),
           ),
         ],
       ),

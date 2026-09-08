@@ -1,24 +1,38 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/core/location/device_location.dart';
+import 'package:crm_millwater/core/maps/address_geocoder.dart';
+import 'package:crm_millwater/core/maps/geo_link_resolver.dart';
+import 'package:crm_millwater/core/maps/route_plan.dart';
 import 'package:crm_millwater/core/maps/yandex_route_launcher.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/features/routes/presentation/widgets/build_route_section.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-RouteStop _stop(String address) => RouteStop(
+RouteStop _stop(
+  String address, {
+  DeliveryStatus status = DeliveryStatus.pending,
+  String name = 'Заказчик',
+  double? latitude,
+  double? longitude,
+}) =>
+    RouteStop(
       id: address,
       customerId: 'c-$address',
-      customerName: 'Заказчик',
+      customerName: name,
       customerAddress: address,
       customerPhone: '+998901234567',
-      status: DeliveryStatus.pending,
+      status: status,
+      customerLatitude: latitude,
+      customerLongitude: longitude,
     );
 
 Position _position(double lat, double lon) => Position(
@@ -57,6 +71,20 @@ class _FakeLocation {
       );
 }
 
+/// Любой запрос наружу означал бы, что тест полез в сеть.
+class _DeadAdapter implements HttpClientAdapter {
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) =>
+      throw StateError('сеть в тесте трогать нечем: ${options.uri}');
+}
+
 /// Собирает ссылки, которые блок отдал бы операционной системе.
 class _RecordingLauncher {
   final List<Uri> opened = [];
@@ -89,6 +117,12 @@ void main() {
   }) async {
     location ??= _FakeLocation();
     tester.view.physicalSize = const Size(1290, 2796);
+    // Планировщик без сети: разворачивать ссылки и геокодировать адреса в
+    // виджет-тесте нечем и незачем.
+    final planner = RoutePlanner(
+      resolver: GeoLinkResolver(dio: Dio()..httpClientAdapter = _DeadAdapter()),
+      geocoder: const NoGeocoder(),
+    );
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -104,6 +138,7 @@ void main() {
               stops: stops,
               launcher: launcher,
               location: location.service,
+              planner: planner,
             ),
           ),
         ),
@@ -278,6 +313,81 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('Построить маршрут'), findsOneWidget);
+  });
+
+  testWidgets('закрытые точки в маршрут не попадают', (tester) async {
+    final recorder = _RecordingLauncher();
+    await pumpSection(
+      tester,
+      [
+        _stop('Доставлено', status: DeliveryStatus.delivered),
+        _stop('Ехать сюда'),
+        _stop('Не доехали', status: DeliveryStatus.failed),
+      ],
+      recorder.service(),
+    );
+
+    await tester.tap(find.text('Построить маршрут'));
+    await tester.pump();
+
+    // Через адреса, где водитель уже был, вести его незачем.
+    expect(recorder.opened.single.queryParameters['rtext'],
+        '41.31,69.24~Ехать сюда');
+  });
+
+  testWidgets('когда все точки закрыты — строить нечего', (tester) async {
+    final recorder = _RecordingLauncher();
+    await pumpSection(
+      tester,
+      [_stop('Первый', status: DeliveryStatus.delivered)],
+      recorder.service(),
+    );
+
+    expect(find.textContaining('Все точки маршрута уже закрыты'), findsOneWidget);
+    await tester.tap(find.text('Построить маршрут'));
+    await tester.pump();
+
+    expect(recorder.opened, isEmpty);
+  });
+
+  testWidgets('маршрут по координатам уходит без предупреждений',
+      (tester) async {
+    final recorder = _RecordingLauncher();
+    await pumpSection(
+      tester,
+      [
+        _stop('Первый', latitude: 41.32, longitude: 69.25),
+        _stop('Второй', latitude: 41.33, longitude: 69.26),
+      ],
+      recorder.service(),
+    );
+
+    await tester.tap(find.text('Построить маршрут'));
+    await tester.pump();
+
+    expect(recorder.opened.single.queryParameters['rtext'],
+        '41.31,69.24~41.32,69.25~41.33,69.26');
+    expect(find.textContaining('нет точки на карте'), findsNothing);
+  });
+
+  testWidgets('адреса без координат названы водителю', (tester) async {
+    final recorder = _RecordingLauncher();
+    await pumpSection(
+      tester,
+      [
+        _stop('Шофиркон 5', name: 'корасу 1/6'),
+        _stop('Точная', latitude: 41.33, longitude: 69.26),
+      ],
+      recorder.service(),
+    );
+
+    await tester.tap(find.text('Построить маршрут'));
+    await tester.pump();
+
+    // Из-за такой точки маршрут и открывается в браузере вместо приложения —
+    // водитель должен знать, какой адрес чинить.
+    expect(find.textContaining('нет точки на карте'), findsOneWidget);
+    expect(find.textContaining('корасу 1/6'), findsOneWidget);
   });
 
   testWidgets('ошибка открытия показывается снекбаром', (tester) async {

@@ -8,6 +8,7 @@ import '../../../l10n/l10n.dart';
 
 import '../../../app/notifications_scope.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/export/file_sharer.dart';
 import '../../../core/pricing/capsule_price.dart';
 import '../../../core/utils/day.dart';
 import '../../../data/models/customer.dart';
@@ -17,6 +18,7 @@ import '../../../data/repositories/crm_repository.dart';
 import '../../customers/bloc/customers_bloc.dart';
 import '../../drivers/bloc/drivers_bloc.dart';
 import '../../reports/bloc/reports_bloc.dart';
+import '../../reports/presentation/report_export_page.dart';
 import '../bloc/day_deliveries_bloc.dart';
 import '../bloc/week_revenue_bloc.dart';
 import '../overlays/desktop_modals.dart';
@@ -47,7 +49,10 @@ import 'pages/routes_desktop_page.dart';
 /// сайдбару нужны цифры сразу из двух (должники и водители на линии), а
 /// переключение раздела не должно перезагружать то, что уже загружено.
 class DesktopShell extends StatelessWidget {
-  const DesktopShell({super.key});
+  const DesktopShell({super.key, this.fileSharer = const PlatformFileSharer()});
+
+  /// Куда уходит выгруженный отчёт. В тестах подменяется записывающим.
+  final FileSharer fileSharer;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +62,8 @@ class DesktopShell extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (_) => DriversBloc(repository)..add(const DriversRequested()),
+            create: (_) =>
+                DriversBloc(repository)..add(const DriversRequested()),
           ),
           BlocProvider(
             create: (_) =>
@@ -79,8 +85,8 @@ class DesktopShell extends StatelessWidget {
             )..add(const OrdersRequested()),
           ),
           BlocProvider(
-            create: (_) => ExpensesBloc(repository)
-              ..add(const ExpensesRequested()),
+            create: (_) =>
+                ExpensesBloc(repository)..add(const ExpensesRequested()),
           ),
           BlocProvider(
             create: (context) => ReportsBloc(
@@ -93,14 +99,16 @@ class DesktopShell extends StatelessWidget {
                 WeekRevenueBloc(repository)..add(const WeekRevenueRequested()),
           ),
         ],
-        child: const _DesktopShellView(),
+        child: _DesktopShellView(fileSharer: fileSharer),
       ),
     );
   }
 }
 
 class _DesktopShellView extends StatefulWidget {
-  const _DesktopShellView();
+  const _DesktopShellView({required this.fileSharer});
+
+  final FileSharer fileSharer;
 
   @override
   State<_DesktopShellView> createState() => _DesktopShellViewState();
@@ -150,7 +158,9 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
       case DesktopSection.customers:
         context.read<CustomersBloc>().add(CustomersSearchChanged(query));
       case DesktopSection.routes:
-        context.read<DayDeliveriesBloc>().add(DayDeliveriesSearchChanged(query));
+        context.read<DayDeliveriesBloc>().add(
+          DayDeliveriesSearchChanged(query),
+        );
       case DesktopSection.orders:
         context.read<OrdersBloc>().add(OrdersSearchChanged(query));
       case DesktopSection.cash:
@@ -163,10 +173,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
 
   /// Карточка доставки.
   void _openDelivery(DeliveryRow row) {
-    showDesktopDrawer<void>(
-      context,
-      builder: (_) => DeliveryDrawer(row: row),
-    );
+    showDesktopDrawer<void>(context, builder: (_) => DeliveryDrawer(row: row));
   }
 
   /// Создание маршрута.
@@ -314,6 +321,22 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
     showDesktopToast(context, l10n.customerDeleted);
   }
 
+  /// Выгрузка отчёта в Excel.
+  ///
+  /// Экран выбора общий с телефоном: разрезы, период и отбор по водителю там
+  /// уже есть, и вторая его копия под десктоп разошлась бы с первой на первой
+  /// же правке. Период передаём тот, что выбран в разделе, — иначе выгрузка
+  /// молча отличалась бы от чисел на экране.
+  Future<void> _exportReport() async {
+    await showDesktopDrawer<void>(
+      context,
+      builder: (_) => ReportExportPage(
+        period: context.read<ReportsBloc>().state.period,
+        fileSharer: widget.fileSharer,
+      ),
+    );
+  }
+
   /// Перечитать то, что сейчас на экране.
   void _refresh() {
     setState(() => _freshEvents = false);
@@ -338,14 +361,19 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
     final l10n = context.l10n;
     return switch (_section) {
       DesktopSection.routes => _routesSubtitle(context),
-      DesktopSection.orders =>
-        l10n.ordersCount(context.watch<OrdersBloc>().state.total),
-      DesktopSection.drivers =>
-        l10n.driversCount(context.watch<DriversBloc>().state.drivers.length),
-      DesktopSection.customers => l10n
-          .customersCount(context.watch<CustomersBloc>().state.customers.length),
+      DesktopSection.orders => l10n.ordersCount(
+        context.watch<OrdersBloc>().state.total,
+      ),
+      DesktopSection.drivers => l10n.driversCount(
+        context.watch<DriversBloc>().state.drivers.length,
+      ),
+      DesktopSection.customers => l10n.customersCount(
+        context.watch<CustomersBloc>().state.customers.length,
+      ),
       DesktopSection.cash => MoneyFormatter.sum(
-          l10n, context.watch<ExpensesBloc>().state.total),
+        l10n,
+        context.watch<ExpensesBloc>().state.total,
+      ),
       DesktopSection.reports => l10n.reportsLabel,
     };
   }
@@ -390,10 +418,24 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
                     DesktopSection.customers => () => _editCustomer(null),
                     _ => null,
                   },
+                  onExport: _section == DesktopSection.reports
+                      ? _exportReport
+                      : null,
                 ),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 280),
+                    // Своя раскладка вместо стандартной: `AnimatedSwitcher`
+                    // кладёт разделы в `Stack` по центру и с нежёсткими
+                    // ограничениями. Прокрутка раздела ужималась по высоте до
+                    // своего содержимого, и стопка карточек или таблица из
+                    // одной строки повисали посреди пустого окна вместо того,
+                    // чтобы начинаться под шапкой.
+                    layoutBuilder: (currentChild, previousChildren) => Stack(
+                      fit: StackFit.expand,
+                      alignment: Alignment.topLeft,
+                      children: [...previousChildren, ?currentChild],
+                    ),
                     transitionBuilder: (child, animation) => FadeTransition(
                       opacity: animation,
                       // Появление со сдвигом на 8px: смена раздела читается
@@ -409,20 +451,22 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
                     child: KeyedSubtree(
                       key: ValueKey(_section),
                       child: switch (_section) {
-                        DesktopSection.routes =>
-                          RoutesDesktopPage(onRowTap: _openDelivery),
-                        DesktopSection.orders =>
-                          OrdersDesktopPage(onOpen: _openOrder),
+                        DesktopSection.routes => RoutesDesktopPage(
+                          onRowTap: _openDelivery,
+                        ),
+                        DesktopSection.orders => OrdersDesktopPage(
+                          onOpen: _openOrder,
+                        ),
                         DesktopSection.drivers => DriversDesktopPage(
-                            onOpen: _openDriver,
-                            onEdit: _editDriver,
-                            onDelete: _deleteDriver,
-                          ),
+                          onOpen: _openDriver,
+                          onEdit: _editDriver,
+                          onDelete: _deleteDriver,
+                        ),
                         DesktopSection.customers => CustomersDesktopPage(
-                            onOpen: _openCustomer,
-                            onEdit: _editCustomer,
-                            onDelete: _deleteCustomer,
-                          ),
+                          onOpen: _openCustomer,
+                          onEdit: _editCustomer,
+                          onDelete: _deleteCustomer,
+                        ),
                         DesktopSection.cash => const CashDesktopPage(),
                         DesktopSection.reports => const ReportsDesktopPage(),
                       },

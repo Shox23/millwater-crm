@@ -20,6 +20,7 @@ class DesktopHeader extends StatelessWidget {
     required this.onRefresh,
     required this.onAdd,
     required this.hasFreshEvents,
+    this.onExport,
   });
 
   final DesktopSection section;
@@ -35,6 +36,12 @@ class DesktopHeader extends StatelessWidget {
 
   /// Создать водителя или заказчика; `null` — в этом разделе создавать нечего.
   final VoidCallback? onAdd;
+
+  /// Выгрузить раздел в файл; `null` — выгружать нечего.
+  ///
+  /// Отдельно от [onAdd]: в отчётах первичное действие — не создание, и
+  /// подпись с иконкой у него свои.
+  final VoidCallback? onExport;
 
   /// Пришло событие, которого пользователь ещё не видел.
   final bool hasFreshEvents;
@@ -90,6 +97,12 @@ class DesktopHeader extends StatelessWidget {
             badge: hasFreshEvents,
             onPressed: onRefresh,
           ),
+          if (onExport != null)
+            DesktopButton(
+              label: context.l10n.reportsExport,
+              icon: Icons.file_download_outlined,
+              onPressed: onExport,
+            ),
           if (onAdd != null)
             DesktopButton(
               label: switch (section) {

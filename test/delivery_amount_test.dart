@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-RouteStop _stop({int? capsules, int? amount}) => RouteStop(
+RouteStop _stop({int? capsules, int? amount, int? balance}) => RouteStop(
       id: 'stop-1',
       customerId: 'c-1',
       customerName: 'Заказчик',
@@ -23,6 +23,7 @@ RouteStop _stop({int? capsules, int? amount}) => RouteStop(
       status: DeliveryStatus.pending,
       deliveredCapsules: capsules,
       paymentAmount: amount,
+      customerBottleBalance: balance,
     );
 
 /// Запоминает сумму, дошедшую до репозитория.
@@ -321,31 +322,27 @@ void main() {
   });
 
   group('Остаток капсул у клиента', () {
-    testWidgets('пока счётчик не трогали — предупреждает о перезаписи',
+    testWidgets('складывается из прежнего остатка и привезённых',
         (tester) async {
-      await pumpPage(tester);
+      await pumpPage(tester, stop: _stop(balance: 3));
 
-      // Значение подставлено само и уйдёт на сервер как новый остаток.
-      expect(find.textContaining('заменит прежний остаток'), findsOneWidget);
-    });
+      expect(find.text('было 3 + привезено 1'), findsOneWidget);
 
-    testWidgets('правка счётчика убирает предупреждение', (tester) async {
-      await pumpPage(tester);
-
-      // Счётчиков на доставке четыре по порядку: привезено, забрано пустых,
-      // повреждено, остаток у клиента — «плюс» остатка последний.
-      await tapVisible(tester, find.byIcon(Icons.add).at(3));
-
-      expect(find.textContaining('заменит прежний остаток'), findsNothing);
-    });
-
-    testWidgets('смена количества предупреждение не снимает', (tester) async {
-      await pumpPage(tester);
-
-      // Остаток тянется за количеством, но подтверждением это не считается.
       await addCapsule(tester);
+      expect(find.text('было 3 + привезено 2'), findsOneWidget);
+    });
 
-      expect(find.textContaining('заменит прежний остаток'), findsOneWidget);
+    testWidgets('на сервер уходит сумма прежнего остатка и привезённых',
+        (tester) async {
+      // Сервер этим числом ЗАМЕНЯЕТ склад клиента, так что уйти обязано
+      // именно 3 + 2, а не одни привезённые.
+      final repo = await pumpPage(tester, stop: _stop(balance: 3));
+
+      await addCapsule(tester);
+      await tapVisible(tester, find.text('Завершить'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(repo.lastBottleBalance, 5);
     });
   });
 

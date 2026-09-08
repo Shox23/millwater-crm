@@ -346,6 +346,16 @@
     }
   },
   "mapOpenFailed": "Не удалось открыть Яндекс.Карты",
+  "mapAllStopsDone": "Все точки маршрута уже закрыты — вести некуда.",
+  "mapStopsWithoutPoint": "{count, plural, one{У {count} адреса нет точки на карте} few{У {count} адресов нет точки на карте} other{У {count} адресов нет точки на карте}}",
+  "@mapStopsWithoutPoint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapAddMapLinkHint": "Такой маршрут откроется в браузере. Чтобы он открывался в Яндекс.Картах, вставьте в адрес заказчика ссылку с карты.",
   "driversTitle": "Водители",
   "driversHeader": "Команда · {count}",
   "@driversHeader": {
@@ -460,9 +470,9 @@
   "customerFormCommentHint": "Например, район или ориентир",
   "customerFormSaveFailed": "Не удалось сохранить заказчика.",
   "myRoutesTitle": "Мои маршруты",
-  "myRoutesStatRoutes": "всего маршрутов",
-  "myRoutesStatDeliveredToday": "доставлено сегодня",
-  "myRoutesStatOrders": "всего заказов",
+  "myRoutesStatRoutes": "маршрутов за день",
+  "myRoutesStatDeliveredToday": "доставлено",
+  "myRoutesStatOrders": "заказов за день",
   "myRoutesEmptyHint": "Когда диспетчер назначит маршрут, он появится здесь",
   "myRouteTitle": "Маршрут",
   "myRouteStatusFailed": "Не удалось изменить статус.",
@@ -487,8 +497,17 @@
     }
   },
   "completionBalance": "КАПСУЛ У КЛИЕНТА",
-  "completionBalanceCaption": "станет остатком у клиента вместо прежнего",
-  "completionBalanceUnchecked": "Подставлено число привезённых. Сверьте со складом клиента — это значение заменит прежний остаток.",
+  "completionBalanceFormula": "было {before} + привезено {delivered}",
+  "@completionBalanceFormula": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "delivered": {
+        "type": "int"
+      }
+    }
+  },
   "completionMethod": "СПОСОБ ОПЛАТЫ",
   "completionAmount": "СУММА ОПЛАТЫ",
   "completionAmountRequired": "Укажите сумму. Ноль — если оплаты не было",

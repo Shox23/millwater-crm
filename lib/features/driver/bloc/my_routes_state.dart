@@ -4,62 +4,68 @@ enum MyRoutesStatus { initial, loading, ready, error }
 
 class MyRoutesState extends Equatable {
   const MyRoutesState({
+    required this.date,
     this.status = MyRoutesStatus.initial,
     this.routes = const [],
     this.filter = RouteFilter.all,
   });
 
+  /// Выбранный в ленте день.
+  ///
+  /// В отличие от админского экрана день не уходит в запрос: `/driver/routes`
+  /// плюс достроенная история отдают все маршруты водителя разом, и отбор
+  /// идёт здесь же. Переключение дня поэтому не ходит в сеть и работает
+  /// там, где связи нет.
+  final DateTime date;
+
   final MyRoutesStatus status;
+
+  /// Все маршруты водителя — за выбранный день отбирает [dayRoutes].
   final List<RouteListItem> routes;
+
   final RouteFilter filter;
 
-  /// Список с учётом активного фильтра.
+  /// Маршруты выбранного дня.
+  ///
+  /// Сравниваются календарные дни — в `date` маршрута времени нет, и
+  /// приводить к полуночи нечего.
+  List<RouteListItem> get dayRoutes => routes
+      .where((r) =>
+          r.date.year == date.year &&
+          r.date.month == date.month &&
+          r.date.day == date.day)
+      .toList();
+
+  /// Список за выбранный день с учётом активного фильтра.
   List<RouteListItem> get visible {
     final wanted = filter.status;
-    if (wanted == null) return routes;
-    return routes.where((r) => r.status == wanted).toList();
+    final day = dayRoutes;
+    if (wanted == null) return day;
+    return day.where((r) => r.status == wanted).toList();
   }
 
-  /// Маршруты на сегодня.
+  /// Показатели над списком (ТЗ, раздел 5).
   ///
-  /// Дата берётся с устройства: серверного «сегодня» в ответе нет, а водитель
-  /// смотрит экран там же, где ездит. Сравниваются календарные дни — в
-  /// `date` маршрута времени нет, и приводить к полуночи нечего.
-  List<RouteListItem> get todayRoutes {
-    final now = DateTime.now();
-    return routes
-        .where((r) =>
-            r.date.year == now.year &&
-            r.date.month == now.month &&
-            r.date.day == now.day)
-        .toList();
-  }
+  /// Считаются за выбранный день, а не за всё время: под ними лежит список
+  /// этого же дня, и накопительная цифра рядом с ним читалась бы как ошибка.
+  int get routesCount => dayRoutes.length;
 
-  /// Показатели главного экрана водителя (ТЗ, раздел 5).
-  ///
-  /// Считается по всем маршрутам, а не по сегодняшним, — так подписана сама
-  /// плитка («всего маршрутов»). До того как список стал достраиваться
-  /// историей из `/driver/orders`, это число всё равно показывало только
-  /// сегодняшний `in_progress`, то есть подпись врала.
-  int get routesCount => routes.length;
+  /// Сколько точек предстоит объехать за день.
+  int get stopsCount =>
+      dayRoutes.fold<int>(0, (sum, r) => sum + r.totalCustomers);
 
-  int get stopsTotal => routes.fold<int>(0, (sum, r) => sum + r.totalCustomers);
-
-  /// Доставлено сегодня — только по сегодняшним маршрутам: шапка экрана
-  /// подписана «Сегодня», и цифры под ней должны значить то же самое.
-  int get deliveredToday =>
-      todayRoutes.fold<int>(0, (sum, r) => sum + r.completedCount);
-
-  /// Сколько точек предстоит объехать сегодня.
-  int get stopsToday =>
-      todayRoutes.fold<int>(0, (sum, r) => sum + r.totalCustomers);
+  /// Сколько из них уже закрыто.
+  int get deliveredCount =>
+      dayRoutes.fold<int>(0, (sum, r) => sum + r.completedCount);
 
   MyRoutesState copyWith({
+    DateTime? date,
     MyRoutesStatus? status,
     List<RouteListItem>? routes,
     RouteFilter? filter,
   }) {
     return MyRoutesState(
+      date: date ?? this.date,
       status: status ?? this.status,
       routes: routes ?? this.routes,
       filter: filter ?? this.filter,
@@ -67,5 +73,5 @@ class MyRoutesState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, routes, filter];
+  List<Object?> get props => [date, status, routes, filter];
 }

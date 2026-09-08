@@ -119,6 +119,7 @@ class RouteStop extends Equatable {
     this.paymentPhoto,
     this.completedAt,
     this.customerCoolerCount = 0,
+    this.customerBottleBalance,
     this.sequence,
     this.purpose = OrderPurpose.delivery19l,
     this.returnedCapsules,
@@ -165,6 +166,13 @@ class RouteStop extends Equatable {
 
   /// Сколько кулеров у заказчика (`customer_cooler_count`).
   final int customerCoolerCount;
+
+  /// Остаток капсул у заказчика на момент выдачи маршрута
+  /// (`customer_bottle_balance`).
+  ///
+  /// `null` — стенд поля ещё не отдаёт: тогда экран завершения считает остаток
+  /// от нуля, то есть отправит одни привезённые.
+  final int? customerBottleBalance;
 
   /// Порядковый номер точки в маршруте (`sequence`, ранее `order`).
   final int? sequence;
@@ -266,6 +274,7 @@ class RouteStop extends Equatable {
       paymentPhoto: paymentPhoto ?? this.paymentPhoto,
       completedAt: completedAt ?? this.completedAt,
       customerCoolerCount: customerCoolerCount,
+      customerBottleBalance: customerBottleBalance,
       sequence: sequence,
       purpose: purpose,
       effectiveWaterPrice: effectiveWaterPrice,
@@ -334,6 +343,11 @@ class RouteStop extends Equatable {
               json['customer_cooler_count'],
             ])) ??
             (boolOr(json['customer_has_cooler']) ? 1 : 0),
+        customerBottleBalance: optionalInt(firstNonNull([
+          customer['customer_bottle_balance'],
+          customer['bottle_balance'],
+          json['customer_bottle_balance'],
+        ])),
         // `order` — прежнее имя поля. Сервер переименовал его в `sequence`,
         // и оба имени встречаются в зависимости от версии стенда.
         sequence: optionalInt(json['sequence']) ?? optionalInt(json['order']),
@@ -396,6 +410,7 @@ class RouteStop extends Equatable {
         paymentMethod,
         completedAt,
         customerCoolerCount,
+        customerBottleBalance,
         sequence,
         purpose,
         returnedCapsules,

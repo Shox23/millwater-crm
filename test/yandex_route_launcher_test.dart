@@ -265,7 +265,7 @@ void main() {
       expect(fake.opened.single.$2, LaunchMode.externalApplication);
     });
 
-    test('внешним запуском открыть нечем — остаётся встроенный браузер',
+    test('внешним запуском открыть нечем — дальше встроенного браузера не идём',
         () async {
       final fake = _FakeLauncher(
         appInstalled: true,
@@ -273,25 +273,29 @@ void main() {
       );
       final result = await fake.service.openRoute(coords);
 
-      expect(result.isSuccess, isTrue);
-      // Deeplink, затем веб наружу, и лишь потом встроенный браузер.
-      expect(fake.opened.map((e) => e.$1.scheme), ['yandexmaps', 'https', 'https']);
-      expect(fake.opened.last.$2, LaunchMode.inAppBrowserView);
+      // Deeplink, затем веб наружу — и всё. Встроенный браузер открывается
+      // поверх приложения, а по карте внутри веб-вида не поедешь: водителю
+      // он не заменяет навигатор.
+      expect(fake.opened.map((e) => e.$1.scheme), ['yandexmaps', 'https']);
+      expect(fake.opened.map((e) => e.$2),
+          everyElement(LaunchMode.externalApplication));
+      expect(result.isSuccess, isFalse);
+      expect(result.error, isA<RouteOpenFailed>());
     });
   });
 
   group('openRoute — сбои', () {
     final route = RouteData(points: [_addr('А'), _addr('Б')]);
 
-    test('PlatformException из внешнего запуска ведёт во встроенный браузер',
-        () async {
+    test('PlatformException из внешнего запуска не роняет экран', () async {
       final fake =
           _FakeLauncher(failModes: {LaunchMode.externalApplication: true});
       final result = await fake.service.openRoute(route);
 
-      expect(result.isSuccess, isTrue);
-      expect(fake.opened.map((e) => e.$2),
-          [LaunchMode.externalApplication, LaunchMode.inAppBrowserView]);
+      // Исключение url_launcher превращается в понятную ошибку, а не в
+      // падение: маршрут не открылся, но карточка маршрута жива.
+      expect(fake.opened.map((e) => e.$2), [LaunchMode.externalApplication]);
+      expect(result.error, isA<RouteOpenFailed>());
     });
 
     test('исключение из canLaunchUrl не роняет открытие', () async {
@@ -309,7 +313,6 @@ void main() {
 
     test('когда не сработало ничего — понятная ошибка', () async {
       final fake = _FakeLauncher(failModes: {
-        LaunchMode.inAppBrowserView: true,
         LaunchMode.externalApplication: false,
       });
       final result = await fake.service.openRoute(route);

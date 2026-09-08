@@ -111,6 +111,41 @@ void main() {
     });
   });
 
+  group('Короткие ссылки', () {
+    // Их разворачивает GeoLinkResolver — здесь только опознание: без него
+    // ссылка уходила в маршрут текстом, и геокодер искал «https://…».
+    test('share.google опознаётся как картографическая', () {
+      final short = GeoLink.shortLinkIn('https://share.google/zhOQ2JLKjOKc2lUSi');
+
+      expect(short, isNotNull);
+      expect(short!.host, 'share.google');
+      // Координат в ней нет: они появятся только после редиректа.
+      expect(GeoLink.tryParse(short.toString()), isNull);
+    });
+
+    test('короткие ссылки Google и Яндекса тоже', () {
+      for (final link in [
+        'https://maps.app.goo.gl/aBcDeFgH',
+        'https://goo.gl/maps/aBcDeFgH',
+        'https://yandex.ru/maps/-/CDe1234',
+      ]) {
+        expect(GeoLink.shortLinkIn(link), isNotNull, reason: link);
+      }
+    });
+
+    test('адрес со ссылкой внутри — тоже случай для резолвера', () {
+      expect(
+        GeoLink.shortLinkIn('Чиланзар, 12 кв https://share.google/abc'),
+        isNotNull,
+      );
+    });
+
+    test('обычный адрес и чужая ссылка резолверу не нужны', () {
+      expect(GeoLink.shortLinkIn('Шофиркон 5'), isNull);
+      expect(GeoLink.shortLinkIn('https://example.com/place'), isNull);
+    });
+  });
+
   group('Что не разбирается', () {
     test('обычный адрес остаётся адресом', () {
       expect(GeoLink.tryParse('Чиланзар, 12 квартал, дом 4'), isNull);

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/utils/day.dart';
 import '../../../core/utils/throttle.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/models/notification_event.dart';
@@ -19,9 +20,10 @@ part 'my_routes_state.dart';
 /// на его экране и не предусмотрено.
 class MyRoutesBloc extends Bloc<MyRoutesEvent, MyRoutesState> {
   MyRoutesBloc(this._repository, {Stream<NotificationEvent>? notifications})
-      : super(const MyRoutesState()) {
+      : super(MyRoutesState(date: dayOnly(DateTime.now()))) {
     on<MyRoutesRequested>(_onRequested);
     on<MyRoutesFilterChanged>(_onFilterChanged);
+    on<MyRoutesDateChanged>(_onDateChanged);
 
     // Админ досыпал точку в маршрут, статус сменился — прогресс на карточках
     // устаревал молча: подписан был только детальный экран, и до захода
@@ -65,5 +67,20 @@ class MyRoutesBloc extends Bloc<MyRoutesEvent, MyRoutesState> {
     Emitter<MyRoutesState> emit,
   ) {
     emit(state.copyWith(filter: event.filter));
+  }
+
+  /// Смена дня — только пересчёт отбора.
+  ///
+  /// Запроса здесь нет намеренно: репозиторий отдаёт все маршруты водителя
+  /// разом, так что нужный день уже лежит в [state.routes]. Лишний поход в
+  /// сеть на каждый таб стоил бы водителю трафика и подвисаний там, где
+  /// связь плохая, — а показать всё равно нечего сверх уже загруженного.
+  void _onDateChanged(
+    MyRoutesDateChanged event,
+    Emitter<MyRoutesState> emit,
+  ) {
+    final day = dayOnly(event.date);
+    if (day == state.date) return;
+    emit(state.copyWith(date: day));
   }
 }

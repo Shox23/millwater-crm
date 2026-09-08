@@ -5,6 +5,7 @@ import 'package:crm_millwater/app/app.dart';
 import 'package:crm_millwater/app/settings/settings_storage.dart';
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/app/theme/theme_cubit.dart';
+import 'package:crm_millwater/core/export/file_sharer.dart';
 import 'package:crm_millwater/core/utils/day.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/data/models/enums.dart';
@@ -23,6 +24,7 @@ import 'package:crm_millwater/features/desktop/presentation/desktop_shell.dart';
 import 'package:crm_millwater/features/desktop/presentation/pages/cash_desktop_page.dart';
 import 'package:crm_millwater/features/desktop/presentation/pages/orders_desktop_page.dart';
 import 'package:crm_millwater/features/desktop/widgets/desktop_table.dart';
+import 'package:crm_millwater/features/reports/presentation/report_export_page.dart';
 import 'package:crm_millwater/features/routes/presentation/route_form_page.dart';
 import 'package:crm_millwater/features/desktop/presentation/driver_desktop_stub.dart';
 import 'package:crm_millwater/features/desktop/widgets/desktop_button.dart';
@@ -562,6 +564,86 @@ void main() {
       }
 
       expect(find.byType(RouteFormPage), findsOneWidget);
+    });
+  });
+
+  group('Выгрузка отчётов', () {
+    late RecordingFileSharer sharer;
+
+    Future<void> pumpShell(WidgetTester tester) async {
+      useDesktopSurface(tester);
+      sharer = RecordingFileSharer();
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<CrmRepository>.value(value: MockCrmRepository()),
+            RepositoryProvider<CapsulePrice>.value(
+              value: const BuildCapsulePrice(),
+            ),
+          ],
+          child: BlocProvider(
+            create: (_) => ThemeCubit(storage: InMemorySettingsStorage()),
+            child: MaterialApp(
+              theme: AppTheme.light(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocales.supported,
+              home: DesktopShell(fileSharer: sharer),
+            ),
+          ),
+        ),
+      );
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    /// Переходит в отчёты. График недели поднимает семь запросов сводки разом,
+    /// и каждый оставляет свой таймер — их надо догнать.
+    Future<void> openReports(WidgetTester tester) async {
+      await tester.tap(find.text('Отчёты'));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+    }
+
+    testWidgets('кнопка выгрузки есть только в отчётах', (tester) async {
+      await pumpShell(tester);
+
+      // В маршрутах первичное действие своё — «Маршрут».
+      expect(
+        find.widgetWithText(DesktopButton, 'Выгрузить в Excel'),
+        findsNothing,
+      );
+
+      await openReports(tester);
+
+      expect(
+        find.widgetWithText(DesktopButton, 'Выгрузить в Excel'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('кнопка открывает выбор отчёта и отдаёт файл', (tester) async {
+      await pumpShell(tester);
+      await openReports(tester);
+
+      await tester.tap(find.widgetWithText(DesktopButton, 'Выгрузить в Excel'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      // Экран выбора общий с телефоном — своей копии под десктоп нет.
+      expect(find.byType(ReportExportPage), findsOneWidget);
+
+      // Точное совпадение: подпись кнопки в шапке под ним — другая строка.
+      await tester.tap(find.text('Выгрузить'));
+      await tester.pump();
+      // Успех подтверждается снек-баром, он живёт 4 секунды — если его не
+      // дождаться, тест падает на «A Timer is still pending».
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(sharer.shared, hasLength(1));
+      expect(sharer.shared.single.filename, endsWith('.xlsx'));
     });
   });
 }

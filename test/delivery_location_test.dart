@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/core/location/device_location.dart';
+import 'package:crm_millwater/core/maps/address_geocoder.dart';
+import 'package:crm_millwater/core/maps/geo_link_resolver.dart';
 import 'package:crm_millwater/core/maps/map_route.dart';
+import 'package:crm_millwater/core/maps/route_plan.dart';
 import 'package:crm_millwater/core/maps/yandex_route_launcher.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
@@ -11,11 +15,31 @@ import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
 import 'package:crm_millwater/features/driver/presentation/delivery_completion_page.dart';
 import 'package:crm_millwater/features/routes/presentation/widgets/build_route_section.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+/// Планировщик без сети: тест проверяет способ открытия, а не поиск адресов.
+RoutePlanner _offlinePlanner() => RoutePlanner(
+      resolver: GeoLinkResolver(dio: Dio()..httpClientAdapter = _DeadAdapter()),
+      geocoder: const NoGeocoder(),
+    );
+
+class _DeadAdapter implements HttpClientAdapter {
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) =>
+      throw StateError('сеть в тесте трогать нечем: ${options.uri}');
+}
 
 Position _position(double lat, double lon) => Position(
       latitude: lat,
@@ -276,6 +300,7 @@ void main() {
               // Место водителя отличается от точек маршрута — так видно,
               // что оно встаёт в начало, а не дублирует первую остановку.
               location: _location(position: _position(41.20, 69.10)),
+              planner: _offlinePlanner(),
             ),
           ),
         ),
@@ -283,7 +308,7 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Построить маршрут'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final (url, mode) = opened.single;
       expect(url.scheme, 'yandexmaps');
@@ -318,6 +343,7 @@ void main() {
               stops: [_stop(lat: 41.31, lon: 69.24), _stop()],
               launcher: launcher,
               location: _location(position: _position(41.20, 69.10)),
+              planner: _offlinePlanner(),
             ),
           ),
         ),
@@ -325,7 +351,7 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Построить маршрут'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // Смешанный список: координаты и адрес в одном rtext понимает только веб.
       expect(opened.single.scheme, 'https');

@@ -8,6 +8,7 @@ import 'package:crm_millwater/data/models/order.dart';
 import 'package:crm_millwater/data/models/result_page.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/core/pricing/capsule_price.dart';
+import 'package:crm_millwater/core/utils/day.dart';
 import 'package:crm_millwater/data/repositories/driver_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_driver_repository.dart';
@@ -20,6 +21,7 @@ import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 /// Водитель, у которого маршрутов нет вообще.
 class _EmptyDriverRepository extends MockDriverRepository {
@@ -31,6 +33,15 @@ class _CountingDriverRepository extends MockDriverRepository {
   _CountingDriverRepository() : super(driverId: 'd1');
 
   int orderPages = 0;
+
+  /// Сколько раз читался список маршрутов.
+  int routeCalls = 0;
+
+  @override
+  Future<List<RouteListItem>> getMyRoutes() {
+    routeCalls++;
+    return super.getMyRoutes();
+  }
 
   @override
   Future<ResultPage<Order>> getMyOrders({
@@ -227,15 +238,37 @@ void main() {
 
       expect(find.text('Мои маршруты'), findsOneWidget);
       expect(find.text('Доставлено доставок'), findsNothing);
-      // «Всего» в подписях не случайно: эти два числа за всё время, и только
-      // среднее — за сегодня. Раньше они читались как один период.
-      expect(find.text('всего маршрутов'), findsOneWidget);
-      expect(find.text('доставлено сегодня'), findsOneWidget);
-      expect(find.text('всего заказов'), findsOneWidget);
+      // Все три показателя относятся к выбранному в ленте дню — подписи не
+      // должны обещать ни «всего», ни «сегодня».
+      expect(find.text('маршрутов за день'), findsOneWidget);
+      expect(find.text('доставлено'), findsOneWidget);
+      expect(find.text('заказов за день'), findsOneWidget);
       // Денежного показателя у водителя нет — сводный отчёт ему недоступен.
       expect(find.text('Собрано сегодня'), findsNothing);
       // Карточка маршрута вместо водителя показывает число точек.
       expect(find.text('3 точки'), findsOneWidget);
+    });
+
+    testWidgets('лента дат переключает день без похода в сеть', (tester) async {
+      final repo = _CountingDriverRepository();
+      await pumpPage(tester, repo, const MyRoutesPage());
+      final loadsAfterOpen = repo.routeCalls;
+
+      // Соседний день в ленте: сегодняшних маршрутов там нет, и шапка
+      // переключается с «Сегодня · …» на «На …».
+      final yesterday = dayOnly(DateTime.now()).subtract(
+        const Duration(days: 1),
+      );
+      await tester.tap(find.text(DateFormat('dd.MM').format(yesterday)));
+      await tester.pumpAndSettle();
+
+      // Шапка рисует подпись капсом.
+      expect(
+        find.text('НА ${DateFormat('dd.MM.yy').format(yesterday)}'),
+        findsOneWidget,
+      );
+      // Данные уже на клиенте — смена дня не должна дёргать репозиторий.
+      expect(repo.routeCalls, loadsAfterOpen);
     });
 
     testWidgets('без маршрутов объясняет, что делать', (tester) async {
@@ -425,28 +458,43 @@ void main() {
           totalCustomers: total,
         );
 
-    test('«доставлено сегодня» считается только по сегодняшним маршрутам', () {
-      final now = DateTime.now();
-      final state = MyRoutesState(routes: [
-        route('r1', now, 2, 5),
-        route('r2', now.subtract(const Duration(days: 1)), 4, 4),
+    test('показатели считаются по выбранному дню, а не по всем маршрутам', () {
+      final today = dayOnly(DateTime.now());
+      final state = MyRoutesState(date: today, routes: [
+        route('r1', today, 2, 5),
+        route('r2', today.subtract(const Duration(days: 1)), 4, 4),
       ]);
 
-      expect(state.deliveredToday, 2);
-      expect(state.stopsToday, 5);
-      // Общие показатели остаются по всем маршрутам — так их требует ТЗ.
-      expect(state.routesCount, 2);
-      expect(state.stopsTotal, 9);
+      expect(state.deliveredCount, 2);
+      expect(state.stopsCount, 5);
+      expect(state.routesCount, 1);
+      expect(state.visible.map((r) => r.id), ['r1']);
     });
 
-    test('без сегодняшних маршрутов показатели дня нулевые', () {
-      final state = MyRoutesState(routes: [
-        route('r1', DateTime.now().subtract(const Duration(days: 3)), 3, 3),
+    test('выбор другого дня переводит на него и список, и показатели', () {
+      final today = dayOnly(DateTime.now());
+      final yesterday = today.subtract(const Duration(days: 1));
+      final state = MyRoutesState(date: today, routes: [
+        route('r1', today, 2, 5),
+        route('r2', yesterday, 4, 4),
+      ]).copyWith(date: yesterday);
+
+      expect(state.deliveredCount, 4);
+      expect(state.stopsCount, 4);
+      expect(state.routesCount, 1);
+      expect(state.visible.map((r) => r.id), ['r2']);
+    });
+
+    test('день без маршрутов даёт нули и пустой список', () {
+      final today = dayOnly(DateTime.now());
+      final state = MyRoutesState(date: today, routes: [
+        route('r1', today.subtract(const Duration(days: 3)), 3, 3),
       ]);
 
-      expect(state.deliveredToday, 0);
-      expect(state.stopsToday, 0);
-      expect(state.routesCount, 1);
+      expect(state.deliveredCount, 0);
+      expect(state.stopsCount, 0);
+      expect(state.routesCount, 0);
+      expect(state.visible, isEmpty);
     });
   });
 

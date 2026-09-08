@@ -51,10 +51,7 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   late DateTime _date;
   final Set<String> _customerIds = {};
 
-  /// Цель маршрута — она же цель по умолчанию для его точек.
-  OrderPurpose _purpose = OrderPurpose.delivery19l;
-
-  /// Своя цель точки; в карте лежат только те, кто от [_purpose] отличается.
+  /// Цель каждой точки; отсутствие записи — цель по умолчанию.
   /// Маршрут бывает смешанным: по дороге и капсулы завезли, и кулер забрали.
   final Map<String, OrderPurpose> _stopPurposes = {};
 
@@ -193,10 +190,11 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
         // а исполнителя ставят, когда станет ясно, кто свободен.
         driverId: _driverId,
         date: _date,
-        purpose: _purpose,
         orders: [
           for (final id in _customerIds)
-            RouteOrderInput(customerId: id, purpose: _stopPurposes[id]),
+            RouteOrderInput(
+                customerId: id,
+                purpose: _stopPurposes[id] ?? OrderPurpose.delivery19l),
         ],
         idempotencyKey: _idempotencyKey,
       );
@@ -305,41 +303,6 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                   ),
                 ),
                 _Section(
-                  label: context.l10n.routeFormPurpose,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: AppSpacing.sm,
-                    children: [
-                      SegmentedToggle<OrderPurpose>(
-                        options: [
-                          for (final p in OrderPurpose.values)
-                            SegmentOption(
-                                value: p, label: p.label(context.l10n)),
-                        ],
-                        value: _purpose,
-                        columns: 3,
-                        onChanged: submitting
-                            ? (_) {}
-                            : (p) => setState(() {
-                                  _purpose = p;
-                                  // Своя цель точки имеет смысл только как
-                                  // отличие от цели маршрута: сменили
-                                  // маршрут — отличия пересчитываются от
-                                  // новой.
-                                  _stopPurposes.removeWhere((_, v) => v == p);
-                                }),
-                      ),
-                      // Под переключателем, а не в шапке секции: в шапке
-                      // подпись стоит в одной строке с заголовком и на
-                      // узком экране выдавливала её за край.
-                      Text(
-                        context.l10n.routeFormPurposeHint,
-                        style: AppTypography.secondary.copyWith(color: t.text3),
-                      ),
-                    ],
-                  ),
-                ),
-                _Section(
                   label: context.l10n.routeFormDriver,
                   child: _drivers.isEmpty
                       ? Text(context.l10n.routeFormNoDrivers,
@@ -445,18 +408,11 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                                 value: p,
                                                 label: p.label(context.l10n)),
                                         ],
-                                        value: _stopPurposes[c.id] ?? _purpose,
+                                        value: _stopPurposes[c.id] ??
+                                            OrderPurpose.delivery19l,
                                         columns: 3,
                                         onChanged: (p) => setState(() {
-                                          // В карте держим только отличия:
-                                          // совпало с целью маршрута — запись
-                                          // не нужна, и точка поедет за целью
-                                          // маршрута, если ту потом сменят.
-                                          if (p == _purpose) {
-                                            _stopPurposes.remove(c.id);
-                                          } else {
-                                            _stopPurposes[c.id] = p;
-                                          }
+                                          _stopPurposes[c.id] = p;
                                         }),
                                       ),
                                     ],

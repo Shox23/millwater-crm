@@ -1334,6 +1334,24 @@ abstract class AppLocalizations {
   /// **'Не удалось открыть Яндекс.Карты'**
   String get mapOpenFailed;
 
+  /// No description provided for @mapAllStopsDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все точки маршрута уже закрыты — вести некуда.'**
+  String get mapAllStopsDone;
+
+  /// No description provided for @mapStopsWithoutPoint.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{У {count} адреса нет точки на карте} few{У {count} адресов нет точки на карте} other{У {count} адресов нет точки на карте}}'**
+  String mapStopsWithoutPoint(int count);
+
+  /// No description provided for @mapAddMapLinkHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Такой маршрут откроется в браузере. Чтобы он открывался в Яндекс.Картах, вставьте в адрес заказчика ссылку с карты.'**
+  String get mapAddMapLinkHint;
+
   /// No description provided for @driversTitle.
   ///
   /// In ru, this message translates to:
@@ -1727,19 +1745,19 @@ abstract class AppLocalizations {
   /// No description provided for @myRoutesStatRoutes.
   ///
   /// In ru, this message translates to:
-  /// **'всего маршрутов'**
+  /// **'маршрутов за день'**
   String get myRoutesStatRoutes;
 
   /// No description provided for @myRoutesStatDeliveredToday.
   ///
   /// In ru, this message translates to:
-  /// **'доставлено сегодня'**
+  /// **'доставлено'**
   String get myRoutesStatDeliveredToday;
 
   /// No description provided for @myRoutesStatOrders.
   ///
   /// In ru, this message translates to:
-  /// **'всего заказов'**
+  /// **'заказов за день'**
   String get myRoutesStatOrders;
 
   /// No description provided for @myRoutesEmptyHint.
@@ -1802,17 +1820,11 @@ abstract class AppLocalizations {
   /// **'КАПСУЛ У КЛИЕНТА'**
   String get completionBalance;
 
-  /// No description provided for @completionBalanceCaption.
+  /// No description provided for @completionBalanceFormula.
   ///
   /// In ru, this message translates to:
-  /// **'станет остатком у клиента вместо прежнего'**
-  String get completionBalanceCaption;
-
-  /// No description provided for @completionBalanceUnchecked.
-  ///
-  /// In ru, this message translates to:
-  /// **'Подставлено число привезённых. Сверьте со складом клиента — это значение заменит прежний остаток.'**
-  String get completionBalanceUnchecked;
+  /// **'было {before} + привезено {delivered}'**
+  String completionBalanceFormula(int before, int delivered);
 
   /// No description provided for @completionMethod.
   ///
