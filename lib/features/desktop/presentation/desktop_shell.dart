@@ -14,6 +14,7 @@ import '../../../core/utils/day.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/driver.dart';
 import '../../../data/models/notification_event.dart';
+import '../../../data/models/route_models.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../../customers/bloc/customers_bloc.dart';
 import '../../drivers/bloc/drivers_bloc.dart';
@@ -173,7 +174,34 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
 
   /// Карточка доставки.
   void _openDelivery(DeliveryRow row) {
-    showDesktopDrawer<void>(context, builder: (_) => DeliveryDrawer(row: row));
+    showDesktopDrawer<void>(
+      context,
+      builder: (drawerContext) => DeliveryDrawer(
+        row: row,
+        onEditRoute: () {
+          Navigator.of(drawerContext).pop();
+          _editRoute(row.route);
+        },
+      ),
+    );
+  }
+
+  /// Правка маршрута: дата, водитель, состав точек.
+  ///
+  /// Форма общая с телефоном — та же, что открывается на создание, только с
+  /// маршрутом. Она же решает, что в текущем статусе менять уже нельзя, так
+  /// что дублировать эти правила здесь не нужно.
+  Future<void> _editRoute(RouteDetail route) async {
+    final saved = await showDesktopDrawer<bool>(
+      context,
+      builder: (_) => RouteFormPage(route: route),
+    );
+    if (saved != true || !mounted) return;
+    // Правка задевает и день маршрутов, и заказы: перенос даты убирает точку
+    // из сегодняшнего списка, а снятые заказчики — из состава.
+    context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
+    context.read<OrdersBloc>().add(const OrdersRequested());
+    showDesktopToast(context, context.l10n.changesSaved);
   }
 
   /// Создание маршрута.

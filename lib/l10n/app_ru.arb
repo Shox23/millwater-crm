@@ -254,6 +254,10 @@
   "routeCancelTitle": "Отменить маршрут?",
   "routeCancelMessage": "Маршрут будет помечен как отменённый.",
   "routeCancelAction": "Отменить маршрут",
+  "desktopEditRoute": "Редактировать маршрут",
+  "@desktopEditRoute": {
+    "description": "Кнопка правки маршрута в десктопной шторке доставки"
+  },
   "routeCancelShort": "Отменить",
   "routeCancelFailed": "Не удалось отменить маршрут.",
   "routeCancelled2": "Маршрут отменён",

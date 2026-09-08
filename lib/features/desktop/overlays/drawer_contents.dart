@@ -62,9 +62,21 @@ class DrawerField extends StatelessWidget {
 
 /// Панель доставки: что известно о точке и что с ней можно сделать.
 class DeliveryDrawer extends StatelessWidget {
-  const DeliveryDrawer({super.key, required this.row});
+  const DeliveryDrawer({
+    super.key,
+    required this.row,
+    required this.onEditRoute,
+  });
 
   final DeliveryRow row;
+
+  /// Правка маршрута, которому принадлежит эта доставка.
+  ///
+  /// Саму доставку админ не закрывает — это делает водитель, — но маршрут
+  /// вокруг неё он ведёт: дата, водитель, состав точек. На телефоне это
+  /// отдельный экран маршрута, а на десктопе список плоский, из доставок, и
+  /// другого входа в маршрут отсюда нет.
+  final VoidCallback onEditRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +136,7 @@ class DeliveryDrawer extends StatelessWidget {
             ),
         ],
       ),
-      footer: _DeliveryActions(row: row),
+      footer: _DeliveryActions(row: row, onEditRoute: onEditRoute),
     );
   }
 }
@@ -136,7 +148,39 @@ class DeliveryDrawer extends StatelessWidget {
 /// но заблокированы с объяснением: молча спрятать их значило бы, что оператор
 /// будет искать их в другом месте.
 class _DeliveryActions extends StatelessWidget {
-  const _DeliveryActions({required this.row});
+  const _DeliveryActions({required this.row, required this.onEditRoute});
+
+  final DeliveryRow row;
+  final VoidCallback onEditRoute;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.md,
+      children: [
+        _DeliveryStatusAction(row: row),
+        // Завершённый и отменённый маршрут править нечего — как и на телефоне,
+        // кнопки тогда нет вовсе.
+        if (row.route.status.isEditable)
+          DesktopButton(
+            label: l10n.desktopEditRoute,
+            icon: Icons.edit_outlined,
+            variant: DesktopButtonVariant.soft,
+            height: 46,
+            expand: true,
+            onPressed: onEditRoute,
+          ),
+      ],
+    );
+  }
+}
+
+/// Что можно сделать с самой доставкой — а сделать нечего.
+class _DeliveryStatusAction extends StatelessWidget {
+  const _DeliveryStatusAction({required this.row});
 
   final DeliveryRow row;
 

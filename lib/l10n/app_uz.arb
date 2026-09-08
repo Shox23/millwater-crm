@@ -236,6 +236,7 @@
   "routeCancelTitle": "Marshrut bekor qilinsinmi?",
   "routeCancelMessage": "Marshrut bekor qilingan deb belgilanadi.",
   "routeCancelAction": "Marshrutni bekor qilish",
+  "desktopEditRoute": "Marshrutni tahrirlash",
   "routeCancelShort": "Bekor qilish",
   "routeCancelFailed": "Marshrutni bekor qilib bo‘lmadi.",
   "routeCancelled2": "Marshrut bekor qilindi",

@@ -518,6 +518,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeCancelAction => 'Marshrutni bekor qilish';
 
   @override
+  String get desktopEditRoute => 'Marshrutni tahrirlash';
+
+  @override
   String get routeCancelShort => 'Bekor qilish';
 
   @override

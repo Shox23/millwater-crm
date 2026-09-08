@@ -1010,6 +1010,12 @@ abstract class AppLocalizations {
   /// **'Отменить маршрут'**
   String get routeCancelAction;
 
+  /// Кнопка правки маршрута в десктопной шторке доставки
+  ///
+  /// In ru, this message translates to:
+  /// **'Редактировать маршрут'**
+  String get desktopEditRoute;
+
   /// No description provided for @routeCancelShort.
   ///
   /// In ru, this message translates to:

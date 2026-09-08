@@ -525,6 +525,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeCancelAction => 'Отменить маршрут';
 
   @override
+  String get desktopEditRoute => 'Редактировать маршрут';
+
+  @override
   String get routeCancelShort => 'Отменить';
 
   @override

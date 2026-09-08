@@ -565,6 +565,28 @@ void main() {
 
       expect(find.byType(RouteFormPage), findsOneWidget);
     });
+
+    testWidgets('из карточки доставки открывается правка её маршрута',
+        (tester) async {
+      await pumpShell(tester);
+
+      // На телефоне вход в маршрут — отдельный экран, а здесь список плоский,
+      // из доставок: правка маршрута доступна из карточки его точки.
+      await tester.tap(find.byIcon(Icons.chevron_right_rounded).first);
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      expect(find.byType(DeliveryDrawer), findsOneWidget);
+
+      await tester.tap(find.text('Редактировать маршрут'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      // Форма та же, что на создании, но с маршрутом — то есть в режиме правки.
+      final form = tester.widget<RouteFormPage>(find.byType(RouteFormPage));
+      expect(form.isEdit, isTrue);
+    });
   });
 
   group('Выгрузка отчётов', () {
