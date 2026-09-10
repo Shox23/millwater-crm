@@ -40,6 +40,13 @@ import 'package:intl/intl.dart';
 class _RecordingRepository extends MockCrmRepository {
   int? addedCoolerCount;
   Customer? updatedCustomer;
+  String? deletedRouteId;
+
+  @override
+  Future<void> deleteRoute(String id) {
+    deletedRouteId = id;
+    return super.deleteRoute(id);
+  }
 
   @override
   Future<Customer> addCustomer({
@@ -336,11 +343,42 @@ void main() {
       }
 
       expect(find.byType(DeliveryDrawer), findsOneWidget);
-      // Завершение доставки админу недоступно — кнопка есть, но выключена.
-      final finish = find.widgetWithText(DesktopButton, 'Закончить маршрут');
-      if (finish.evaluate().isNotEmpty) {
-        expect(tester.widget<DesktopButton>(finish).onPressed, isNull);
+      // Удаление маршрута доступно всегда — в отличие от завершения доставки,
+      // которое остаётся за водителем и на этом экране не показывается кнопкой.
+      expect(
+        find.widgetWithText(DesktopButton, 'Удалить маршрут'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('удаление маршрута спрашивает подтверждение и чистит день',
+        (tester) async {
+      await pumpShell(tester);
+      final before = visibleRows();
+
+      final name = todayStops().first.customerName;
+      await tester.tap(find.text(name).first);
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 150));
       }
+
+      await tester.tap(find.widgetWithText(DesktopButton, 'Удалить маршрут'));
+      await tester.pump();
+
+      // Подтверждение — без него уйти можно, отменив диалог.
+      expect(find.text('Удалить маршрут?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(DesktopButton, 'Удалить'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      // Успех подтверждается тостом — он живёт несколько секунд, и его нужно
+      // догнать, иначе тест падает на «A Timer is still pending».
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(repo.deletedRouteId, isNotNull);
+      expect(find.byType(DeliveryDrawer), findsNothing);
+      expect(visibleRows(), lessThan(before));
     });
 
     testWidgets('переключение даты перестраивает день', (tester) async {

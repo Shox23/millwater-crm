@@ -1573,21 +1573,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get desktopDeliveryTitle => 'Доставка';
 
   @override
-  String get desktopFinishRoute => 'Закончить маршрут';
-
-  @override
-  String get desktopMarkDebtPaid => 'Отметить оплату долга';
-
-  @override
   String get desktopFinishedAndPaid => 'Завершено и оплачено';
 
   @override
-  String get desktopDriverOnlyHint =>
-      'Доставку закрывает водитель в своём приложении — отсюда это сделать нельзя.';
+  String get desktopDeleteRoute => 'Удалить маршрут';
 
   @override
-  String get desktopDebtPaidHint =>
-      'Пока недоступно: отметить оплату долга можно будет позже.';
+  String get routeDeleteTitle => 'Удалить маршрут?';
+
+  @override
+  String get routeDeleteMessage =>
+      'Маршрут и все доставки по нему будут удалены без возможности восстановления.';
+
+  @override
+  String get routeDeleted => 'Маршрут удалён';
+
+  @override
+  String get routeDeleteFailed => 'Не удалось удалить маршрут.';
 
   @override
   String get desktopOnLine => 'На линии';

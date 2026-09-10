@@ -66,6 +66,7 @@ class DeliveryDrawer extends StatelessWidget {
     super.key,
     required this.row,
     required this.onEditRoute,
+    required this.onDeleteRoute,
   });
 
   final DeliveryRow row;
@@ -77,6 +78,14 @@ class DeliveryDrawer extends StatelessWidget {
   /// отдельный экран маршрута, а на десктопе список плоский, из доставок, и
   /// другого входа в маршрут отсюда нет.
   final VoidCallback onEditRoute;
+
+  /// Безвозвратное удаление маршрута целиком.
+  ///
+  /// На телефоне такого действия нет вовсе — только отмена, которая метит
+  /// маршрут отменённым и оставляет запись в истории. Здесь это отдельная,
+  /// более резкая возможность для оператора за компьютером: убрать
+  /// заведённый по ошибке маршрут так, чтобы он не путался в списке.
+  final VoidCallback onDeleteRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -136,32 +145,51 @@ class DeliveryDrawer extends StatelessWidget {
             ),
         ],
       ),
-      footer: _DeliveryActions(row: row, onEditRoute: onEditRoute),
+      footer: _DeliveryActions(
+        row: row,
+        onEditRoute: onEditRoute,
+        onDeleteRoute: onDeleteRoute,
+      ),
     );
   }
 }
 
-/// Действия над доставкой.
-///
-/// Обе операции сервер админу не отдаёт: завершение доставки под админским
-/// токеном — 403, а отдельной «оплаты долга» в API нет вовсе. Кнопки видны,
-/// но заблокированы с объяснением: молча спрятать их значило бы, что оператор
-/// будет искать их в другом месте.
+/// Действия под карточкой доставки.
 class _DeliveryActions extends StatelessWidget {
-  const _DeliveryActions({required this.row, required this.onEditRoute});
+  const _DeliveryActions({
+    required this.row,
+    required this.onEditRoute,
+    required this.onDeleteRoute,
+  });
 
   final DeliveryRow row;
   final VoidCallback onEditRoute;
+  final VoidCallback onDeleteRoute;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
     final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: AppSpacing.md,
       children: [
-        _DeliveryStatusAction(row: row),
+        // Завершение доставки — под админским токеном 403, это делает
+        // водитель в своём приложении. Показываем только готовый результат;
+        // ни «закончить», ни «отметить долг оплаченным» отсюда всё равно не
+        // сделать, и держать под них неработающие кнопки незачем.
+        if (row.stop.isCompleted && !row.isDebt)
+          Row(
+            spacing: AppSpacing.sm,
+            children: [
+              Icon(Icons.check_circle_rounded, size: 20, color: t.success),
+              Text(
+                l10n.desktopFinishedAndPaid,
+                style: DesktopTypography.bodyStrong.copyWith(color: t.success),
+              ),
+            ],
+          ),
         // Завершённый и отменённый маршрут править нечего — как и на телефоне,
         // кнопки тогда нет вовсе.
         if (row.route.status.isEditable)
@@ -173,48 +201,16 @@ class _DeliveryActions extends StatelessWidget {
             expand: true,
             onPressed: onEditRoute,
           ),
-      ],
-    );
-  }
-}
-
-/// Что можно сделать с самой доставкой — а сделать нечего.
-class _DeliveryStatusAction extends StatelessWidget {
-  const _DeliveryStatusAction({required this.row});
-
-  final DeliveryRow row;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    final l10n = context.l10n;
-
-    if (row.stop.isCompleted && !row.isDebt) {
-      return Row(
-        spacing: AppSpacing.sm,
-        children: [
-          Icon(Icons.check_circle_rounded, size: 20, color: t.success),
-          Text(l10n.desktopFinishedAndPaid,
-              style: DesktopTypography.bodyStrong.copyWith(color: t.success)),
-        ],
-      );
-    }
-
-    final debt = row.isDebt;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: AppSpacing.sm,
-      children: [
+        // Удаление — не перенос отмены с телефона, а отдельная, более резкая
+        // возможность: снимает маршрут целиком, а не метит отменённым, и не
+        // ограничена статусом.
         DesktopButton(
-          label: debt ? l10n.desktopMarkDebtPaid : l10n.desktopFinishRoute,
+          label: l10n.desktopDeleteRoute,
+          icon: Icons.delete_outline_rounded,
+          variant: DesktopButtonVariant.danger,
           height: 46,
           expand: true,
-          onPressed: null,
-        ),
-        Text(
-          debt ? l10n.desktopDebtPaidHint : l10n.desktopDriverOnlyHint,
-          style: DesktopTypography.caption.copyWith(color: t.text3),
+          onPressed: onDeleteRoute,
         ),
       ],
     );

@@ -182,8 +182,37 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
           Navigator.of(drawerContext).pop();
           _editRoute(row.route);
         },
+        onDeleteRoute: () {
+          Navigator.of(drawerContext).pop();
+          _deleteRoute(row.route);
+        },
       ),
     );
+  }
+
+  /// Безвозвратное удаление маршрута — см. пояснение у [DeliveryDrawer].
+  Future<void> _deleteRoute(RouteDetail route) async {
+    final l10n = context.l10n;
+    final repo = context.read<CrmRepository>();
+
+    final confirmed = await showDesktopConfirm(
+      context,
+      title: l10n.routeDeleteTitle,
+      message: l10n.routeDeleteMessage,
+      confirmLabel: l10n.commonDelete,
+    );
+    if (!confirmed || !mounted) return;
+
+    try {
+      await repo.deleteRoute(route.id);
+    } catch (_) {
+      if (mounted) showDesktopToast(context, l10n.routeDeleteFailed);
+      return;
+    }
+    if (!mounted) return;
+    context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
+    context.read<OrdersBloc>().add(const OrdersRequested());
+    showDesktopToast(context, l10n.routeDeleted);
   }
 
   /// Правка маршрута: дата, водитель, состав точек.

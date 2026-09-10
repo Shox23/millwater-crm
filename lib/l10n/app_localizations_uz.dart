@@ -1554,21 +1554,23 @@ class AppLocalizationsUz extends AppLocalizations {
   String get desktopDeliveryTitle => 'Yetkazma';
 
   @override
-  String get desktopFinishRoute => 'Marshrutni yakunlash';
-
-  @override
-  String get desktopMarkDebtPaid => 'Qarz to‘lovini belgilash';
-
-  @override
   String get desktopFinishedAndPaid => 'Yakunlangan va to‘langan';
 
   @override
-  String get desktopDriverOnlyHint =>
-      'Yetkazmani haydovchi o‘z ilovasida yopadi — bu yerdan buni qilib bo‘lmaydi.';
+  String get desktopDeleteRoute => 'Marshrutni o‘chirish';
 
   @override
-  String get desktopDebtPaidHint =>
-      'Hozircha mavjud emas: qarz to‘lovini keyinroq belgilash mumkin bo‘ladi.';
+  String get routeDeleteTitle => 'Marshrut o‘chirilsinmi?';
+
+  @override
+  String get routeDeleteMessage =>
+      'Marshrut va undagi barcha yetkazmalar butunlay o‘chiriladi.';
+
+  @override
+  String get routeDeleted => 'Marshrut o‘chirildi';
+
+  @override
+  String get routeDeleteFailed => 'Marshrutni o‘chirib bo‘lmadi.';
 
   @override
   String get desktopOnLine => 'Liniyada';

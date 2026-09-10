@@ -2780,35 +2780,41 @@ abstract class AppLocalizations {
   /// **'Доставка'**
   String get desktopDeliveryTitle;
 
-  /// No description provided for @desktopFinishRoute.
-  ///
-  /// In ru, this message translates to:
-  /// **'Закончить маршрут'**
-  String get desktopFinishRoute;
-
-  /// No description provided for @desktopMarkDebtPaid.
-  ///
-  /// In ru, this message translates to:
-  /// **'Отметить оплату долга'**
-  String get desktopMarkDebtPaid;
-
   /// No description provided for @desktopFinishedAndPaid.
   ///
   /// In ru, this message translates to:
   /// **'Завершено и оплачено'**
   String get desktopFinishedAndPaid;
 
-  /// No description provided for @desktopDriverOnlyHint.
+  /// Кнопка безвозвратного удаления маршрута в десктопной шторке доставки
   ///
   /// In ru, this message translates to:
-  /// **'Доставку закрывает водитель в своём приложении — отсюда это сделать нельзя.'**
-  String get desktopDriverOnlyHint;
+  /// **'Удалить маршрут'**
+  String get desktopDeleteRoute;
 
-  /// No description provided for @desktopDebtPaidHint.
+  /// No description provided for @routeDeleteTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Пока недоступно: отметить оплату долга можно будет позже.'**
-  String get desktopDebtPaidHint;
+  /// **'Удалить маршрут?'**
+  String get routeDeleteTitle;
+
+  /// No description provided for @routeDeleteMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут и все доставки по нему будут удалены без возможности восстановления.'**
+  String get routeDeleteMessage;
+
+  /// No description provided for @routeDeleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут удалён'**
+  String get routeDeleted;
+
+  /// No description provided for @routeDeleteFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось удалить маршрут.'**
+  String get routeDeleteFailed;
 
   /// No description provided for @desktopOnLine.
   ///
