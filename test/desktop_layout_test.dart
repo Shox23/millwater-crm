@@ -48,6 +48,7 @@ class _RecordingRepository extends MockCrmRepository {
     required String address,
     String? comment,
     int coolerCount = 0,
+    int capsuleBalance = 0,
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
@@ -60,6 +61,7 @@ class _RecordingRepository extends MockCrmRepository {
       address: address,
       comment: comment,
       coolerCount: coolerCount,
+      capsuleBalance: capsuleBalance,
       debt: debt,
       prepayment: prepayment,
       customWaterPrice: customWaterPrice,
@@ -71,9 +73,14 @@ class _RecordingRepository extends MockCrmRepository {
   Future<Customer> updateCustomer(
     Customer customer, {
     bool balanceChanged = false,
+    bool capsulesChanged = false,
   }) {
     updatedCustomer = customer;
-    return super.updateCustomer(customer, balanceChanged: balanceChanged);
+    return super.updateCustomer(
+      customer,
+      balanceChanged: balanceChanged,
+      capsulesChanged: capsulesChanged,
+    );
   }
 }
 

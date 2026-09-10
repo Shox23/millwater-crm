@@ -1705,6 +1705,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'К кулеру капсулу ставят, без него воду переливают';
 
   @override
+  String get customerFormCapsules => 'Капсул у заказчика';
+
+  @override
+  String get customerFormCapsulesHint => 'Сколько тары на руках сейчас';
+
+  @override
+  String get customerFormCapsulesLocked =>
+      'Заменит остаток, который ведёт водитель';
+
+  @override
   String get customerFormBalance => 'Стартовый баланс';
 
   @override

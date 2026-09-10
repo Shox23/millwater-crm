@@ -140,6 +140,32 @@ void main() {
     });
   });
 
+  group('Остаток капсул заказчика уходит на сервер', () {
+    late _RecordingAdapter adapter;
+    late ApiCrmRepository repo;
+
+    setUp(() {
+      adapter = _RecordingAdapter();
+      repo = ApiCrmRepository(
+        Dio(BaseOptions(baseUrl: 'https://crm.millwater.uz'))
+          ..httpClientAdapter = adapter,
+      );
+    });
+
+    test('при создании заказчика', () async {
+      await repo.addCustomer(
+        name: 'Кафе Тест',
+        phone: '998900000002',
+        address: 'ул. Тестовая, 1',
+        capsuleBalance: 4,
+      );
+
+      final body = adapter.requests.single.data as Map<String, dynamic>;
+      // Новый заказчик приходит со своей тарой от прежнего поставщика.
+      expect(body['bottle_balance'], 4);
+    });
+  });
+
   group('Форма маршрута', () {
     late MockCrmRepository repo;
 

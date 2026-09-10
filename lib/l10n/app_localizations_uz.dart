@@ -1684,6 +1684,16 @@ class AppLocalizationsUz extends AppLocalizations {
       'Kulerga kapsula qo‘yiladi, usiz suv quyib beriladi';
 
   @override
+  String get customerFormCapsules => 'Mijozdagi kapsulalar soni';
+
+  @override
+  String get customerFormCapsulesHint => 'Hozir qo‘lida nechta tara bor';
+
+  @override
+  String get customerFormCapsulesLocked =>
+      'Haydovchi yuritadigan qoldiqni almashtiradi';
+
+  @override
   String get customerFormBalance => 'Boshlang‘ich balans';
 
   @override

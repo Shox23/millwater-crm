@@ -306,6 +306,7 @@ class ApiCrmRepository implements CrmRepository {
     required String address,
     String? comment,
     int coolerCount = 0,
+    int capsuleBalance = 0,
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
@@ -319,6 +320,9 @@ class ApiCrmRepository implements CrmRepository {
         'address': address,
         'comment': ?comment,
         'cooler_count': coolerCount,
+        // Сколько капсул уже на руках у нового заказчика: тара, которую он
+        // держит с прошлого поставщика, иначе всплыла бы недостачей.
+        'bottle_balance': capsuleBalance,
         'debt': MoneyParser.toApi(debt),
         'prepayment': MoneyParser.toApi(prepayment),
         // Ключ отправляем всегда: `null` — это «по общему прайсу», и пропуск
@@ -335,10 +339,14 @@ class ApiCrmRepository implements CrmRepository {
   Future<Customer> updateCustomer(
     Customer customer, {
     bool balanceChanged = false,
+    bool capsulesChanged = false,
   }) async {
     final res = await _dio.patch(
       '/admin/customers/${customer.id}',
-      data: customer.toUpdateJson(includeBalance: balanceChanged),
+      data: customer.toUpdateJson(
+        includeBalance: balanceChanged,
+        includeCapsules: capsulesChanged,
+      ),
     );
     return Customer.fromJson(asMap(res.data));
   }

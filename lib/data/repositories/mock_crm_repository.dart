@@ -239,6 +239,7 @@ class MockCrmRepository implements CrmRepository {
     required String address,
     String? comment,
     int coolerCount = 0,
+    int capsuleBalance = 0,
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
@@ -262,6 +263,7 @@ class MockCrmRepository implements CrmRepository {
       address: address,
       comment: comment,
       coolerCount: coolerCount,
+      capsuleBalance: capsuleBalance,
       debt: debt,
       prepayment: prepayment,
       customWaterPrice: customWaterPrice,
@@ -275,6 +277,7 @@ class MockCrmRepository implements CrmRepository {
   Future<Customer> updateCustomer(
     Customer customer, {
     bool balanceChanged = false,
+    bool capsulesChanged = false,
   }) async {
     await _tick();
     if (balanceChanged && customer.debt > 0 && customer.prepayment > 0) {
@@ -286,10 +289,16 @@ class MockCrmRepository implements CrmRepository {
     // Баланс без явного признака не трогаем — ровно как сервер, который
     // непереданные поля оставляет прежними. Иначе форма правки названия
     // откатывала бы оплату, принятую водителем, пока она была открыта.
+    //
+    // С остатком капсул то же самое: его ведёт водитель на завершении
+    // доставки, и без признака правки он остаётся тем, что лежит в сторе.
     final stored = _customers[i];
-    final saved = balanceChanged
+    var saved = balanceChanged
         ? customer
         : customer.copyWith(debt: stored.debt, prepayment: stored.prepayment);
+    if (!capsulesChanged) {
+      saved = saved.copyWith(capsuleBalance: stored.capsuleBalance);
+    }
     _customers[i] = saved;
     return saved;
   }

@@ -102,6 +102,7 @@ abstract class CrmRepository {
     required String address,
     String? comment,
     int coolerCount = 0,
+    int capsuleBalance = 0,
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
@@ -112,9 +113,13 @@ abstract class CrmRepository {
   ///
   /// [balanceChanged] — админ правил долг или предоплату вручную, и их надо
   /// отправить. По умолчанию баланс не отправляется: см. `toUpdateJson`.
+  /// [capsulesChanged] — админ правил остаток капсул вручную. Без флага поле
+  /// не отправляется вовсе: остаток ведёт водитель, и сервер присланным
+  /// числом заменяет его целиком.
   Future<Customer> updateCustomer(
     Customer customer, {
     bool balanceChanged = false,
+    bool capsulesChanged = false,
   });
   Future<void> deleteCustomer(String id);
 

@@ -86,6 +86,38 @@ void main() {
     });
   });
 
+  group('Остаток капсул в теле правки', () {
+    Customer withCapsules(int count) => Customer(
+          id: 'c-1',
+          name: 'Кафе',
+          phone: '+998901112233',
+          address: 'ул. Тестовая, 1',
+          capsuleBalance: count,
+          createdAt: DateTime(2026, 1, 1),
+        );
+
+    test('без признака правки поле не отправляется', () {
+      // Остаток ведёт водитель, а сервер присланным числом заменяет его
+      // целиком: правка комментария не должна откатывать склад заказчика.
+      final json = withCapsules(5).toUpdateJson();
+
+      expect(json.containsKey('bottle_balance'), isFalse);
+    });
+
+    test('с признаком правки уходит числом', () {
+      final json = withCapsules(5).toUpdateJson(includeCapsules: true);
+
+      expect(json['bottle_balance'], 5);
+    });
+
+    test('ноль — осмысленное значение, а не пропуск', () {
+      // «Тары на руках нет» админ задаёт нулём, и он обязан дойти до сервера.
+      final json = withCapsules(0).toUpdateJson(includeCapsules: true);
+
+      expect(json['bottle_balance'], 0);
+    });
+  });
+
   group('Долг и предоплата вместе', () {
     testWidgets('в списке видны оба', (tester) async {
       useLargeSurface(tester);

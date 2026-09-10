@@ -120,6 +120,57 @@ void main() {
     });
   });
 
+  group('Капсулы у заказчика', () {
+    testWidgets('счётчик уходит на сервер при создании', (tester) async {
+      await pumpForm(tester);
+      await fillRequired(tester);
+
+      // Новый заказчик приходит со своей тарой от прежнего поставщика: без
+      // этого числа первая же доставка разошлась бы со складом.
+      await tapText(tester, 'Капсул у заказчика');
+      final plus = find.byIcon(Icons.add);
+      await tester.ensureVisible(plus.at(1));
+      await tester.pump();
+      await tester.tap(plus.at(1));
+      await settle(tester);
+      await tester.tap(plus.at(1));
+      await settle(tester);
+
+      expect((await saved(tester)).capsuleBalance, 2);
+    });
+
+    testWidgets('правка открывается с текущим остатком', (tester) async {
+      final customer = repo.store.customers.first.copyWith(capsuleBalance: 7);
+      repo.store.customers[0] = customer;
+      await pumpForm(tester, customer: customer);
+
+      expect(find.text('7'), findsWidgets);
+    });
+
+    testWidgets('правка чужого поля остаток не откатывает', (tester) async {
+      // Пока админ правит комментарий, водитель может закрыть доставку и
+      // изменить остаток. Форма не должна затирать его своим числом.
+      final customer = repo.store.customers.first.copyWith(capsuleBalance: 5);
+      repo.store.customers[0] = customer;
+      await pumpForm(tester, customer: customer);
+
+      await tester.enterText(inputFor('Комментарий'), 'Мирабад');
+      await settle(tester);
+      // Водитель закрыл доставку, пока форма была открыта.
+      repo.store.customers[0] =
+          repo.store.customers.first.copyWith(capsuleBalance: 2);
+
+      final submit = find.widgetWithText(AppButton, 'Сохранить');
+      await tester.ensureVisible(submit);
+      await settle(tester);
+      await tester.tap(submit);
+      await settle(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(repo.store.customers.first.capsuleBalance, 2);
+    });
+  });
+
   group('Стартовый баланс', () {
     testWidgets('поле суммы появляется только с выбранным видом',
         (tester) async {

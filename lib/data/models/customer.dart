@@ -145,7 +145,15 @@ class Customer extends Equatable {
   /// пока админ правит название, водитель может закрыть доставку. Отправив
   /// «свои» цифры, форма откатила бы уже принятую оплату — а сервер вдобавок
   /// записал бы это в журнал правок как ручное решение админа.
-  Map<String, dynamic> toUpdateJson({bool includeBalance = false}) => {
+  ///
+  /// [includeCapsules] — то же самое про остаток капсул, и по той же причине:
+  /// его ведёт водитель, а сервер присланным числом **заменяет** остаток
+  /// целиком. Правка комментария не должна откатывать склад заказчика к
+  /// значению, каким оно было при открытии формы.
+  Map<String, dynamic> toUpdateJson({
+    bool includeBalance = false,
+    bool includeCapsules = false,
+  }) => {
         'full_name': name,
         'phone': phone,
         'address': address,
@@ -158,6 +166,7 @@ class Customer extends Equatable {
           'debt': MoneyParser.toApi(debt),
           'prepayment': MoneyParser.toApi(prepayment),
         },
+        if (includeCapsules) 'bottle_balance': capsuleBalance,
       };
 
   @override

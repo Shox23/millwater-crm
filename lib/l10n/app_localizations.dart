@@ -3008,6 +3008,24 @@ abstract class AppLocalizations {
   /// **'К кулеру капсулу ставят, без него воду переливают'**
   String get customerFormCoolersHint;
 
+  /// No description provided for @customerFormCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Капсул у заказчика'**
+  String get customerFormCapsules;
+
+  /// No description provided for @customerFormCapsulesHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько тары на руках сейчас'**
+  String get customerFormCapsulesHint;
+
+  /// No description provided for @customerFormCapsulesLocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заменит остаток, который ведёт водитель'**
+  String get customerFormCapsulesLocked;
+
   /// No description provided for @customerFormBalance.
   ///
   /// In ru, this message translates to:

@@ -69,6 +69,11 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// само — `hasCooler` у модели теперь производное от количества.
   late int _coolerCount;
 
+  /// Остаток капсул у заказчика. Уходит на сервер только когда админ его
+  /// правил: остаток ведёт водитель, и присланным числом сервер **заменяет**
+  /// его целиком — см. [_capsulesChanged].
+  late int _capsuleBalance;
+
   /// Стартовый баланс: долг, предоплата или ничего.
   ///
   /// Одно поле суммы, а не два: сервер запрещает ненулевой долг вместе с
@@ -117,6 +122,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
     _coolerCount = customer?.coolerCount ?? 0;
+    _capsuleBalance = customer?.capsuleBalance ?? 0;
     _isActive = customer?.isActive ?? true;
 
     _balanceKind = switch (customer) {
@@ -194,10 +200,19 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
         _address.text.trim() != (customer?.address ?? '') ||
         _comment.text.trim() != (customer?.comment ?? '') ||
         _coolerCount != (customer?.coolerCount ?? 0) ||
+        _capsulesChanged ||
         _balanceChanged ||
         _customWaterPrice != customer?.customWaterPrice ||
         _isActive != (customer?.isActive ?? true);
   }
+
+  /// Остаток капсул правили руками — только тогда он уйдёт на сервер.
+  ///
+  /// Пока админ правит телефон, водитель может закрыть доставку и изменить
+  /// остаток. Отправив «своё» число, форма затёрла бы этот склад значением,
+  /// которое было в ней при открытии.
+  bool get _capsulesChanged =>
+      _capsuleBalance != (widget.customer?.capsuleBalance ?? 0);
 
   /// Баланс правили руками — только тогда он уйдёт на сервер.
   ///
@@ -274,12 +289,14 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 address: _address.text.trim(),
                 comment: _commentOrNull,
                 coolerCount: _coolerCount,
+                capsuleBalance: _capsuleBalance,
                 debt: _debt,
                 prepayment: _prepayment,
                 customWaterPrice: _customWaterPrice,
                 isActive: _isActive,
               ),
               balanceChanged: _balanceChanged,
+              capsulesChanged: _capsulesChanged,
             )
           : repo.addCustomer(
               name: _name.text.trim(),
@@ -287,6 +304,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
               address: _address.text.trim(),
               comment: _commentOrNull,
               coolerCount: _coolerCount,
+              capsuleBalance: _capsuleBalance,
               debt: _debt,
               prepayment: _prepayment,
               customWaterPrice: _customWaterPrice,
@@ -405,6 +423,40 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                           ? (_) {}
                           : (value) => setState(() => _coolerCount = value),
                     ),
+                  ],
+                ),
+              ),
+              // Капсулы на руках: тара, которую заказчик держит у себя. У
+              // нового её задают сразу — он приходит со своими бутылями от
+              // прежнего поставщика, и без этого числа первая же доставка
+              // разошлась бы со складом.
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppSpacing.md,
+                  children: [
+                    Text(
+                      context.l10n.customerFormCapsules,
+                      style: AppTypography.bodyStrong
+                          .copyWith(color: context.tokens.text),
+                    ),
+                    QuantityStepper(
+                      value: _capsuleBalance,
+                      max: 99,
+                      caption: context.l10n.customerFormCapsulesHint,
+                      onChanged: submitting
+                          ? (_) {}
+                          : (value) =>
+                              setState(() => _capsuleBalance = value),
+                    ),
+                    // Предупреждаем только при правке и только когда число
+                    // тронули: у нового заказчика перезаписывать нечего.
+                    if (widget.isEdit && _capsulesChanged)
+                      Text(
+                        context.l10n.customerFormCapsulesLocked,
+                        style: AppTypography.secondary
+                            .copyWith(color: context.tokens.warn),
+                      ),
                   ],
                 ),
               ),
