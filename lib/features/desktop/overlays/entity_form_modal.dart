@@ -203,6 +203,9 @@ class _CustomerFormModalState extends State<CustomerFormModal>
   late final TextEditingController _comment;
   late int _coolerCount;
 
+  /// Остаток капсул у заказчика — тара, которую он держит на руках.
+  late int _capsuleBalance;
+
   /// Стартовый баланс: одно поле на долг и предоплату, а не два.
   /// Сервер запрещает оба ненулевыми (422 `BOTH_BALANCES_SET`), и форма не
   /// должна давать собрать состояние, которое он отвергнет.
@@ -225,6 +228,14 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     final value = int.tryParse(_price.text.trim()) ?? 0;
     return value > 0 ? value : null;
   }
+
+  /// Остаток капсул отправляется только когда его трогали.
+  ///
+  /// Его ведёт водитель на завершении доставки, а сервер присланным числом
+  /// **заменяет** остаток целиком: правка имени не должна откатывать склад
+  /// заказчика к тому, что было при открытии формы.
+  bool get _capsulesChanged =>
+      _capsuleBalance != (widget.customer?.capsuleBalance ?? 0);
 
   /// Баланс отправляется только когда его трогали: иначе правка имени
   /// затирала бы долг, накопленный доставками с тех пор.
@@ -249,6 +260,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
     _coolerCount = customer?.coolerCount ?? 0;
+    _capsuleBalance = customer?.capsuleBalance ?? 0;
     _balanceKind = switch (customer) {
       Customer(debt: > 0) => BalanceKind.debt,
       Customer(prepayment: > 0) => BalanceKind.prepayment,
@@ -302,11 +314,13 @@ class _CustomerFormModalState extends State<CustomerFormModal>
               address: _address.text.trim(),
               comment: comment.isEmpty ? null : comment,
               coolerCount: _coolerCount,
+              capsuleBalance: _capsuleBalance,
               debt: _debt,
               prepayment: _prepayment,
               customWaterPrice: _customWaterPrice,
             ),
             balanceChanged: _balanceChanged,
+            capsulesChanged: _capsulesChanged,
           );
         } else {
           await repo.addCustomer(
@@ -315,6 +329,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
             address: _address.text.trim(),
             comment: comment.isEmpty ? null : comment,
             coolerCount: _coolerCount,
+            capsuleBalance: _capsuleBalance,
             debt: _debt,
             prepayment: _prepayment,
             customWaterPrice: _customWaterPrice,
@@ -389,6 +404,37 @@ class _CustomerFormModalState extends State<CustomerFormModal>
                   max: 10,
                   onChanged: (value) => setState(() => _coolerCount = value),
                 ),
+              ],
+            ),
+            // Капсулы на руках: тара заказчика. У нового её задают сразу —
+            // он приходит со своими бутылями от прежнего поставщика, и без
+            // этого числа первая доставка разошлась бы со складом.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppSpacing.sm,
+              children: [
+                Text(
+                  l10n.customerFormCapsules,
+                  style: DesktopTypography.secondary.copyWith(
+                    color: context.tokens.text2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                QuantityStepper(
+                  value: _capsuleBalance,
+                  max: 99,
+                  caption: l10n.customerFormCapsulesHint,
+                  onChanged: (value) =>
+                      setState(() => _capsuleBalance = value),
+                ),
+                // Предупреждаем только при правке и только когда число
+                // тронули: у нового заказчика перезаписывать нечего.
+                if (widget.isEdit && _capsulesChanged)
+                  Text(
+                    l10n.customerFormCapsulesLocked,
+                    style: DesktopTypography.secondary
+                        .copyWith(color: context.tokens.warn),
+                  ),
               ],
             ),
             // Стартовый баланс: одно поле, потому что сервер запрещает

@@ -444,10 +444,20 @@ void main() {
       // «есть/нет» заменён на количество: к кулеру ставят капсулу, и их у
       // заказчика может быть несколько.
       // Ищем внутри модалки: такой же плюс стоит в кнопке «+ Заказчик».
-      await tester.tap(find.descendant(
+      // Степперов в форме два, кулеры — первый; второй считает капсулы на
+      // руках у заказчика.
+      final plus = find.descendant(
         of: find.byType(CustomerFormModal),
         matching: find.byIcon(Icons.add),
-      ));
+      );
+      await tester.tap(plus.first);
+      await tester.pump();
+
+      // Заодно задаём тару, с которой заказчик приходит от прежнего
+      // поставщика: без неё первая доставка разошлась бы со складом.
+      await tester.tap(plus.at(1));
+      await tester.pump();
+      await tester.tap(plus.at(1));
       await tester.pump();
 
       await tester.tap(find.widgetWithText(DesktopButton, 'Сохранить'));
@@ -458,6 +468,41 @@ void main() {
 
       expect(repo.addedCoolerCount, 1);
       expect(repo.store.customers.last.hasCooler, isTrue);
+      expect(repo.store.customers.last.capsuleBalance, 2);
+      await settleToast(tester);
+    });
+
+    testWidgets('правка чужого поля не откатывает остаток капсул',
+        (tester) async {
+      // Остаток ведёт водитель: пока форма открыта, он может закрыть доставку
+      // и изменить число. Правка имени не должна затирать его тем, что было
+      // в форме при открытии.
+      repo.store.customers[0] =
+          repo.store.customers[0].copyWith(capsuleBalance: 5);
+
+      await pumpShell(tester);
+      await openSection(tester, 'Заказчики');
+
+      await tester.tap(find.byTooltip('Редактировать').first);
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 150));
+      }
+
+      await tester.enterText(customerField(0), 'Кафе «Новое имя»');
+      await tester.pump();
+
+      // Водитель закрыл доставку, пока форма была открыта.
+      repo.store.customers[0] =
+          repo.store.customers[0].copyWith(capsuleBalance: 2);
+
+      await tester.tap(find.widgetWithText(DesktopButton, 'Сохранить'));
+      await tester.pump();
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(repo.store.customers[0].capsuleBalance, 2);
       await settleToast(tester);
     });
 
@@ -479,7 +524,10 @@ void main() {
       }
       expect(find.byType(CustomerFormModal), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.remove));
+      await tester.tap(find.descendant(
+        of: find.byType(CustomerFormModal),
+        matching: find.byIcon(Icons.remove),
+      ).first);
       await tester.pump();
 
       await tester.tap(find.widgetWithText(DesktopButton, 'Сохранить'));
