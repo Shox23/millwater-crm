@@ -193,7 +193,16 @@ class _AuthInterceptor extends QueuedInterceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     final is401 = err.response?.statusCode == 401;
-    final isAuthCall = err.requestOptions.path.contains('/auth/');
+    // Только вход и сам refresh не должны запускать повторный refresh: там
+    // 401 значит «неверные данные» или «refresh мёртв», а не «access протух».
+    // `/auth/me` и `/auth/change-password` сюда не входят — их 401 как раз
+    // и есть протухший access, который лечится обновлением токена. Раньше
+    // здесь было `path.contains('/auth/')`, из-за чего `/auth/me` при
+    // восстановлении сессии никогда не пытался обновить токен: 401 на
+    // протухший access (живёт 15 минут) сразу стирал сессию, хотя
+    // refresh-токен (живёт 30 дней) был рабочим.
+    final path = err.requestOptions.path;
+    final isAuthCall = path.endsWith('/auth/login') || path.endsWith('/auth/refresh');
     final canRefresh = _store.refreshToken != null;
     final ownRetry = err.requestOptions.extra[kNoAuthRetry] == true;
 
