@@ -118,13 +118,14 @@ void main() {
 
     test('отказ сервера сессию стирает', () async {
       final storage = storedSession();
-      final dio = Dio()
-        ..httpClientAdapter = _StatusAdapter(401)
-        // Без refresh-токена интерсептора нет — 401 доходит как есть.
-        ;
+      final store = AuthTokenStore(storage);
+      // Боевой клиент, а не голый Dio: интерсептор обязан сперва попробовать
+      // refresh (401 от `/auth/me` иначе не отличить от протухшего access —
+      // см. session_restore_expired_access_test.dart), и только когда
+      // сервер отвергает и его, сессия действительно мертва.
+      final dio = buildDio(store, adapter: _StatusAdapter(401));
 
-      final role = await AuthRepository(dio, AuthTokenStore(storage))
-          .restoreSession();
+      final role = await AuthRepository(dio, store).restoreSession();
 
       expect(role, isNull);
       expect(await storage.read('access_token'), isNull);
