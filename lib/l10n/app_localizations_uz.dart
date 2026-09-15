@@ -1693,6 +1693,20 @@ class AppLocalizationsUz extends AppLocalizations {
       'Haydovchi yuritadigan qoldiqni almashtiradi';
 
   @override
+  String get customerFormLastOrder => 'Oxirgi buyurtma';
+
+  @override
+  String get customerFormLastOrderHint =>
+      'Mijoz oxirgi marta qachon suv olgan — shu kun bo‘yicha ro‘yxat jim qolganlarni ajratib ko‘rsatadi';
+
+  @override
+  String get customerFormLastOrderNone => 'Ko‘rsatilmagan';
+
+  @override
+  String get customerFormLastOrderLocked =>
+      'Yetkazib berish yopilganda qo‘yiladigan sanani almashtiradi';
+
+  @override
   String get customerFormBalance => 'Boshlang‘ich balans';
 
   @override
@@ -2179,6 +2193,10 @@ class AppLocalizationsUz extends AppLocalizations {
   String get errorDateInPast => 'Sana o‘tmishda bo‘lishi mumkin emas';
 
   @override
+  String get errorLastOrderDateFuture =>
+      'Oxirgi buyurtma sanasi kelajakda bo‘lishi mumkin emas';
+
+  @override
   String get deliveryCancelled => 'Bekor qilingan';
 
   @override
@@ -2240,4 +2258,37 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get orderCancelReasonEmpty => 'Sabab ko‘rsatilmagan';
+
+  @override
+  String get routeFormCustomPrice => 'Buyurtma narxi';
+
+  @override
+  String get routeFormCustomPriceHint => 'Narxlar bo‘yicha';
+
+  @override
+  String get routeFormCustomPriceHelper =>
+      'Butun buyurtma uchun so‘m, necha kapsula keltirilishidan qat’i nazar. Bo‘sh — narxlar bo‘yicha';
+
+  @override
+  String get routeFormCustomPriceInvalid => 'Summa noldan katta bo‘lishi kerak';
+
+  @override
+  String stopCustomPrice(String amount) {
+    return 'Buyurtma narxi: $amount';
+  }
+
+  @override
+  String get orderCustomPrice => 'Buyurtma narxi (kelishilgan)';
+
+  @override
+  String get completionCustomPrice => 'BUYURTMA NARXI';
+
+  @override
+  String get completionCustomPriceCaption =>
+      'Butun buyurtma uchun kelishilgan summa — kapsula, brak va qaytarish uni o‘zgartirmaydi';
+
+  @override
+  String completionByCustomPrice(String amount) {
+    return 'Buyurtma narxi bo‘yicha: $amount';
+  }
 }

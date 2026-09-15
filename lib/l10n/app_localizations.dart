@@ -3026,6 +3026,30 @@ abstract class AppLocalizations {
   /// **'Заменит остаток, который ведёт водитель'**
   String get customerFormCapsulesLocked;
 
+  /// No description provided for @customerFormLastOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Последний заказ'**
+  String get customerFormLastOrder;
+
+  /// No description provided for @customerFormLastOrderHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Когда заказчик брал воду в последний раз — по этому дню список подсвечивает замолчавших'**
+  String get customerFormLastOrderHint;
+
+  /// No description provided for @customerFormLastOrderNone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не указан'**
+  String get customerFormLastOrderNone;
+
+  /// No description provided for @customerFormLastOrderLocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заменит дату, которую ставит закрытие доставки'**
+  String get customerFormLastOrderLocked;
+
   /// No description provided for @customerFormBalance.
   ///
   /// In ru, this message translates to:
@@ -3895,6 +3919,12 @@ abstract class AppLocalizations {
   /// **'Дата не может быть в прошлом'**
   String get errorDateInPast;
 
+  /// No description provided for @errorLastOrderDateFuture.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дата последнего заказа не может быть в будущем'**
+  String get errorLastOrderDateFuture;
+
   /// No description provided for @deliveryCancelled.
   ///
   /// In ru, this message translates to:
@@ -4000,6 +4030,60 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Причина не указана'**
   String get orderCancelReasonEmpty;
+
+  /// No description provided for @routeFormCustomPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена заказа'**
+  String get routeFormCustomPrice;
+
+  /// No description provided for @routeFormCustomPriceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'По прайсу'**
+  String get routeFormCustomPriceHint;
+
+  /// No description provided for @routeFormCustomPriceHelper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сум за весь заказ, сколько бы капсул ни привезли. Пусто — по прайсу'**
+  String get routeFormCustomPriceHelper;
+
+  /// No description provided for @routeFormCustomPriceInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сумма должна быть больше нуля'**
+  String get routeFormCustomPriceInvalid;
+
+  /// No description provided for @stopCustomPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена заказа: {amount}'**
+  String stopCustomPrice(String amount);
+
+  /// No description provided for @orderCustomPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена заказа (договорная)'**
+  String get orderCustomPrice;
+
+  /// No description provided for @completionCustomPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'ЦЕНА ЗАКАЗА'**
+  String get completionCustomPrice;
+
+  /// No description provided for @completionCustomPriceCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'Договорная сумма за весь заказ — капсулы, брак и возврат её не меняют'**
+  String get completionCustomPriceCaption;
+
+  /// No description provided for @completionByCustomPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'По цене заказа: {amount}'**
+  String completionByCustomPrice(String amount);
 }
 
 class _AppLocalizationsDelegate

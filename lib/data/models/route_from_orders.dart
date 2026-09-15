@@ -123,6 +123,7 @@ RouteStop stopFromOrder(Order order) => RouteStop(
       damagedCapsules: order.damagedCapsules,
       cancelReason: order.cancelReason,
       cancelledAt: order.cancelledAt,
+      customPrice: order.customPrice,
       pickedCoolers: order.pickedCoolers,
       pickedBottles: order.pickedBottles,
       bulk5lCount: order.bulk5lCount,

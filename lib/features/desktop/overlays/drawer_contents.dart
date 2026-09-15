@@ -144,6 +144,11 @@ class DeliveryDrawer extends StatelessWidget {
                 ? '—'
                 : MoneyFormatter.sum(l10n, stop.paymentAmount!),
           ),
+          if (stop.customPrice case final int customPrice)
+            DrawerField(
+              label: l10n.orderCustomPrice,
+              value: MoneyFormatter.sum(l10n, customPrice),
+            ),
           if (stop.completedAt != null)
             DrawerField(
               label: l10n.desktopFieldTime,

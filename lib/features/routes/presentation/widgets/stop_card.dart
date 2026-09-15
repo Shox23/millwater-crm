@@ -124,6 +124,20 @@ class StopCard extends StatelessWidget {
                 ),
               ],
             ),
+          // Договорная сумма — рядом с заданием, пока точка открыта: после
+          // закрытия она уже в итоге внизу.
+          if (stop.status.isOpen && stop.customPrice != null)
+            Row(
+              spacing: 4,
+              children: [
+                Icon(Icons.sell_outlined, size: 16, color: t.primary),
+                Text(
+                  context.l10n.stopCustomPrice(
+                      MoneyFormatter.sum(context.l10n, stop.customPrice!)),
+                  style: AppTypography.secondary.copyWith(color: t.primary),
+                ),
+              ],
+            ),
           // Причина отмены — прямо в списке: у водителя это напоминание,
           // почему сюда не едем, у админа — ответ без звонка.
           if (stop.isCancelled)

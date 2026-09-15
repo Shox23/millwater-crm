@@ -1714,6 +1714,20 @@ class AppLocalizationsRu extends AppLocalizations {
       'Заменит остаток, который ведёт водитель';
 
   @override
+  String get customerFormLastOrder => 'Последний заказ';
+
+  @override
+  String get customerFormLastOrderHint =>
+      'Когда заказчик брал воду в последний раз — по этому дню список подсвечивает замолчавших';
+
+  @override
+  String get customerFormLastOrderNone => 'Не указан';
+
+  @override
+  String get customerFormLastOrderLocked =>
+      'Заменит дату, которую ставит закрытие доставки';
+
+  @override
   String get customerFormBalance => 'Стартовый баланс';
 
   @override
@@ -2199,6 +2213,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorDateInPast => 'Дата не может быть в прошлом';
 
   @override
+  String get errorLastOrderDateFuture =>
+      'Дата последнего заказа не может быть в будущем';
+
+  @override
   String get deliveryCancelled => 'Отменён';
 
   @override
@@ -2260,4 +2278,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get orderCancelReasonEmpty => 'Причина не указана';
+
+  @override
+  String get routeFormCustomPrice => 'Цена заказа';
+
+  @override
+  String get routeFormCustomPriceHint => 'По прайсу';
+
+  @override
+  String get routeFormCustomPriceHelper =>
+      'Сум за весь заказ, сколько бы капсул ни привезли. Пусто — по прайсу';
+
+  @override
+  String get routeFormCustomPriceInvalid => 'Сумма должна быть больше нуля';
+
+  @override
+  String stopCustomPrice(String amount) {
+    return 'Цена заказа: $amount';
+  }
+
+  @override
+  String get orderCustomPrice => 'Цена заказа (договорная)';
+
+  @override
+  String get completionCustomPrice => 'ЦЕНА ЗАКАЗА';
+
+  @override
+  String get completionCustomPriceCaption =>
+      'Договорная сумма за весь заказ — капсулы, брак и возврат её не меняют';
+
+  @override
+  String completionByCustomPrice(String amount) {
+    return 'По цене заказа: $amount';
+  }
 }

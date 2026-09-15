@@ -65,6 +65,7 @@ class _RecordingRepository extends MockCrmRepository {
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
+    DateTime? lastOrderDate,
     String? idempotencyKey,
   }) {
     addedCoolerCount = coolerCount;
@@ -78,6 +79,7 @@ class _RecordingRepository extends MockCrmRepository {
       debt: debt,
       prepayment: prepayment,
       customWaterPrice: customWaterPrice,
+      lastOrderDate: lastOrderDate,
       idempotencyKey: idempotencyKey,
     );
   }
@@ -87,12 +89,14 @@ class _RecordingRepository extends MockCrmRepository {
     Customer customer, {
     bool balanceChanged = false,
     bool capsulesChanged = false,
+    bool lastOrderDateChanged = false,
   }) {
     updatedCustomer = customer;
     return super.updateCustomer(
       customer,
       balanceChanged: balanceChanged,
       capsulesChanged: capsulesChanged,
+      lastOrderDateChanged: lastOrderDateChanged,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../l10n/l10n.dart';
 
@@ -8,6 +9,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/forms/submit_state.dart';
+import '../../../core/utils/day.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../../../core/utils/uz_phone.dart';
@@ -94,6 +96,14 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// активным, отдельного поля в `CreateCustomer` нет.
   late bool _isActive;
 
+  /// Когда заказчик брал воду в последний раз. `null` — не известно.
+  ///
+  /// Обычно дату ставит закрытие доставки, но заказчика, перенесённого из
+  /// старой базы, иначе не отличить от новичка — и список не подсветит его,
+  /// когда он замолчит. Уходит на сервер только когда админ её трогал —
+  /// см. [_lastOrderDateChanged].
+  DateTime? _lastOrderDate;
+
   /// Один ключ на весь экран: повтор после обрыва связи не должен завести
   /// второго заказчика. При редактировании не нужен — PATCH идемпотентен.
   final String _idempotencyKey = newIdempotencyKey('customer');
@@ -124,6 +134,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _coolerCount = customer?.coolerCount ?? 0;
     _capsuleBalance = customer?.capsuleBalance ?? 0;
     _isActive = customer?.isActive ?? true;
+    _lastOrderDate = customer?.lastOrderDate;
 
     _balanceKind = switch (customer) {
       Customer(debt: > 0) => BalanceKind.debt,
@@ -202,8 +213,41 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
         _coolerCount != (customer?.coolerCount ?? 0) ||
         _capsulesChanged ||
         _balanceChanged ||
+        _lastOrderDateChanged ||
         _customWaterPrice != customer?.customWaterPrice ||
         _isActive != (customer?.isActive ?? true);
+  }
+
+  /// Дату последнего заказа правили руками — только тогда она уйдёт.
+  ///
+  /// Причина та же, что у капсул и баланса: пока форма открыта, водитель
+  /// мог закрыть доставку и сдвинуть дату; форма, отправив «свою», откатила
+  /// бы её. Сравниваем по дням: календарь отдаёт полночь, а сервер — момент
+  /// закрытия доставки, и без этого тот же день выглядел бы правкой.
+  bool get _lastOrderDateChanged {
+    final was = widget.customer?.lastOrderDate;
+    final now = _lastOrderDate;
+    if (was == null || now == null) return was != now;
+    return dayOnly(was) != dayOnly(now);
+  }
+
+  Future<void> _pickLastOrderDate() async {
+    final today = dayOnly(DateTime.now());
+    final initial = _lastOrderDate == null ? today : dayOnly(_lastOrderDate!);
+    var first = DateTime(today.year - 10, today.month, today.day);
+    // Дата из базы может быть старше окна — календарь падал бы на ассерте
+    // SDK: initialDate раньше firstDate.
+    if (initial.isBefore(first)) first = initial;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: first,
+      // Будущее сервер отвергнет (422 LAST_ORDER_DATE_FUTURE) — календарь
+      // туда и не пускает.
+      lastDate: today,
+    );
+    if (picked != null) setState(() => _lastOrderDate = dayOnly(picked));
   }
 
   /// Остаток капсул правили руками — только тогда он уйдёт на сервер.
@@ -294,9 +338,11 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 prepayment: _prepayment,
                 customWaterPrice: _customWaterPrice,
                 isActive: _isActive,
+                lastOrderDate: _lastOrderDate,
               ),
               balanceChanged: _balanceChanged,
               capsulesChanged: _capsulesChanged,
+              lastOrderDateChanged: _lastOrderDateChanged,
             )
           : repo.addCustomer(
               name: _name.text.trim(),
@@ -308,6 +354,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
               debt: _debt,
               prepayment: _prepayment,
               customWaterPrice: _customWaterPrice,
+              lastOrderDate: _lastOrderDate,
               idempotencyKey: _idempotencyKey,
             ),
       // Сервер может отклонить и валидные с виду данные: занятый телефон,
@@ -460,6 +507,12 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                   ],
                 ),
               ),
+              _LastOrderBlock(
+                date: _lastOrderDate,
+                // Предупреждение по тому же правилу, что у капсул.
+                locked: widget.isEdit && _lastOrderDateChanged,
+                onTap: submitting ? null : _pickLastOrderDate,
+              ),
               _BalanceBlock(
                 kind: _balanceKind,
                 controller: _balance,
@@ -560,6 +613,73 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Дата последнего заказа: день в карточке-кнопке, календарь по нажатию.
+///
+/// Стереть выбранное нельзя намеренно: сервер `null` в PATCH пропускает как
+/// «не менять», и крестик обещал бы то, чего не случится. Дату можно только
+/// заменить.
+class _LastOrderBlock extends StatelessWidget {
+  const _LastOrderBlock({
+    required this.date,
+    required this.locked,
+    required this.onTap,
+  });
+
+  final DateTime? date;
+
+  /// Показать, что правка заменит дату, которую ведёт закрытие доставки.
+  final bool locked;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final t = context.tokens;
+    final enabled = onTap != null;
+
+    return AppCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.md,
+        children: [
+          Text(
+            l10n.customerFormLastOrder,
+            style: AppTypography.bodyStrong.copyWith(color: t.text),
+          ),
+          Row(
+            spacing: AppSpacing.md,
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 20,
+                color: enabled ? t.primary : t.text3,
+              ),
+              Expanded(
+                child: Text(
+                  date == null
+                      ? l10n.customerFormLastOrderNone
+                      : DateFormat('dd.MM.yyyy').format(date!),
+                  style: AppTypography.bodyStrong.copyWith(
+                    color: date == null ? t.text2 : t.text,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right, color: t.text2),
+            ],
+          ),
+          Text(
+            locked ? l10n.customerFormLastOrderLocked : l10n.customerFormLastOrderHint,
+            style: AppTypography.secondary.copyWith(
+              color: locked ? t.warn : t.text2,
+            ),
+          ),
+        ],
       ),
     );
   }

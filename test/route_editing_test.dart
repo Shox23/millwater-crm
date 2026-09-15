@@ -38,6 +38,7 @@ class _RecordingRepository extends MockCrmRepository {
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
+    int? customPrice,
   }) {
     // Задание к доставке пишем в след вызова: экран обязан отправить его
     // вместе с точкой — изменить это число потом сервер не даст.

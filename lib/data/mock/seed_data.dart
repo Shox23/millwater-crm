@@ -108,7 +108,8 @@ abstract class SeedData {
           address: 'Куйлюк, база 2',
           comment: 'Куйлюк',
           capsuleBalance: 3,
-          lastOrderDate: _daysAgo(4),
+          // Месяц без заказов — в списке жёлтая.
+          lastOrderDate: _daysAgo(40),
           createdAt: _created,
         ),
         Customer(
@@ -119,7 +120,8 @@ abstract class SeedData {
           comment: 'М. Улугбек',
           capsuleBalance: 5,
           debt: 300000,
-          lastOrderDate: _daysAgo(5),
+          // Два месяца без заказов — в списке светло-красная.
+          lastOrderDate: _daysAgo(75),
           createdAt: _created,
         ),
         Customer(

@@ -133,6 +133,7 @@ class Order extends Equatable {
     this.pickedCoolers,
     this.pickedBottles,
     this.bottleSellCount,
+    this.customPrice,
     this.payments = const [],
     this.completedAt,
     this.cancelReason,
@@ -215,6 +216,12 @@ class Order extends Equatable {
   /// водителю от админа. Что привезли на самом деле, живёт в
   /// [deliveredCapsules].
   final int? bottleSellCount;
+
+  /// Договорная сумма за весь заказ (`custom_price`), сум; `null` — по
+  /// прайсу. У закрытого заказа сервер кладёт её и в [orderAmount], и — по
+  /// ошибке — в [waterPriceApplied]; показывать «цену капсулы» при заданной
+  /// сумме нельзя, это сумма всего заказа.
+  final int? customPrice;
 
   /// История платежей по заказу.
   final List<OrderPayment> payments;
@@ -328,6 +335,7 @@ class Order extends Equatable {
       pickedCoolers: optionalInt(json['picked_coolers']),
       pickedBottles: optionalInt(json['picked_bottles']),
       bottleSellCount: optionalInt(json['bottle_sell_count']),
+      customPrice: _money(json['custom_price']),
       // Строка без `id` пропускается, а не роняет заказ: история платежей —
       // справка, из-за неё терять карточку незачем.
       payments: parseList(json['payments'], OrderPayment.fromJson),
@@ -431,6 +439,7 @@ class Order extends Equatable {
         pickedCoolers,
         pickedBottles,
         bottleSellCount,
+        customPrice,
         payments,
         completedAt,
         cancelReason,

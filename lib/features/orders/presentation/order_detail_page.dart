@@ -207,12 +207,21 @@ class OrderDetailPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: AppSpacing.md,
                 children: [
-                  // Снимок цены, а не сегодняшний прайс: заказ считали по
-                  // той цене, которая действовала в день доставки.
-                  _MoneyRow(
-                    label: l10n.orderPriceApplied,
-                    amount: order.waterPriceApplied,
-                  ),
+                  // Договорная сумма за весь заказ — вместо цены капсулы:
+                  // сервер кладёт её и в `water_price_applied`, и строка
+                  // «цена капсулы 150 000» вводила бы в заблуждение.
+                  if (order.customPrice case final int customPrice)
+                    _MoneyRow(
+                      label: l10n.orderCustomPrice,
+                      amount: customPrice,
+                    )
+                  else
+                    // Снимок цены, а не сегодняшний прайс: заказ считали по
+                    // той цене, которая действовала в день доставки.
+                    _MoneyRow(
+                      label: l10n.orderPriceApplied,
+                      amount: order.waterPriceApplied,
+                    ),
                   _MoneyRow(
                     label: l10n.orderFineApplied,
                     amount: order.damagedFineApplied,

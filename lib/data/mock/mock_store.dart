@@ -93,6 +93,8 @@ class MockStore {
           returnedFullCapsules: stop.returnedFullCapsules,
           damagedCapsules: stop.damagedCapsules,
           capsuleBalanceAfter: stop.capsuleBalanceAfter,
+          customPrice: stop.customPrice,
+          bottleSellCount: stop.bottleSellCount,
           orderAmount: stop.paymentAmount,
           completedAt: stop.completedAt,
           cancelReason: stop.cancelReason,

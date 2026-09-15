@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
@@ -14,7 +15,9 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/detail_scaffold.dart';
+import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/labeled_card.dart';
+import '../../../core/widgets/labeled_text_field.dart';
 import '../../../core/widgets/quantity_stepper.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/initials_avatar.dart';
@@ -60,6 +63,34 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   /// Задание водителю: сколько капсул везти каждому заказчику.
   /// Ноль — задания ещё не поставили, и форма такую точку не отпустит.
   final Map<String, int> _bottleCounts = {};
+
+  /// Договорная сумма за весь заказ по каждой точке — поле ввода живёт в
+  /// списке заказчиков, и контроллер заводится при первом обращении.
+  /// Пустое поле — считать по прайсу.
+  final Map<String, TextEditingController> _customPrices = {};
+
+  TextEditingController _customPriceController(String customerId) =>
+      _customPrices.putIfAbsent(customerId, TextEditingController.new);
+
+  /// Введённая сумма; `null` — поле пустое (по прайсу) или не число.
+  int? _customPriceOf(String customerId) =>
+      int.tryParse(_customPrices[customerId]?.text.trim() ?? '');
+
+  /// Сумма либо пустая, либо целое больше нуля: ноль сервер отверг бы, а
+  /// «бесплатно» задают не ценой, а способом оплаты «в долг» при закрытии.
+  bool _customPriceValid(String customerId) {
+    final text = _customPrices[customerId]?.text.trim() ?? '';
+    return text.isEmpty || (_customPriceOf(customerId) ?? 0) > 0;
+  }
+
+  bool get _customPricesValid => _customerIds.every(_customPriceValid);
+
+  /// Суммы точек, с которыми маршрут открыли, — менять их нечем, как и
+  /// задание (см. [_initialBottleCounts]).
+  late final Map<String, int?> _initialCustomPrices = {
+    for (final stop in widget.route?.stops ?? const <RouteStop>[])
+      stop.customerId: stop.customPrice,
+  };
 
   /// Точки, с которыми маршрут был открыт, — база для вычисления правок.
   late final Set<String> _initialCustomerIds =
@@ -129,6 +160,14 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
     _load();
   }
 
+  @override
+  void dispose() {
+    for (final controller in _customPrices.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -175,7 +214,10 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   /// Водителя в условии нет: маршрут без исполнителя — законное состояние,
   /// сервер оставляет такой маршрут в `created`, пока водителя не назначат.
   bool get _valid =>
-      _customerIds.isNotEmpty && _hasChanges && _bottleCountsFilled;
+      _customerIds.isNotEmpty &&
+      _hasChanges &&
+      _bottleCountsFilled &&
+      _customPricesValid;
 
   /// Можно ли тронуть этого заказчика: снять галочку с уже стоящей точки
   /// разрешено не всегда, поставить новую — почти всегда.
@@ -230,6 +272,9 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
               // смысла не имеет, и сервер получит поле пустым.
               bottleSellCount:
                   _needsBottleCount(id) ? _bottleCountOf(id) : null,
+              // Договорная сумма — тоже только у доставки: у вывоза денег
+              // нет, у опта цена договорная на бутыль и вводится водителем.
+              customPrice: _needsBottleCount(id) ? _customPriceOf(id) : null,
             ),
         ],
         idempotencyKey: _idempotencyKey,
@@ -275,6 +320,9 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
           purpose: _stopPurposes[customerId] ?? OrderPurpose.delivery19l,
           bottleSellCount: _needsBottleCount(customerId)
               ? _bottleCountOf(customerId)
+              : null,
+          customPrice: _needsBottleCount(customerId)
+              ? _customPriceOf(customerId)
               : null,
         );
       }
@@ -472,6 +520,18 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                               _initialBottleCounts[c.id],
                                           onChanged: (value) => setState(
                                               () => _bottleCounts[c.id] = value),
+                                        ),
+                                      // Договорная сумма за весь заказ — по
+                                      // тому же правилу: только у доставки и
+                                      // только у новой точки.
+                                      if (_needsBottleCount(c.id))
+                                        _CustomPriceField(
+                                          controller:
+                                              _customPriceController(c.id),
+                                          editable: _isNewStop(c.id),
+                                          savedValue: _initialCustomPrices[c.id],
+                                          valid: _customPriceValid(c.id),
+                                          onChanged: () => setState(() {}),
                                         ),
                                     ],
                                   ),
@@ -704,6 +764,88 @@ class _BottleSellField extends StatelessWidget {
                       style: AppTypography.secondary.copyWith(color: t.text3)),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+/// Договорная сумма за весь заказ этой точки.
+///
+/// Не цена капсулы: сервер при закрытии запишет её в стоимость заказа как
+/// есть, сколько бы капсул ни привезли. Пустое поле — считать по прайсу;
+/// так у подавляющего большинства точек, поэтому поле не обязательное и
+/// не мешает собрать маршрут.
+///
+/// У уже добавленной точки — только число, как и у задания: изменить его
+/// сервер не умеет.
+class _CustomPriceField extends StatelessWidget {
+  const _CustomPriceField({
+    required this.controller,
+    required this.editable,
+    required this.savedValue,
+    required this.valid,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final bool editable;
+
+  /// Сумма, с которой точка пришла с сервера; `null` — по прайсу.
+  final int? savedValue;
+  final bool valid;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+
+    if (!editable) {
+      // Точке без своей суммы строка не нужна: «по прайсу» — обычный случай,
+      // и напоминать о нём у каждой точки незачем.
+      if (savedValue == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: LabeledCard(
+          label: l10n.routeFormCustomPrice,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 2,
+            children: [
+              Text(MoneyFormatter.sum(l10n, savedValue!),
+                  style: AppTypography.statNumber.copyWith(color: t.text)),
+              Text(l10n.routeFormBottleSellLocked,
+                  style: AppTypography.secondary.copyWith(color: t.text3)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.xs,
+        children: [
+          LabeledTextField(
+            label: l10n.routeFormCustomPrice,
+            hint: l10n.routeFormCustomPriceHint,
+            helper: l10n.routeFormCustomPriceHelper,
+            helperMaxLines: 2,
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            maxLength: 10,
+            onChanged: (_) => onChanged(),
+          ),
+          // Ошибка строкой, а не валидатором поля: форма маршрута не
+          // обёрнута в `Form`, и валидатор без неё не сработал бы. Как у
+          // задания капсул выше.
+          if (!valid)
+            Text(l10n.routeFormCustomPriceInvalid,
+                style: AppTypography.secondary.copyWith(color: t.danger)),
+        ],
       ),
     );
   }

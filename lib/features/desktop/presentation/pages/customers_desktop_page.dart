@@ -11,6 +11,7 @@ import '../../../../core/widgets/load_more_notifier.dart';
 import '../../../../core/utils/uz_phone.dart';
 import '../../../../data/models/customer.dart';
 import '../../../customers/bloc/customers_bloc.dart';
+import '../../../customers/presentation/widgets/activity_background.dart';
 import '../../theme/desktop_typography.dart';
 import '../../widgets/desktop_badge.dart';
 import '../../widgets/desktop_button.dart';
@@ -50,6 +51,9 @@ class CustomersDesktopPage extends StatelessWidget {
         }
 
         final customers = state.visible;
+        // Один день на всю таблицу: строк десятки, а полночь между двумя
+        // соседними нас не волнует.
+        final today = DateTime.now();
 
         // Таблица показывает загруженные страницы; прокрутка до низа
         // добирает следующую — как и в мобильном списке, блок у них общий.
@@ -70,6 +74,10 @@ class CustomersDesktopPage extends StatelessWidget {
               ],
               itemCount: customers.length,
               onRowTap: (i) => onOpen(customers[i]),
+              // То же правило, что у мобильной карточки: жёлтый — месяц
+              // без заказов, светло-красный — два.
+              rowColor: (i) =>
+                  activityBackground(t, customers[i].activityOn(today)),
               empty: DesktopEmpty(
                 icon: Icons.storefront_outlined,
                 title: state.isEmptySearch

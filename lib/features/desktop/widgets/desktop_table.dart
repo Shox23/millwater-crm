@@ -29,6 +29,7 @@ class DesktopTable extends StatelessWidget {
     required this.cellsBuilder,
     this.onRowTap,
     this.selectedIndex,
+    this.rowColor,
     this.empty,
   });
 
@@ -42,6 +43,12 @@ class DesktopTable extends StatelessWidget {
 
   /// Какая строка открыта в drawer — она подсвечивается.
   final int? selectedIndex;
+
+  /// Свой фон строки, когда данным есть что сказать цветом (заказчик,
+  /// давно не заказывавший). `null` — обычная прозрачная строка. Курсор и
+  /// выбор в drawer перекрывают его: это состояния взаимодействия, а не
+  /// данных.
+  final Color? Function(int index)? rowColor;
 
   /// Что показать вместо строк, когда их нет.
   final Widget? empty;
@@ -73,6 +80,7 @@ class DesktopTable extends StatelessWidget {
                 columns: columns,
                 cells: cellsBuilder(i),
                 selected: i == selectedIndex,
+                color: rowColor?.call(i),
                 last: i == itemCount - 1,
                 onTap: onRowTap == null ? null : () => onRowTap!(i),
               ),
@@ -118,6 +126,7 @@ class _Row extends StatefulWidget {
     required this.columns,
     required this.cells,
     required this.selected,
+    required this.color,
     required this.last,
     required this.onTap,
   });
@@ -125,6 +134,7 @@ class _Row extends StatefulWidget {
   final List<DesktopColumn> columns;
   final List<Widget> cells;
   final bool selected;
+  final Color? color;
   final bool last;
   final VoidCallback? onTap;
 
@@ -145,7 +155,9 @@ class _RowState extends State<_Row> {
       decoration: BoxDecoration(
         color: widget.selected
             ? t.primarySoft
-            : (_hovered ? t.surface2 : Colors.transparent),
+            : _hovered
+                ? t.surface2
+                : (widget.color ?? Colors.transparent),
         border: widget.last
             ? null
             : Border(bottom: BorderSide(color: t.border)),

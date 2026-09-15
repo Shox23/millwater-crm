@@ -25,6 +25,8 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.dangerBg,
     required this.warn,
     required this.warnBg,
+    required this.staleBg,
+    required this.dormantBg,
     required this.cardShadow,
     required this.isDark,
     required this.sidebar,
@@ -76,6 +78,17 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color warn;
   final Color warnBg;
 
+  /// Фон карточки заказчика, который не заказывал больше месяца, — жёлтый.
+  ///
+  /// Не [warnBg]: тот — янтарный на 12% прозрачности и на белой карточке
+  /// читается как персиковый, а заказчик просил именно жёлтый. Непрозрачный,
+  /// чтобы фон не зависел от того, что под ним.
+  final Color staleBg;
+
+  /// Фон карточки заказчика, который не заказывал больше двух месяцев, —
+  /// светло-красный. Тоже непрозрачный, по той же причине.
+  final Color dormantBg;
+
   final List<BoxShadow> cardShadow;
 
   /// Подъём карточки под курсором. Мышь есть только на десктопе, поэтому
@@ -118,6 +131,8 @@ class AppTokens extends ThemeExtension<AppTokens> {
     dangerBg: Color(0x1AD93A3F),
     warn: Color(0xFFC4761C),
     warnBg: Color(0x1FC4761C),
+    staleBg: Color(0xFFFFF4C2),
+    dormantBg: Color(0xFFFFDFDF),
     cardShadow: [
       BoxShadow(
         color: Color(0x141F446E),
@@ -174,6 +189,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
     dangerBg: Color(0x2BD93A3F),
     warn: Color(0xFFC4761C),
     warnBg: Color(0x30C4761C),
+    // На тёмной поверхности светлые заливки слепят — берём те же тона,
+    // но притушенные до яркости карточки.
+    staleBg: Color(0xFF3A3416),
+    dormantBg: Color(0xFF3F1F24),
     cardShadow: [
       BoxShadow(
         color: Color(0x80000000),
@@ -258,6 +277,8 @@ class AppTokens extends ThemeExtension<AppTokens> {
     Color? dangerBg,
     Color? warn,
     Color? warnBg,
+    Color? staleBg,
+    Color? dormantBg,
     List<BoxShadow>? cardShadow,
     bool? isDark,
     Color? sidebar,
@@ -286,6 +307,8 @@ class AppTokens extends ThemeExtension<AppTokens> {
       dangerBg: dangerBg ?? this.dangerBg,
       warn: warn ?? this.warn,
       warnBg: warnBg ?? this.warnBg,
+      staleBg: staleBg ?? this.staleBg,
+      dormantBg: dormantBg ?? this.dormantBg,
       cardShadow: cardShadow ?? this.cardShadow,
       isDark: isDark ?? this.isDark,
       sidebar: sidebar ?? this.sidebar,
@@ -319,6 +342,8 @@ class AppTokens extends ThemeExtension<AppTokens> {
       dangerBg: Color.lerp(dangerBg, other.dangerBg, t)!,
       warn: Color.lerp(warn, other.warn, t)!,
       warnBg: Color.lerp(warnBg, other.warnBg, t)!,
+      staleBg: Color.lerp(staleBg, other.staleBg, t)!,
+      dormantBg: Color.lerp(dormantBg, other.dormantBg, t)!,
       cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, t)!,
       isDark: t < 0.5 ? isDark : other.isDark,
       sidebar: Color.lerp(sidebar, other.sidebar, t)!,

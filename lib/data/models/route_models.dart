@@ -92,6 +92,7 @@ class RouteOrderInput extends Equatable {
     this.purpose,
     this.sequence,
     this.bottleSellCount,
+    this.customPrice,
   });
 
   final String customerId;
@@ -107,9 +108,16 @@ class RouteOrderInput extends Equatable {
   /// Осмысленно только у доставки 19 л: вывозу и опту везти нечего.
   final int? bottleSellCount;
 
+  /// Договорная сумма за **весь** заказ, сум (`order_custom_price`).
+  ///
+  /// Не цена капсулы: при закрытии сервер записывает её в стоимость заказа
+  /// как есть, сколько бы капсул ни привезли, и штраф с возвратом к ней не
+  /// добавляет. `null` — считается по прайсу.
+  final int? customPrice;
+
   @override
   List<Object?> get props =>
-      [customerId, purpose, sequence, bottleSellCount];
+      [customerId, purpose, sequence, bottleSellCount, customPrice];
 }
 
 /// Остановка маршрута — доставка конкретному заказчику (RouteCustomerResponse).
@@ -147,6 +155,7 @@ class RouteStop extends Equatable {
     this.effectiveWaterPrice,
     this.damagedBottleFine,
     this.bottleSellCount,
+    this.customPrice,
   });
 
   /// Идентификатор остановки (route_customer_id) — им оперируют driver-эндпоинты.
@@ -239,6 +248,13 @@ class RouteStop extends Equatable {
   /// заказов, заведённых до появления поля).
   final int? bottleSellCount;
 
+  /// Договорная сумма за весь заказ (`custom_price`), сум; `null` — по
+  /// прайсу. Сервер при закрытии ставит её в стоимость заказа целиком, не
+  /// считая капсулы, штраф и возврат, — и, увы, отдаёт её же в
+  /// `effective_water_price`. Поэтому при заданной сумме цена капсулы для
+  /// расчёта не используется вовсе.
+  final int? customPrice;
+
   /// Доставка выполнена. `failed` сюда не входит: точка закрыта, но привезти
   /// не удалось, и в «выполнено N из M» ей не место.
   bool get isCompleted => status == DeliveryStatus.delivered;
@@ -285,6 +301,7 @@ class RouteStop extends Equatable {
     PaymentMethod? paymentMethod,
     String? paymentPhoto,
     DateTime? completedAt,
+    int? customPrice,
   }) {
     return RouteStop(
       id: id,
@@ -319,6 +336,7 @@ class RouteStop extends Equatable {
       effectiveWaterPrice: effectiveWaterPrice,
       damagedBottleFine: damagedBottleFine,
       bottleSellCount: bottleSellCount,
+      customPrice: customPrice ?? this.customPrice,
     );
   }
 
@@ -407,6 +425,7 @@ class RouteStop extends Equatable {
         effectiveWaterPrice: _money(json['effective_water_price']),
         damagedBottleFine: _money(json['damaged_bottle_fine']),
         bottleSellCount: optionalInt(json['bottle_sell_count']),
+        customPrice: _money(json['custom_price']),
       );
   }
 
@@ -470,6 +489,7 @@ class RouteStop extends Equatable {
         effectiveWaterPrice,
         damagedBottleFine,
         bottleSellCount,
+        customPrice,
       ];
 }
 

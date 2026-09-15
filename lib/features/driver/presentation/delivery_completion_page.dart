@@ -59,6 +59,11 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// сборке маршрута, а водитель отчитывается по тому, зачем приехал.
   OrderPurpose get _purpose => widget.stop.purpose;
 
+  /// Договорная сумма за весь заказ, если админ её задал при сборке
+  /// маршрута. Тогда деньги не зависят от счётчиков: сервер запишет её в
+  /// стоимость как есть, без штрафа и возврата, — и расчёт здесь такой же.
+  int? get _customPrice => widget.stop.customPrice;
+
   late int _capsules;
 
   /// Доставка 19 л: сколько пустых забрали и сколько из них с браком.
@@ -160,9 +165,12 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// у доставки, которую уже проводили, — затирать введённое число ответом
   /// сервера значило бы менять принятую оплату за спиной водителя.
   Future<void> _loadPrice() async {
-    // Цена заказа старше прайса: она уже содержит индивидуальную цену
-    // заказчика, а общий прайс её не знает.
-    if (widget.stop.effectiveWaterPrice != null) return;
+    // При договорной сумме цена капсулы в расчёте не участвует — незачем и
+    // спрашивать. Цена заказа старше прайса: она уже содержит индивидуальную
+    // цену заказчика, а общий прайс её не знает.
+    if (_customPrice != null || widget.stop.effectiveWaterPrice != null) {
+      return;
+    }
     final price = await widget.price.value();
     if (!mounted || price == _capsulePrice) return;
     setState(() {
@@ -180,6 +188,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// Вывоз денег не приносит. Опт считается по договорным ценам, которые
   /// водитель вводит сам.
   int get _calculatedAmount => switch (_purpose) {
+        // Договорная сумма перекрывает формулу целиком — как на сервере.
+        OrderPurpose.delivery19l when _customPrice != null => _customPrice!,
         OrderPurpose.delivery19l => _atLeastZero(
             (_capsules - _returnedFull) * _capsulePrice + _damaged * _damagedFine),
         OrderPurpose.pickup => 0,
@@ -392,6 +402,28 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             // только показ: менять задание с его стороны нечем.
             if ((widget.stop.bottleSellCount ?? 0) > 0)
               _BottleSellCard(count: widget.stop.bottleSellCount!),
+            // Договорная сумма — тоже от админа и тоже только показ: водитель
+            // должен видеть, что считать по прайсу здесь не надо.
+            if (_customPrice case final int customPrice)
+              LabeledCard(
+                label: context.l10n.completionCustomPrice,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
+                  children: [
+                    Text(
+                      MoneyFormatter.sum(context.l10n, customPrice),
+                      style: AppTypography.statNumber
+                          .copyWith(color: context.tokens.text),
+                    ),
+                    Text(
+                      context.l10n.completionCustomPriceCaption,
+                      style: AppTypography.secondary
+                          .copyWith(color: context.tokens.text2),
+                    ),
+                  ],
+                ),
+              ),
             LabeledCard(
               label: context.l10n.completionCapsules,
               child: QuantityStepper(
@@ -626,6 +658,15 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 else if (_purpose == OrderPurpose.pickup)
                   Text(context.l10n.completionPickupHint,
                       style: AppTypography.secondary.copyWith(color: t.text2))
+                else if (_customPrice case final int customPrice)
+                  // Подпись про договорную сумму вместо формулы по прайсу:
+                  // капсулы здесь деньги не двигают.
+                  _CustomPriceHint(
+                    amount: customPrice,
+                    onRestore: _amount == _calculatedAmount
+                        ? null
+                        : _restoreCalculatedAmount,
+                  )
                 else if (_purpose == OrderPurpose.delivery19l)
                   _AmountHint(
                     capsules: _capsules,
@@ -1019,6 +1060,43 @@ class _BottleSellCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Подпись под суммой при договорной цене заказа: откуда сумма и как её
+/// вернуть после ручной правки.
+class _CustomPriceHint extends StatelessWidget {
+  const _CustomPriceHint({required this.amount, required this.onRestore});
+
+  final int amount;
+
+  /// null — сумма совпадает с договорной, возвращать нечего.
+  final VoidCallback? onRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+    return Row(
+      spacing: AppSpacing.sm,
+      children: [
+        Expanded(
+          child: Text(
+            l10n.completionByCustomPrice(MoneyFormatter.sum(l10n, amount)),
+            style: AppTypography.secondary.copyWith(color: t.text2),
+          ),
+        ),
+        if (onRestore != null)
+          GestureDetector(
+            onTap: onRestore,
+            child: Text(l10n.completionRestoreAmount,
+                style: AppTypography.secondary.copyWith(
+                  color: t.primary,
+                  fontWeight: FontWeight.w700,
+                )),
+          ),
+      ],
     );
   }
 }

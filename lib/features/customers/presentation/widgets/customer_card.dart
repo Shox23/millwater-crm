@@ -10,6 +10,7 @@ import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../data/models/customer.dart';
+import 'activity_background.dart';
 import 'finance_tag.dart';
 import 'placeholder_avatar.dart';
 
@@ -35,6 +36,9 @@ class CustomerCard extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
+      // Замолчавший заказчик виден ещё до того, как админ прочитал дату
+      // последнего заказа в теге ниже.
+      color: activityBackground(t, customer.activityOn(DateTime.now())),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.md,

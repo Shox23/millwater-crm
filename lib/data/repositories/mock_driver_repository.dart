@@ -35,6 +35,9 @@ class MockDriverRepository implements DriverRepository {
   /// Сколько полных капсул ушло в последнее завершение — для тестов.
   int? lastReturnedFullCapsules;
 
+  /// Сумма последнего завершения — для тестов.
+  int? lastAmount;
+
   /// Причина последней отмены — для тестов.
   String? lastCancelReason;
 
@@ -169,6 +172,7 @@ class MockDriverRepository implements DriverRepository {
     await _tick();
     lastBottleBalance = bottleBalance;
     lastReturnedFullCapsules = returnedFullCapsules;
+    lastAmount = amount;
     lastMethod = method;
     lastPurpose = purpose;
     if (idempotencyKey != null && !seenIdempotencyKeys.add(idempotencyKey)) {

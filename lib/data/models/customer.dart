@@ -1,7 +1,22 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/utils/day.dart';
 import '../../core/utils/money_parser.dart';
 import 'json.dart';
+import 'order.dart' show formatApiDate;
+
+/// Давность последнего заказа — по ней список подсвечивает заказчика,
+/// которого пора обзванивать.
+enum CustomerActivity {
+  /// Заказывал в последний месяц.
+  recent,
+
+  /// Не заказывал больше месяца.
+  stale,
+
+  /// Не заказывал больше двух месяцев.
+  dormant,
+}
 
 /// Заказчик. Соответствует CustomerResponse из Water CRM API.
 ///
@@ -62,6 +77,30 @@ class Customer extends Equatable {
 
   /// У заказчика своя цена, отличная от общего прайса.
   bool get hasIndividualPrice => customWaterPrice != null;
+
+  /// Через сколько дней без заказа заказчик считается «остывшим».
+  static const staleAfterDays = 30;
+
+  /// Через сколько дней без заказа — «ушедшим».
+  static const dormantAfterDays = 60;
+
+  /// Давность последнего заказа на день [today].
+  ///
+  /// Точка отсчёта — последняя завершённая доставка (сервер пишет
+  /// `last_order_date` при закрытии заказа). У того, кто ещё ни разу не
+  /// заказывал, — день, когда его завели: заведён три месяца назад без
+  /// единого заказа — та же потеря, что и замолчавший постоянный, а вчерашний
+  /// новичок подсветки не заслужил.
+  ///
+  /// Считаются календарные дни, без часов: доставка в 23:50 и проверка на
+  /// следующее утро — это один день разницы, и время суток порог не двигает.
+  CustomerActivity activityOn(DateTime today) {
+    final since = dayOnly(lastOrderDate ?? createdAt);
+    final days = dayOnly(today).difference(since).inDays;
+    if (days > dormantAfterDays) return CustomerActivity.dormant;
+    if (days > staleAfterDays) return CustomerActivity.stale;
+    return CustomerActivity.recent;
+  }
 
   /// Маркер «значение не передавали».
   ///
@@ -150,9 +189,14 @@ class Customer extends Equatable {
   /// его ведёт водитель, а сервер присланным числом **заменяет** остаток
   /// целиком. Правка комментария не должна откатывать склад заказчика к
   /// значению, каким оно было при открытии формы.
+  ///
+  /// [includeLastOrderDate] — и дата последнего заказа туда же: её ставит
+  /// закрытие доставки, и форма, открытая до него, держит устаревшую.
+  /// Уходит как [lastOrderDateWire] — см. там, почему без времени.
   Map<String, dynamic> toUpdateJson({
     bool includeBalance = false,
     bool includeCapsules = false,
+    bool includeLastOrderDate = false,
   }) => {
         'full_name': name,
         'phone': phone,
@@ -167,7 +211,17 @@ class Customer extends Equatable {
           'prepayment': MoneyParser.toApi(prepayment),
         },
         if (includeCapsules) 'bottle_balance': capsuleBalance,
+        if (includeLastOrderDate && lastOrderDate != null)
+          'last_order_date': lastOrderDateWire(lastOrderDate!),
       };
+
+  /// Дата последнего заказа для `CreateCustomer`/`UpdateCustomer`.
+  ///
+  /// Только день, без времени и зоны. Сервер проверяет «не в будущем»,
+  /// сравнивая с наивным `datetime.now()`: метка с зоной (`…Z`) роняет это
+  /// сравнение в `TypeError`, то есть в 500 вместо 422. А само время суток
+  /// здесь ничего не значит — админ вводит день, когда заказчик брал воду.
+  static String lastOrderDateWire(DateTime date) => formatApiDate(date);
 
   @override
   List<Object?> get props => [

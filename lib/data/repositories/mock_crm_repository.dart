@@ -240,6 +240,7 @@ class MockCrmRepository implements CrmRepository {
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
+    DateTime? lastOrderDate,
     String? idempotencyKey,
   }) async {
     await _tick();
@@ -264,6 +265,7 @@ class MockCrmRepository implements CrmRepository {
       debt: debt,
       prepayment: prepayment,
       customWaterPrice: customWaterPrice,
+      lastOrderDate: lastOrderDate,
       createdAt: DateTime.now(),
     );
     _customers.add(customer);
@@ -275,6 +277,7 @@ class MockCrmRepository implements CrmRepository {
     Customer customer, {
     bool balanceChanged = false,
     bool capsulesChanged = false,
+    bool lastOrderDateChanged = false,
   }) async {
     await _tick();
     if (balanceChanged && customer.debt > 0 && customer.prepayment > 0) {
@@ -295,6 +298,11 @@ class MockCrmRepository implements CrmRepository {
         : customer.copyWith(debt: stored.debt, prepayment: stored.prepayment);
     if (!capsulesChanged) {
       saved = saved.copyWith(capsuleBalance: stored.capsuleBalance);
+    }
+    // И дата последнего заказа: её ставит закрытие доставки. `null` сервер
+    // из PATCH выбрасывает — стереть дату нельзя, только заменить.
+    if (!lastOrderDateChanged || customer.lastOrderDate == null) {
+      saved = saved.copyWith(lastOrderDate: stored.lastOrderDate);
     }
     _customers[i] = saved;
     return saved;
@@ -388,6 +396,7 @@ class MockCrmRepository implements CrmRepository {
         sequence: order.sequence ?? i + 1,
         customerCoolerCount: c.coolerCount,
         bottleSellCount: order.bottleSellCount,
+        customPrice: order.customPrice,
       ));
     }
     final route = RouteDetail(
@@ -454,6 +463,7 @@ class MockCrmRepository implements CrmRepository {
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
+    int? customPrice,
   }) async {
     await _tick();
     final customer = _customers.where((c) => c.id == customerId).firstOrNull;
@@ -473,6 +483,7 @@ class MockCrmRepository implements CrmRepository {
           status: DeliveryStatus.pending,
           purpose: purpose,
           bottleSellCount: bottleSellCount,
+          customPrice: customPrice,
         ),
       ]);
     });

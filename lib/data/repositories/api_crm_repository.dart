@@ -308,6 +308,7 @@ class ApiCrmRepository implements CrmRepository {
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
+    DateTime? lastOrderDate,
     String? idempotencyKey,
   }) async {
     final res = await _dio.post(
@@ -327,6 +328,9 @@ class ApiCrmRepository implements CrmRepository {
         // поля значил бы то же самое, но сервер о намерении не узнал бы.
         'custom_water_price':
             customWaterPrice == null ? null : MoneyParser.toApi(customWaterPrice),
+        // Одним днём, без зоны — см. `Customer.lastOrderDateWire`.
+        if (lastOrderDate != null)
+          'last_order_date': Customer.lastOrderDateWire(lastOrderDate),
       },
       options: _idempotent(idempotencyKey),
     );
@@ -338,12 +342,14 @@ class ApiCrmRepository implements CrmRepository {
     Customer customer, {
     bool balanceChanged = false,
     bool capsulesChanged = false,
+    bool lastOrderDateChanged = false,
   }) async {
     final res = await _dio.patch(
       '/admin/customers/${customer.id}',
       data: customer.toUpdateJson(
         includeBalance: balanceChanged,
         includeCapsules: capsulesChanged,
+        includeLastOrderDate: lastOrderDateChanged,
       ),
     );
     return Customer.fromJson(asMap(res.data));
@@ -405,6 +411,9 @@ class ApiCrmRepository implements CrmRepository {
               // Задание водителю: сколько капсул везти. Только у доставки —
               // см. `RouteOrderInput.bottleSellCount`.
               'bottle_sell_count': ?order.bottleSellCount,
+              // Договорная сумма за весь заказ; без неё считают по прайсу.
+              if (order.customPrice != null)
+                'order_custom_price': MoneyParser.toApi(order.customPrice!),
             },
         ],
       },
@@ -444,6 +453,7 @@ class ApiCrmRepository implements CrmRepository {
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
+    int? customPrice,
   }) =>
       // Заказчик остаётся и в пути — ради старых сборок, — но сервер читает
       // его из тела вместе с целью заказа.
@@ -455,6 +465,8 @@ class ApiCrmRepository implements CrmRepository {
           // Ключа нет вовсе, когда задания не ставили: у вывоза и опта везти
           // нечего, и ноль там значил бы «привезти ноль капсул».
           'bottle_sell_count': ?bottleSellCount,
+          if (customPrice != null)
+            'order_custom_price': MoneyParser.toApi(customPrice),
         },
       );
 

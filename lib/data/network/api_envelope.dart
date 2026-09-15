@@ -63,6 +63,7 @@ String? _messageForCode(AppLocalizations l10n, String? code) =>
       'ORDER_ALREADY_COMPLETED' => l10n.errorOrderCompleted,
       'ORDER_NOT_COMPLETED' => l10n.errorOrderNotCompleted,
       'DATE_IN_PAST' => l10n.errorDateInPast,
+      'LAST_ORDER_DATE_FUTURE' => l10n.errorLastOrderDateFuture,
       'ROUTE_NOT_IN_PROGRESS' => l10n.errorRouteNotInProgress,
       'CUSTOMER_PHONE_ALREADY_EXISTS' => l10n.errorCustomerPhoneExists,
       'PHONE_ALREADY_EXISTS' || 'USER_ALREADY_EXISTS' => l10n.errorPhoneExists,

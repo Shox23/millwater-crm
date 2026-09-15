@@ -94,6 +94,9 @@ abstract class CrmRepository {
   /// собрать такое состояние.
   /// [customWaterPrice] — индивидуальная цена капсулы; `null` — по общему
   /// прайсу.
+  /// [lastOrderDate] — когда заказчик брал воду в последний раз: переносится
+  /// из старой базы, чтобы новый в списке не выглядел ни новичком, ни
+  /// замолчавшим. `null` — не известно, поле не отправляется.
   /// [idempotencyKey] — см. [addDriver].
   Future<Customer> addCustomer({
     required String name,
@@ -105,6 +108,7 @@ abstract class CrmRepository {
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
+    DateTime? lastOrderDate,
     String? idempotencyKey,
   });
 
@@ -115,10 +119,14 @@ abstract class CrmRepository {
   /// [capsulesChanged] — админ правил остаток капсул вручную. Без флага поле
   /// не отправляется вовсе: остаток ведёт водитель, и сервер присланным
   /// числом заменяет его целиком.
+  /// [lastOrderDateChanged] — админ правил дату последнего заказа. Та же
+  /// логика: её ставит закрытие доставки, и без флага поле не уходит.
+  /// Стереть дату нельзя — сервер `null` в PATCH пропускает как «не менять».
   Future<Customer> updateCustomer(
     Customer customer, {
     bool balanceChanged = false,
     bool capsulesChanged = false,
+    bool lastOrderDateChanged = false,
   });
   Future<void> deleteCustomer(String id);
 
@@ -181,12 +189,14 @@ abstract class CrmRepository {
   /// [bottleSellCount] — сколько капсул везти этому заказчику. Изменить это
   /// число у **уже добавленной** точки нечем: у сервера есть только создание,
   /// удаление и правка порядка объезда, поэтому задание ставится в момент
-  /// добавления.
+  /// добавления. [customPrice] — договорная сумма за весь заказ, по той же
+  /// причине задаётся только здесь (см. `RouteOrderInput.customPrice`).
   Future<void> addRouteCustomer({
     required String routeId,
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
+    int? customPrice,
   });
 
   /// Убирает заказчика из маршрута

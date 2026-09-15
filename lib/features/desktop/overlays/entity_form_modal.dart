@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../l10n/l10n.dart';
 
@@ -8,6 +9,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/forms/balance_kind.dart';
 import '../../../core/forms/submit_state.dart';
+import '../../../core/utils/day.dart';
 import '../../../core/utils/driver_password.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/uz_phone.dart';
@@ -216,6 +218,10 @@ class _CustomerFormModalState extends State<CustomerFormModal>
   late final TextEditingController _price;
   late bool _customPrice;
 
+  /// Когда заказчик брал воду в последний раз; `null` — не известно.
+  /// Нужна заказчику из старой базы — иначе он неотличим от новичка.
+  DateTime? _lastOrderDate;
+
   final String _idempotencyKey = newIdempotencyKey('customer');
 
   int get _balanceAmount => int.tryParse(_balance.text.trim()) ?? 0;
@@ -242,6 +248,33 @@ class _CustomerFormModalState extends State<CustomerFormModal>
   bool get _balanceChanged =>
       _debt != (widget.customer?.debt ?? 0) ||
       _prepayment != (widget.customer?.prepayment ?? 0);
+
+  /// Дата последнего заказа уходит только когда её трогали — её ставит
+  /// закрытие доставки, и «своя» дата из открытой формы откатила бы её.
+  /// По дням: календарь отдаёт полночь, сервер — момент закрытия.
+  bool get _lastOrderDateChanged {
+    final was = widget.customer?.lastOrderDate;
+    final now = _lastOrderDate;
+    if (was == null || now == null) return was != now;
+    return dayOnly(was) != dayOnly(now);
+  }
+
+  Future<void> _pickLastOrderDate() async {
+    final today = dayOnly(DateTime.now());
+    final initial = _lastOrderDate == null ? today : dayOnly(_lastOrderDate!);
+    var first = DateTime(today.year - 10, today.month, today.day);
+    // Дата из базы старше окна — иначе ассерт SDK: initialDate < firstDate.
+    if (initial.isBefore(first)) first = initial;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: first,
+      // Будущее сервер отвергнет (422 LAST_ORDER_DATE_FUTURE).
+      lastDate: today,
+    );
+    if (picked != null) setState(() => _lastOrderDate = dayOnly(picked));
+  }
 
   @override
   void didChangeDependencies() {
@@ -277,6 +310,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     _price = TextEditingController(
       text: customer?.customWaterPrice?.toString() ?? '',
     );
+    _lastOrderDate = customer?.lastOrderDate;
     _name.addListener(_onChanged);
   }
 
@@ -318,9 +352,11 @@ class _CustomerFormModalState extends State<CustomerFormModal>
               debt: _debt,
               prepayment: _prepayment,
               customWaterPrice: _customWaterPrice,
+              lastOrderDate: _lastOrderDate,
             ),
             balanceChanged: _balanceChanged,
             capsulesChanged: _capsulesChanged,
+            lastOrderDateChanged: _lastOrderDateChanged,
           );
         } else {
           await repo.addCustomer(
@@ -333,6 +369,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
             debt: _debt,
             prepayment: _prepayment,
             customWaterPrice: _customWaterPrice,
+            lastOrderDate: _lastOrderDate,
             idempotencyKey: _idempotencyKey,
           );
         }
@@ -435,6 +472,42 @@ class _CustomerFormModalState extends State<CustomerFormModal>
                     style: DesktopTypography.secondary
                         .copyWith(color: context.tokens.warn),
                   ),
+              ],
+            ),
+            // Дата последнего заказа. Стереть её нельзя намеренно: сервер
+            // `null` в PATCH пропускает как «не менять» — только заменить.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppSpacing.sm,
+              children: [
+                Text(
+                  l10n.customerFormLastOrder,
+                  style: DesktopTypography.secondary.copyWith(
+                    color: context.tokens.text2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: DesktopButton(
+                    icon: Icons.calendar_today_outlined,
+                    label: _lastOrderDate == null
+                        ? l10n.customerFormLastOrderNone
+                        : DateFormat('dd.MM.yyyy').format(_lastOrderDate!),
+                    variant: DesktopButtonVariant.soft,
+                    onPressed: submitting ? null : _pickLastOrderDate,
+                  ),
+                ),
+                Text(
+                  widget.isEdit && _lastOrderDateChanged
+                      ? l10n.customerFormLastOrderLocked
+                      : l10n.customerFormLastOrderHint,
+                  style: DesktopTypography.secondary.copyWith(
+                    color: widget.isEdit && _lastOrderDateChanged
+                        ? context.tokens.warn
+                        : context.tokens.text3,
+                  ),
+                ),
               ],
             ),
             // Стартовый баланс: одно поле, потому что сервер запрещает

@@ -54,6 +54,7 @@ class _FailingRepository extends MockCrmRepository {
     int debt = 0,
     int prepayment = 0,
     int? customWaterPrice,
+    DateTime? lastOrderDate,
     String? idempotencyKey,
   }) async {
     if (onWrite != null) _throwWrite();
@@ -67,6 +68,7 @@ class _FailingRepository extends MockCrmRepository {
       debt: debt,
       prepayment: prepayment,
       customWaterPrice: customWaterPrice,
+      lastOrderDate: lastOrderDate,
       idempotencyKey: idempotencyKey,
     );
   }
