@@ -6,9 +6,12 @@ import '../../../../l10n/l10n.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
+import '../../../../core/utils/date_period.dart';
 import '../../../../core/utils/day.dart';
 import '../../../../core/utils/initials.dart';
 import '../../../../core/utils/money_formatter.dart';
+import '../../../../core/utils/stats_period.dart';
+import '../../../../core/widgets/date_range_picker.dart';
 import '../../../../data/models/customer.dart';
 import '../../../../data/models/reports_summary.dart';
 import '../../../customers/bloc/customers_bloc.dart';
@@ -75,6 +78,10 @@ class ReportsDesktopPage extends StatelessWidget {
   }
 }
 
+/// Пресеты в пилюле и рядом чип «Свои даты…» — как в фильтре заказов.
+///
+/// При выбранном диапазоне пилюля остаётся без активного сегмента
+/// (`value: null`), а чип подписан датами и залит акцентом.
 class _PeriodSelector extends StatelessWidget {
   const _PeriodSelector({required this.period});
 
@@ -82,21 +89,73 @@ class _PeriodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final bloc = context.read<ReportsBloc>();
+    final custom = switch (period) { CustomPeriod c => c, _ => null };
+
     return Row(
+      spacing: AppSpacing.md,
       children: [
         SizedBox(
           width: 300,
-          child: DesktopSegmented<ReportPeriod>(
+          child: DesktopSegmented<StatsPeriod?>(
             options: [
-              for (final value in ReportPeriod.values)
-                (value, value.label(context.l10n)),
+              for (final value in StatsPeriod.values)
+                (value, value.label(l10n)),
             ],
-            value: period,
-            onChanged: (value) =>
-                context.read<ReportsBloc>().add(ReportsPeriodChanged(value)),
+            value: switch (period) {
+              PresetPeriod(:final period) => period,
+              CustomPeriod() => null,
+            },
+            onChanged: (value) {
+              if (value != null) bloc.add(ReportsPeriodChanged(PresetPeriod(value)));
+            },
           ),
         ),
+        _DateRangeChip(
+          label: custom == null ? l10n.periodCustom : custom.label(l10n),
+          selected: custom != null,
+          onTap: () async {
+            final picked = await pickCustomPeriod(context, current: period);
+            if (picked != null) bloc.add(ReportsPeriodChanged(picked));
+          },
+        ),
       ],
+    );
+  }
+}
+
+/// Чип диапазона: открывает календарь и подписывается выбранными датами.
+class _DateRangeChip extends StatelessWidget {
+  const _DateRangeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+
+    return Material(
+      color: selected ? t.primary : t.surface2,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Text(
+            label,
+            style: DesktopTypography.tableCell
+                .copyWith(color: selected ? Colors.white : t.text2),
+          ),
+        ),
+      ),
     );
   }
 }

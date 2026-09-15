@@ -9,11 +9,11 @@ import '../../../app/theme/app_typography.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/detail_scaffold.dart';
+import '../../../core/widgets/network_photo_card.dart';
 import '../../../core/widgets/phone_contact_row.dart';
 import '../../../core/widgets/stat_tile.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/route_models.dart';
-import '../../../data/network/api_config.dart';
 import 'widgets/route_card.dart';
 
 /// Точка маршрута глазами администратора — только просмотр.
@@ -105,57 +105,41 @@ class StopDetailPage extends StatelessWidget {
               ),
             ),
           if (stop.paymentPhoto case final String photo)
-            _PaymentPhoto(url: photo),
-          AppCard(child: PhoneContactRow(phone: stop.customerPhone)),
-        ],
-      ),
-    );
-  }
-}
-
-/// Фото оплаты, приложенное водителем при завершении доставки.
-class _PaymentPhoto extends StatelessWidget {
-  const _PaymentPhoto({required this.url});
-
-  final String url;
-
-  /// Сервер может отдать как полный URL, так и путь относительно API.
-  String get _absolute =>
-      url.startsWith('http') ? url : '${ApiConfig.baseUrl}/$url';
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.sm,
-      children: [
-        Text(context.l10n.stopPhotoLabel,
-            style: AppTypography.fieldLabel.copyWith(color: t.text2)),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          child: Image.network(
-            _absolute,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              color: t.surface2,
-              child: Row(
-                spacing: AppSpacing.md,
+            NetworkPhotoCard(label: context.l10n.stopPhotoLabel, url: photo),
+          // Отменённая точка объясняет себя сама: причина и время отмены.
+          if (stop.isCancelled)
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppSpacing.sm,
                 children: [
-                  Icon(Icons.broken_image_outlined, size: 20, color: t.text2),
-                  Expanded(
-                    child: Text(context.l10n.stopPhotoFailed,
-                        style:
-                            AppTypography.secondary.copyWith(color: t.text2)),
+                  Row(
+                    spacing: AppSpacing.md,
+                    children: [
+                      Icon(Icons.block_outlined, size: 20, color: t.danger),
+                      Expanded(
+                        child: Text(context.l10n.orderCancelledAt,
+                            style: AppTypography.secondary
+                                .copyWith(color: t.text2)),
+                      ),
+                      if (stop.cancelledAt case final DateTime at)
+                        Text(
+                          DateFormat('dd.MM.yyyy HH:mm').format(at),
+                          style:
+                              AppTypography.bodyStrong.copyWith(color: t.text),
+                        ),
+                    ],
+                  ),
+                  Text(
+                    stop.cancelReason ?? context.l10n.orderCancelReasonEmpty,
+                    style: AppTypography.body.copyWith(color: t.text),
                   ),
                 ],
               ),
             ),
-          ),
-        ),
-      ],
+          AppCard(child: PhoneContactRow(phone: stop.customerPhone)),
+        ],
+      ),
     );
   }
 }

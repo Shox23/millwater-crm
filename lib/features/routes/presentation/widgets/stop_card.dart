@@ -113,7 +113,7 @@ class StopCard extends StatelessWidget {
           ),
           // Задание к доставке: сколько капсул везти. Показываем, пока точка
           // не закрыта, — после закрытия важнее факт, а не план.
-          if (!stop.isCompleted && (stop.bottleSellCount ?? 0) > 0)
+          if (stop.status.isOpen && (stop.bottleSellCount ?? 0) > 0)
             Row(
               spacing: 4,
               children: [
@@ -121,6 +121,24 @@ class StopCard extends StatelessWidget {
                 Text(
                   context.l10n.stopBottleSell(stop.bottleSellCount!),
                   style: AppTypography.secondary.copyWith(color: t.primary),
+                ),
+              ],
+            ),
+          // Причина отмены — прямо в списке: у водителя это напоминание,
+          // почему сюда не едем, у админа — ответ без звонка.
+          if (stop.isCancelled)
+            Row(
+              spacing: 4,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.block_outlined, size: 16, color: t.danger),
+                Expanded(
+                  child: Text(
+                    stop.cancelReason ?? context.l10n.orderCancelReasonEmpty,
+                    style: AppTypography.secondary.copyWith(color: t.text2),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

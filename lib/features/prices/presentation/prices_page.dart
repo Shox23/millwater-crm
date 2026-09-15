@@ -11,9 +11,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/forms/submit_state.dart';
 import '../../../core/product_config.dart';
-import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/money_formatter.dart';
-import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
@@ -25,6 +23,8 @@ import '../../../core/widgets/section_block.dart';
 import '../../../data/models/price_settings.dart';
 import '../../../data/network/api_envelope.dart';
 import '../../../data/repositories/crm_repository.dart';
+import '../bloc/prices_cubit.dart';
+import 'price_rules.dart';
 
 /// Экран «Цены»: действующий прайс и его изменение.
 ///
@@ -34,143 +34,82 @@ import '../../../data/repositories/crm_repository.dart';
 /// Сервер прайс не правит, а копит: `POST /admin/prices` заводит новую
 /// запись, действующей становится последняя. Поэтому кнопка называется
 /// «Сохранить», но по сути это «назначить новую цену».
-class PricesPage extends StatefulWidget {
+class PricesPage extends StatelessWidget {
   const PricesPage({super.key});
 
   @override
-  State<PricesPage> createState() => _PricesPageState();
+  Widget build(BuildContext context) {
+    // Кубит свой, а не из дерева: экран открывается отдельным маршрутом из
+    // настроек, и держать прайс живым, пока его никто не смотрит, незачем.
+    return BlocProvider(
+      create: (context) => PricesCubit(context.read<CrmRepository>())..load(),
+      child: const _PricesForm(),
+    );
+  }
 }
 
-class _PricesPageState extends State<PricesPage> with SubmitState {
+class _PricesForm extends StatefulWidget {
+  const _PricesForm();
+
+  @override
+  State<_PricesForm> createState() => _PricesFormState();
+}
+
+class _PricesFormState extends State<_PricesForm> with SubmitState {
   /// Правила проверки на языке интерфейса. Пересобираются при смене
   /// локали: `didChangeDependencies` вызывается снова.
-  late Validators _v;
+  late PriceRules _rules;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _v = Validators(context.l10n);
+    _rules = PriceRules(context.l10n);
   }
 
   final _formKey = GlobalKey<FormState>();
 
   final _capsule = TextEditingController();
-  final _deposit = TextEditingController();
   final _fine = TextEditingController();
 
   final _capsuleFocus = FocusNode();
-  final _depositFocus = FocusNode();
   final _fineFocus = FocusNode();
 
+  /// Действующий прайс, под который заполнены поля. Нужен, чтобы отличить
+  /// «поля пустые, потому что ещё грузимся» от «админ стёр значение».
   PriceSettings? _current;
-
-  /// Прошлые прайсы, новые первыми. Действующий сюда не попадает — он уже
-  /// показан карточкой выше.
-  List<PriceSettings> _past = const [];
-
-  /// История не загрузилась. Экран из-за этого не ломаем: главное здесь —
-  /// действующая цена и её изменение.
-  bool _historyFailed = false;
-
-  bool _loading = true;
-  bool _loadFailed = false;
-
-  /// Один ключ на весь экран: повтор после обрыва связи не должен завести
-  /// вторую запись прайса.
-  final String _idempotencyKey = newIdempotencyKey('price');
-
-  FormFieldValidator<String> get _priceRule => Validators.all([
-    _v.notEmpty(context.l10n.pricesEmpty),
-    _v.maxLen(10),
-  ]);
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
 
   @override
   void dispose() {
     _capsule.dispose();
-    _deposit.dispose();
     _fine.dispose();
     _capsuleFocus.dispose();
-    _depositFocus.dispose();
     _fineFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _loadFailed = false;
-    });
-    final repo = context.read<CrmRepository>();
-    try {
-      final prices = await repo.getPrices();
-      final history = await _loadHistory(repo);
-      if (!mounted) return;
-      setState(() {
-        _current = prices;
-        // Действующий прайс убираем из списка: он уже в карточке выше.
-        _past = history.where((p) => p.id != prices.id).toList();
-        _capsule.text = '${prices.capsulePrice}';
-        _deposit.text = '${prices.depositPrice}';
-        _fine.text = '${prices.damagedBottleFine}';
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _loadFailed = true;
-      });
-    }
-  }
-
-  /// История — не повод не показать экран: её отказ гасится здесь, а не
-  /// уводит весь экран в «Не удалось загрузить цены».
-  Future<List<PriceSettings>> _loadHistory(CrmRepository repo) async {
-    try {
-      final history = await repo.getPriceHistory();
-      _historyFailed = false;
-      return history;
-    } catch (_) {
-      _historyFailed = true;
-      return const [];
-    }
+  /// Заполняет поля действующим прайсом, когда он приехал.
+  void _fill(PriceSettings prices) {
+    _current = prices;
+    _capsule.text = '${prices.capsulePrice}';
+    _fine.text = '${prices.damagedBottleFine}';
   }
 
   /// Поля и их текущие ошибки — один источник и для кнопки, и для перехода
   /// к первой ошибке.
   List<(FocusNode, String?)> get _checks => [
-        (_capsuleFocus, _capsuleRule(_capsule.text)),
-        (_depositFocus, _priceRule(_deposit.text)),
-        (_fineFocus, _priceRule(_fine.text)),
+        (_capsuleFocus, _rules.capsule(_capsule.text)),
+        (_fineFocus, _rules.price(_fine.text)),
       ];
-
-  /// Ноль за капсулу — почти наверняка опечатка: воду раздают не бесплатно.
-  /// Залог нулевым быть может, поэтому у него правило проще.
-  String? _capsuleRule(String? value) {
-    final error = _priceRule(value);
-    if (error != null) return error;
-    return (int.tryParse(value!.trim()) ?? 0) > 0
-        ? null
-        : context.l10n.pricesZero;
-  }
 
   bool get _valid => _checks.every((c) => c.$2 == null);
 
-  int get _capsuleValue => int.tryParse(_capsule.text.trim()) ?? 0;
-  int get _depositValue => int.tryParse(_deposit.text.trim()) ?? 0;
-  int get _fineValue => int.tryParse(_fine.text.trim()) ?? 0;
+  int get _capsuleValue => PriceRules.parse(_capsule.text);
+  int get _fineValue => PriceRules.parse(_fine.text);
 
   /// Введённое отличается от действующего прайса — есть что сохранять.
   bool get _changed =>
       _current == null ||
       _capsuleValue != _current!.capsulePrice ||
-      _depositValue != _current!.depositPrice ||
       _fineValue != _current!.damagedBottleFine;
 
   Future<void> _submit() async {
@@ -191,7 +130,6 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
       title: context.l10n.pricesConfirmTitle,
       message: '${context.l10n.pricesConfirmMessage(
         MoneyFormatter.sum(context.l10n, _capsuleValue),
-        MoneyFormatter.sum(context.l10n, _depositValue),
       )} ${context.l10n.pricesConfirmFine(
         MoneyFormatter.sum(context.l10n, _fineValue),
       )}',
@@ -201,18 +139,13 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
     );
     if (!confirmed || !mounted) return;
 
-    final repo = context.read<CrmRepository>();
+    final cubit = context.read<PricesCubit>();
     final l10n = context.l10n;
 
     final saved = await submit(
-      // Все три значения уходят вместе, хотя сервер принимает и подмножество:
-      // на экране они показаны сразу все, и «отправлю только изменённое»
-      // значило бы гадать, что админ считал изменением.
-      () => repo.setPrices(
+      () => cubit.save(
         capsulePrice: _capsuleValue,
-        depositPrice: _depositValue,
         damagedBottleFine: _fineValue,
-        idempotencyKey: _idempotencyKey,
       ),
       message: (e) => e is DioException
           ? apiErrorMessage(l10n, e, fallback: l10n.pricesSaveFailed)
@@ -224,20 +157,32 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
 
   @override
   Widget build(BuildContext context) {
+    return BlocConsumer<PricesCubit, PricesState>(
+      // Поля заполняются один раз на приход прайса, а не на каждую
+      // перестройку: иначе ввод админа затирался бы ответом сервера.
+      listenWhen: (a, b) => a.status != b.status && b.current != null,
+      listener: (_, state) => _fill(state.current!),
+      builder: (context, state) => _build(context, state),
+    );
+  }
+
+  Widget _build(BuildContext context, PricesState state) {
     final t = context.tokens;
+    final loading = state.status == PricesStatus.loading;
+    final loadFailed = state.status == PricesStatus.error;
 
     return DetailScaffold(
       title: context.l10n.pricesTitle,
-      body: _loading
+      body: loading
           ? const Padding(
               padding: EdgeInsets.only(top: 80),
               child: Center(child: CircularProgressIndicator()),
             )
-          : _loadFailed
+          : loadFailed
               ? Padding(
                   padding: const EdgeInsets.only(top: 60),
                   child: ErrorRetryView(
-                    onRetry: _load,
+                    onRetry: context.read<PricesCubit>().load,
                     message: context.l10n.pricesLoadFailed,
                   ),
                 )
@@ -251,7 +196,7 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                     children: [
                       SectionBlock(
                         label: context.l10n.pricesCurrent,
-                        child: _CurrentPriceCard(prices: _current!),
+                        child: _CurrentPriceCard(prices: state.current!),
                       ),
                       SectionBlock(
                         label: context.l10n.pricesNew,
@@ -269,22 +214,7 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                               helperMaxLines: 2,
                               controller: _capsule,
                               focusNode: _capsuleFocus,
-                              validator: _capsuleRule,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly
-                              ],
-                              maxLength: 10,
-                              textInputAction: TextInputAction.next,
-                              onSubmitted: (_) => _depositFocus.requestFocus(),
-                            ),
-                            LabeledTextField(
-                              label: context.l10n.pricesDeposit,
-                              hint: '50000',
-                              helper: context.l10n.pricesDepositHelper,
-                              controller: _deposit,
-                              focusNode: _depositFocus,
-                              validator: _priceRule,
+                              validator: _rules.capsule,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly
@@ -300,7 +230,7 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                               helperMaxLines: 2,
                               controller: _fine,
                               focusNode: _fineFocus,
-                              validator: _priceRule,
+                              validator: _rules.price,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly
@@ -315,8 +245,8 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                       SectionBlock(
                         label: context.l10n.pricesHistory,
                         child: _HistoryCard(
-                          past: _past,
-                          failed: _historyFailed,
+                          past: state.past,
+                          failed: state.historyFailed,
                         ),
                       ),
                       if (submitError != null)
@@ -326,7 +256,7 @@ class _PricesPageState extends State<PricesPage> with SubmitState {
                     ],
                   ),
                 ),
-      bottomBar: _loading || _loadFailed
+      bottomBar: loading || loadFailed
           ? null
           : BottomActionBar(
               child: Row(
@@ -377,12 +307,6 @@ class _CurrentPriceCard extends StatelessWidget {
             label: context.l10n
                 .pricesCapsuleRow(ProductConfig.capsuleVolumeLiters),
             value: MoneyFormatter.sum(context.l10n, prices.capsulePrice),
-          ),
-          const Divider(),
-          _Row(
-            icon: Icons.inventory_2_outlined,
-            label: context.l10n.pricesDeposit,
-            value: MoneyFormatter.sum(context.l10n, prices.depositPrice),
           ),
           const Divider(),
           _Row(
@@ -464,13 +388,6 @@ class _HistoryRow extends StatelessWidget {
               Text(
                 MoneyFormatter.sum(context.l10n, prices.capsulePrice),
                 style: AppTypography.bodyStrong.copyWith(color: t.text),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                context.l10n.pricesDepositRow(
-                    MoneyFormatter.sum(context.l10n, prices.depositPrice)),
-                style: AppTypography.secondary.copyWith(color: t.text2),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

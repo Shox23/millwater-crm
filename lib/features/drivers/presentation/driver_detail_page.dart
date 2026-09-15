@@ -9,6 +9,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/export/file_sharer.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/utils/date_period.dart';
 import '../../../core/utils/stats_period.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_button.dart';
@@ -67,7 +68,7 @@ class DriverDetailPage extends StatelessWidget {
         builder: (_) => ReportExportPage(
           // Период правится на самом экране; месяц — разумное начало для
           // разбора работы водителя.
-          period: StatsPeriod.month,
+          period: const PresetPeriod(StatsPeriod.month),
           fileSharer: fileSharer,
           initialKind: ReportKind.drivers,
           initialDriverId: driver.id,

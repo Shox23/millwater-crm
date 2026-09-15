@@ -67,9 +67,14 @@ class DeliveryDrawer extends StatelessWidget {
     required this.row,
     required this.onEditRoute,
     required this.onDeleteRoute,
+    required this.onCancelOrder,
   });
 
   final DeliveryRow row;
+
+  /// Отмена этой доставки с причиной. Кнопка есть только у незакрытой
+  /// точки: закрытую сервер отменять отказывается (409).
+  final VoidCallback onCancelOrder;
 
   /// Правка маршрута, которому принадлежит эта доставка.
   ///
@@ -107,6 +112,7 @@ class DeliveryDrawer extends StatelessWidget {
                 DeliveryStatus.delivered => t.success,
                 DeliveryStatus.onWay => t.primary,
                 DeliveryStatus.failed => t.danger,
+                DeliveryStatus.cancelled => t.danger,
                 DeliveryStatus.pending => t.text2,
               },
               large: true,
@@ -143,10 +149,23 @@ class DeliveryDrawer extends StatelessWidget {
               label: l10n.desktopFieldTime,
               value: DateFormat('dd.MM.yyyy · HH:mm').format(stop.completedAt!),
             ),
+          // Отмена — с причиной, за которой оператор и открывает панель.
+          if (stop.isCancelled) ...[
+            if (stop.cancelledAt case final DateTime at)
+              DrawerField(
+                label: l10n.orderCancelledAt,
+                value: DateFormat('dd.MM.yyyy · HH:mm').format(at),
+              ),
+            DrawerField(
+              label: l10n.orderCancelReason,
+              value: stop.cancelReason ?? l10n.orderCancelReasonEmpty,
+            ),
+          ],
         ],
       ),
       footer: _DeliveryActions(
         row: row,
+        onCancelOrder: onCancelOrder,
         onEditRoute: onEditRoute,
         onDeleteRoute: onDeleteRoute,
       ),
@@ -160,11 +179,13 @@ class _DeliveryActions extends StatelessWidget {
     required this.row,
     required this.onEditRoute,
     required this.onDeleteRoute,
+    required this.onCancelOrder,
   });
 
   final DeliveryRow row;
   final VoidCallback onEditRoute;
   final VoidCallback onDeleteRoute;
+  final VoidCallback onCancelOrder;
 
   @override
   Widget build(BuildContext context) {
@@ -189,6 +210,17 @@ class _DeliveryActions extends StatelessWidget {
                 style: DesktopTypography.bodyStrong.copyWith(color: t.success),
               ),
             ],
+          ),
+        // Снять одну точку, а не весь маршрут: отмена с причиной, как у
+        // админа на телефоне. Только пока точка открыта.
+        if (row.stop.status.isOpen)
+          DesktopButton(
+            label: l10n.orderActionCancel,
+            icon: Icons.block_outlined,
+            variant: DesktopButtonVariant.soft,
+            height: 46,
+            expand: true,
+            onPressed: onCancelOrder,
           ),
         // Завершённый и отменённый маршрут править нечего — как и на телефоне,
         // кнопки тогда нет вовсе.

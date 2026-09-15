@@ -65,6 +65,10 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   int _returned = 0;
   int _damaged = 0;
 
+  /// Сколько **полных** капсул заказчик вернул. Они уходят из его остатка и
+  /// из денег; итог считает сервер, здесь — только число и ориентир суммы.
+  int _returnedFull = 0;
+
   /// Вывоз: сколько кулеров и капсул увезли с точки.
   int _pickedCoolers = 0;
   int _pickedBottles = 0;
@@ -80,10 +84,20 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// `bottle_balance` заказчика).
   int get _balanceBefore => widget.stop.customerBottleBalance ?? 0;
 
-  /// Сколько капсул останется у заказчика: прежний остаток плюс привезённое.
-  /// Сервер этим числом **перезаписывает** склад клиента, поэтому считаем его
-  /// сами и руками не даём править — расхождение уходило бы прямо в учёт.
-  int get _bottleBalance => _balanceBefore + _capsules;
+  /// Сколько капсул останется у заказчика: прежний остаток плюс привезённое
+  /// минус возвращённое с водой. Сервер этим числом **перезаписывает** склад
+  /// клиента, поэтому считаем его сами и руками не даём править —
+  /// расхождение уходило бы прямо в учёт.
+  int get _bottleBalance => _balanceBefore + _capsules - _returnedFull;
+
+  /// Больше, чем есть у заказчика, вернуть нельзя: остаток ушёл бы в минус.
+  /// Когда остаток не пришёл (старый стенд), ограничивать нечем.
+  int get _returnedFullMax => widget.stop.customerBottleBalance ?? 999;
+
+  /// Только возврат или только брак — тоже результат визита: везти было
+  /// незачем, а забрать пришлось. Иначе «Доставлено» не опускается ниже
+  /// единицы — ноль там означал бы «не доставлено».
+  int get _capsulesMin => (_returnedFull > 0 || _damaged > 0) ? 0 : 1;
 
   /// Сумму правили вручную — расчёт за водителем её больше не перебивает.
   /// Так закрываются частичная оплата и долг: цифра остаётся его.
@@ -114,6 +128,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     if (widget.location != null) _captureLocation();
     _capsules = widget.stop.deliveredCapsules ?? 1;
     _returned = widget.stop.returnedCapsules ?? 0;
+    _returnedFull = widget.stop.returnedFullCapsules ?? 0;
     _damaged = widget.stop.damagedCapsules ?? 0;
     _bulk5Price = TextEditingController();
     _bulk10Price = TextEditingController();
@@ -158,12 +173,15 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
 
   /// Сколько должно получиться по расчёту — у каждой цели он свой.
   ///
-  /// Доставка: привезённые капсулы по цене заказа плюс штраф за брак. Вывоз
-  /// денег не приносит. Опт считается по договорным ценам, которые водитель
-  /// вводит сам.
+  /// Доставка: привезённые капсулы по цене заказа плюс штраф за брак минус
+  /// возвращённые с водой по той же цене — ниже нуля не опускается, деньги
+  /// водитель не выдаёт, остаток сервер запишет заказчику сам. Это ориентир:
+  /// итог по возврату считает сервер, а водитель может переписать сумму.
+  /// Вывоз денег не приносит. Опт считается по договорным ценам, которые
+  /// водитель вводит сам.
   int get _calculatedAmount => switch (_purpose) {
-        OrderPurpose.delivery19l =>
-          _capsules * _capsulePrice + _damaged * _damagedFine,
+        OrderPurpose.delivery19l => _atLeastZero(
+            (_capsules - _returnedFull) * _capsulePrice + _damaged * _damagedFine),
         OrderPurpose.pickup => 0,
         OrderPurpose.bulkWater =>
           _bulk5Count * _bulkPrice(_bulk5Price) +
@@ -172,6 +190,16 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
 
   int _bulkPrice(TextEditingController controller) =>
       int.tryParse(controller.text.trim()) ?? 0;
+
+  static int _atLeastZero(int value) => value < 0 ? 0 : value;
+
+  /// Доставка, на которой ничего не произошло: ни привезли, ни забрали брак,
+  /// ни приняли возврат. Серверное правило — хотя бы одно из трёх > 0.
+  bool get _deliveryEmpty =>
+      _purpose == OrderPurpose.delivery19l &&
+      _capsules == 0 &&
+      _damaged == 0 &&
+      _returnedFull == 0;
 
   /// Вывоз, на котором ничего не забрали.
   ///
@@ -197,6 +225,26 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
       _purpose == OrderPurpose.bulkWater &&
       ((_bulk5Count > 0 && _bulkPrice(_bulk5Price) <= 0) ||
           (_bulk10Count > 0 && _bulkPrice(_bulk10Price) <= 0));
+
+  /// Всё, что мешает отправить, — одним списком для кнопки: пустая сумма
+  /// (на сервер ушёл бы ноль, неотличимый от долга), опт без цены, ноль не
+  /// в долг, пустой вывоз и пустая доставка — всё это сервер отвергнет сам,
+  /// а упираться в отказ у заказчика незачем.
+  bool get _canSubmit =>
+      !submitting &&
+      _amountOrNull != null &&
+      !_bulkPriceMissing &&
+      !_zeroAmountConflict &&
+      !_pickupEmpty &&
+      !_deliveryEmpty;
+
+  /// Нижняя граница «Доставлено» плавает (см. [_capsulesMin]): когда возврат
+  /// и брак сняли до нуля, ноль капсул снова означает «не доставлено», и
+  /// счётчик возвращается к единице сам — а не остаётся на недопустимом
+  /// значении с потухшим минусом.
+  void _keepCapsulesAboveMin() {
+    if (_capsules < _capsulesMin) _capsules = _capsulesMin;
+  }
 
   /// Пересчитывает сумму, пока водитель не назначил свою.
   void _recalculate() {
@@ -300,6 +348,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
         method: _method,
         capsules: _purpose == OrderPurpose.delivery19l ? _capsules : 0,
         returnedCapsules: _returned,
+        returnedFullCapsules:
+            _purpose == OrderPurpose.delivery19l ? _returnedFull : 0,
         damagedCapsules: _damaged,
         // Остаток заказчика правит только доставка: вывоз и опт капсульный
         // склад не трогают, и слать туда число незачем — сервер им
@@ -347,8 +397,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               child: QuantityStepper(
                 value: _capsules,
                 // Завершать доставку с нулём капсул нечего: это «не
-                // доставлено».
-                min: 1,
+                // доставлено» — если только не забрали брак или возврат.
+                min: _capsulesMin,
                 onChanged: _onCapsulesChanged,
                 caption: context.l10n.completionCapsulesCaption(
                     ProductConfig.capsuleVolumeLiters),
@@ -364,6 +414,21 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               ),
             ),
             LabeledCard(
+              label: context.l10n.completionReturnedFull,
+              child: QuantityStepper(
+                value: _returnedFull,
+                min: 0,
+                max: _returnedFullMax,
+                // Возврат уменьшает и остаток, и ориентир суммы.
+                onChanged: (value) => setState(() {
+                  _returnedFull = value;
+                  _keepCapsulesAboveMin();
+                  _recalculate();
+                }),
+                caption: context.l10n.completionReturnedFullCaption,
+              ),
+            ),
+            LabeledCard(
               label: context.l10n.completionDamaged,
               child: QuantityStepper(
                 value: _damaged,
@@ -371,6 +436,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 // Брак оплачивается штрафом, поэтому сумма идёт за ним.
                 onChanged: (value) => setState(() {
                   _damaged = value;
+                  _keepCapsulesAboveMin();
                   _recalculate();
                 }),
                 caption: context.l10n.completionDamagedCaption,
@@ -381,6 +447,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               child: _BalanceSummary(
                 before: _balanceBefore,
                 delivered: _capsules,
+                returned: _returnedFull,
               ),
             ),
           ],
@@ -539,6 +606,9 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 else if (_pickupEmpty)
                   Text(context.l10n.completionPickupRequired,
                       style: AppTypography.secondary.copyWith(color: t.danger))
+                else if (_deliveryEmpty)
+                  Text(context.l10n.completionDeliveryRequired,
+                      style: AppTypography.secondary.copyWith(color: t.danger))
                 else if (_bulkPriceMissing)
                   Text(context.l10n.completionBulkPriceRequired,
                       style: AppTypography.secondary.copyWith(color: t.danger))
@@ -562,6 +632,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                     price: _capsulePrice,
                     damaged: _damaged,
                     fine: _damagedFine,
+                    returned: _returnedFull,
                     // Кнопка возврата нужна, только если сумма разошлась
                     // с расчётом: иначе возвращать нечего.
                     onRestore: _amount == _calculatedAmount
@@ -619,18 +690,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               // Пустое поле суммы отправлять нельзя: на сервер ушёл бы ноль,
               // неотличимый от осознанной оплаты в долг. Опт без цены сервер
               // отвергнет сам — упираться в отказ у заказчика незачем.
-              enabled: !submitting &&
-                  _amountOrNull != null &&
-                  !_bulkPriceMissing &&
-                  !_zeroAmountConflict &&
-                  !_pickupEmpty,
-              onPressed: (submitting ||
-                      _amountOrNull == null ||
-                      _bulkPriceMissing ||
-                      _zeroAmountConflict ||
-                      _pickupEmpty)
-                  ? null
-                  : _submit,
+              enabled: _canSubmit,
+              onPressed: _canSubmit ? _submit : null,
             ),
           ],
         ),
@@ -734,23 +795,34 @@ class _LocationRow extends StatelessWidget {
 /// склад клиента, и правка рукой уходила бы прямо в учёт. Слагаемые под
 /// числом — чтобы водитель видел, из чего оно сложилось.
 class _BalanceSummary extends StatelessWidget {
-  const _BalanceSummary({required this.before, required this.delivered});
+  const _BalanceSummary({
+    required this.before,
+    required this.delivered,
+    this.returned = 0,
+  });
 
   final int before;
   final int delivered;
 
+  /// Возвращено с водой — вычитаемое показываем, только когда оно есть.
+  final int returned;
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
+    final l10n = context.l10n;
     return SizedBox(
       width: double.infinity,
       child: Column(
         spacing: 2,
         children: [
-          Text('${before + delivered}',
+          Text('${before + delivered - returned}',
               style: AppTypography.statNumber.copyWith(color: t.text)),
           Text(
-            context.l10n.completionBalanceFormula(before, delivered),
+            returned > 0
+                ? l10n.completionBalanceFormulaReturned(
+                    before, delivered, returned)
+                : l10n.completionBalanceFormula(before, delivered),
             style: AppTypography.secondary.copyWith(color: t.text2),
           ),
         ],
@@ -767,10 +839,15 @@ class _AmountHint extends StatelessWidget {
     required this.damaged,
     required this.fine,
     required this.onRestore,
+    this.returned = 0,
   });
 
   final int capsules;
   final int price;
+
+  /// Возврат с водой: вычитаемое показываем, только когда оно есть, и рядом
+  /// напоминаем, что итог по нему — за сервером.
+  final int returned;
 
   /// Брак и штраф за него: показываем слагаемое, только когда оно есть, —
   /// иначе водитель видел бы «+ брак 0 × 0» на каждой обычной доставке.
@@ -792,24 +869,39 @@ class _AmountHint extends StatelessWidget {
             MoneyFormatter.sum(l10n, fine),
           )
         : '$capsules × ${MoneyFormatter.sum(l10n, price)}';
+    final withReturn = returned > 0
+        ? '$formula ${l10n.completionFormulaReturnedPart(
+            '$returned', MoneyFormatter.sum(l10n, price))}'
+        : formula;
 
-    return Row(
-      spacing: AppSpacing.sm,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 2,
       children: [
-        Expanded(
-          child: Text(
-            context.l10n.completionByPrice(formula),
-            style: AppTypography.secondary.copyWith(color: t.text2),
-          ),
+        Row(
+          spacing: AppSpacing.sm,
+          children: [
+            Expanded(
+              child: Text(
+                context.l10n.completionByPrice(withReturn),
+                style: AppTypography.secondary.copyWith(color: t.text2),
+              ),
+            ),
+            if (onRestore != null)
+              GestureDetector(
+                onTap: onRestore,
+                child: Text(context.l10n.completionRestoreAmount,
+                    style: AppTypography.secondary.copyWith(
+                      color: t.primary,
+                      fontWeight: FontWeight.w700,
+                    )),
+              ),
+          ],
         ),
-        if (onRestore != null)
-          GestureDetector(
-            onTap: onRestore,
-            child: Text(context.l10n.completionRestoreAmount,
-                style: AppTypography.secondary.copyWith(
-                  color: t.primary,
-                  fontWeight: FontWeight.w700,
-                )),
+        if (returned > 0)
+          Text(
+            l10n.completionReturnedFullHint,
+            style: AppTypography.secondary.copyWith(color: t.text2),
           ),
       ],
     );

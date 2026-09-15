@@ -104,7 +104,6 @@
   "apiFieldPaymentMethod": "To‘lov usuli",
   "apiFieldBalance": "Kapsulalar qoldig‘i",
   "apiFieldPrice": "Kapsula narxi",
-  "apiFieldDeposit": "Idish garovi",
   "phoneCallUnavailable": "Qo‘ng‘iroq imkonsiz — raqam nusxalandi",
   "phoneCopied": "Raqam nusxalandi",
   "phoneCopy": "Raqamdan nusxa olish",
@@ -182,6 +181,8 @@
   "periodToday": "Bugun",
   "periodWeek": "Hafta",
   "periodMonth": "Oy",
+  "periodCustom": "Boshqa sanalar…",
+  "dateRangeValue": "{from} — {to}",
   "loginTitle": "Tizimga kirish",
   "loginPhone": "Telefon raqami",
   "loginPassword": "Parol",
@@ -284,10 +285,22 @@
   "routeFormBottleSellRequired": "Qancha kapsula olib borishni kiriting",
   "routeFormBottleSellLocked": "Nuqta qo‘shilganda belgilangan — server uni o‘zgartira olmaydi",
   "stopBottleSell": "{count} kapsula olib boramiz",
-  "@stopBottleSell": {"placeholders": {"count": {"type": "int"}}},
+  "@stopBottleSell": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "completionBottleSell": "YETKAZISHGA BELGILANGAN",
   "completionBottleSellValue": "{count, plural, one{{count} kapsula} other{{count} kapsula}}",
-  "@completionBottleSellValue": {"placeholders": {"count": {"type": "int"}}},
+  "@completionBottleSellValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "completionBottleSellHint": "Admin shuncha belgilagan. Quyida haqiqatda qancha olib kelganingizni belgilang",
   "routeFormDriver": "HAYDOVCHI",
   "routeFormNoDrivers": "Avval haydovchi qo‘shing",
@@ -571,26 +584,13 @@
       }
     }
   },
-  "pricesDeposit": "Idish garovi",
-  "pricesDepositHelper": "So‘m; 0 — garov yo‘q",
-  "pricesDepositRow": "garov {amount}",
-  "@pricesDepositRow": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "pricesEmpty": "Narxni kiriting",
   "pricesZero": "Kapsula narxi noldan katta bo‘lishi kerak",
   "pricesConfirmTitle": "Yangi narx belgilansinmi?",
-  "pricesConfirmMessage": "Kapsula — {capsule}, garov — {deposit}.",
+  "pricesConfirmMessage": "Kapsula — {capsule}.",
   "@pricesConfirmMessage": {
     "placeholders": {
       "capsule": {
-        "type": "String"
-      },
-      "deposit": {
         "type": "String"
       }
     }
@@ -604,6 +604,7 @@
       }
     }
   },
+  "pricesEffectiveFromColumn": "Amal qiladi",
   "pricesHistoryFailed": "Tarixni yuklab bo‘lmadi.",
   "pricesHistoryEmpty": "Narx hali o‘zgartirilmagan — bu birinchi narx.",
   "reportsLabel": "Tahlil",
@@ -750,9 +751,21 @@
   "orderPurposeBulkShort": "Ulgurji",
   "orderPurposeBulk": "Ulgurji 5/10 l",
   "coolersCount": "{count, plural, other{{count} kuler}}",
-  "@coolersCount": {"placeholders": {"count": {"type": "int"}}},
+  "@coolersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "customerCustomPrice": "Shaxsiy narx: {price}",
-  "@customerCustomPrice": {"placeholders": {"price": {"type": "String"}}},
+  "@customerCustomPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "customerFormCoolers": "Mijozdagi kulerlar soni",
   "customerFormCoolersHint": "Kulerga kapsula qo‘yiladi, usiz suv quyib beriladi",
   "customerFormCapsules": "Mijozdagi kapsulalar soni",
@@ -771,7 +784,13 @@
   "customerFormPriceValue": "Mijoz uchun narx",
   "customerFormPriceEmpty": "Narxni kiriting",
   "customerFormPriceHelper": "Umumiy narx: {price}",
-  "@customerFormPriceHelper": {"placeholders": {"price": {"type": "String"}}},
+  "@customerFormPriceHelper": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "pricesDamagedFine": "Shikast uchun jarima",
   "pricesDamagedFineHelper": "Bitta shikastlangan kapsula uchun so‘m",
   "pricesDamagedFineRow": "Kapsula uchun jarima",
@@ -793,8 +812,24 @@
   "completionPickupHint": "Olib ketish to‘lovsiz: summani nol qoldiring",
   "completionZeroNeedsDebt": "Nol summani server faqat «Qarzga» usuli bilan qabul qiladi",
   "completionPickupRequired": "Nimani olganingizni kiriting: kuler, kapsula yoki brak",
+  "completionDeliveryRequired": "Nima keltirganingizni, brak olganingizni yoki qaytarish qabul qilganingizni kiriting",
   "completionFormulaDamaged": "{capsules} × {price} + brak {damaged} × {fine}",
-  "@completionFormulaDamaged": {"placeholders": {"capsules": {"type": "String"}, "price": {"type": "String"}, "damaged": {"type": "String"}, "fine": {"type": "String"}}},
+  "@completionFormulaDamaged": {
+    "placeholders": {
+      "capsules": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "damaged": {
+        "type": "String"
+      },
+      "fine": {
+        "type": "String"
+      }
+    }
+  },
   "errorBothBalances": "Mijozda qarz va oldindan to‘lov bir vaqtda bo‘lmaydi",
   "errorOrderCompleted": "Buyurtma allaqachon yopilgan",
   "errorOrderNotCompleted": "Buyurtma hali yopilmagan",
@@ -816,9 +851,21 @@
   "ordersEmpty": "Hozircha buyurtmalar yo‘q",
   "ordersLoadFailed": "Buyurtmalarni yuklab bo‘lmadi",
   "ordersCount": "{count, plural, other{{count} buyurtma}}",
-  "@ordersCount": {"placeholders": {"count": {"type": "int"}}},
+  "@ordersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "orderNumber": "Buyurtma №{number}",
-  "@orderNumber": {"placeholders": {"number": {"type": "int"}}},
+  "@orderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "orderNoDriver": "Haydovchi tayinlanmagan",
   "orderBulk5l": "5 l butilkalar",
   "orderBulk10l": "10 l butilkalar",
@@ -847,9 +894,21 @@
   "driverOrdersTitle": "Mening buyurtmalarim",
   "driverOrdersTileHint": "Butun davr uchun buyurtmalar tarixi",
   "pricesFineRow": "jarima {amount}",
-  "@pricesFineRow": {"placeholders": {"amount": {"type": "String"}}},
+  "@pricesFineRow": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "pricesConfirmFine": "Shikastlangan kapsula uchun jarima — {fine}.",
-  "@pricesConfirmFine": {"placeholders": {"fine": {"type": "String"}}},
+  "@pricesConfirmFine": {
+    "placeholders": {
+      "fine": {
+        "type": "String"
+      }
+    }
+  },
   "orderMoveTitle": "Buyurtmani ko‘chirish",
   "orderMoveDate": "Sana",
   "orderMoveRoutes": "SHU SANADAGI MARSHRUT",
@@ -862,14 +921,32 @@
   "orderMoveFailed": "Buyurtmani ko‘chirib bo‘lmadi.",
   "orderMoved": "Buyurtma ko‘chirildi",
   "orderRouteStops": "{count, plural, other{{count} nuqta}} · {driver}",
-  "@orderRouteStops": {"placeholders": {"count": {"type": "int"}, "driver": {"type": "String"}}},
+  "@orderRouteStops": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
   "orderNoDriverShort": "haydovchisiz",
   "orderPaymentTitle": "To‘lovni o‘zgartirish",
   "orderPaymentAmount": "Buyurtmaning yakuniy summasi",
   "orderPaymentAmountHint": "Qo‘shimcha to‘lov emas, butun summa: farqni server o‘zi hisoblaydi",
   "orderPaymentAmountEmpty": "Summani kiriting",
   "orderPaymentWasBecomes": "Edi {before} → bo‘ladi {after}",
-  "@orderPaymentWasBecomes": {"placeholders": {"before": {"type": "String"}, "after": {"type": "String"}}},
+  "@orderPaymentWasBecomes": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "orderPaymentNote": "Izoh",
   "orderPaymentNoteHint": "Nima uchun o‘zgartirdingiz — to‘lovlar tarixida qoladi",
   "orderPaymentBalanceNow": "Mijoz balansi hozir",
@@ -908,5 +985,45 @@
   "expenseDelete": "Xarajatni o‘chirish",
   "expenseDeleteConfirm": "Xarajat kassaga qaytariladi. O‘chirilsinmi?",
   "expenseDeleteFailed": "Xarajatni o‘chirib bo‘lmadi.",
-  "errorDateInPast": "Sana o‘tmishda bo‘lishi mumkin emas"
+  "errorDateInPast": "Sana o‘tmishda bo‘lishi mumkin emas",
+  "deliveryCancelled": "Bekor qilingan",
+  "orderReturnedFull": "Suv bilan qaytarildi",
+  "completionReturnedFull": "SUV BILAN QAYTARILDI",
+  "completionReturnedFullCaption": "to‘la kapsulalarni buyurtmachi qaytardi — qoldig‘idan chiqadi",
+  "completionBalanceFormulaReturned": "avval {before} + keltirildi {delivered} − qaytarildi {returned}",
+  "@completionBalanceFormulaReturned": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "delivered": {
+        "type": "int"
+      },
+      "returned": {
+        "type": "int"
+      }
+    }
+  },
+  "completionFormulaReturnedPart": "− qaytarish {returned} × {price}",
+  "@completionFormulaReturnedPart": {
+    "placeholders": {
+      "returned": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "completionReturnedFullHint": "Qaytarish bo‘yicha yakunni server hisoblaydi — bu yerdagi summa taxminiy",
+  "orderActionCancel": "Buyurtmani bekor qilish",
+  "orderCancelTitle": "Buyurtmani bekor qilish",
+  "orderCancelWarning": "Buyurtma yetkazilmasdan yopiladi. Uni qayta ishga qaytarib bo‘lmaydi.",
+  "orderCancelReason": "Bekor qilish sababi",
+  "orderCancelReasonHint": "Majburiy emas — buyurtma kartasida qoladi",
+  "orderCancelled": "Buyurtma bekor qilindi",
+  "orderCancelFailed": "Buyurtmani bekor qilib bo‘lmadi.",
+  "orderSectionCancellation": "BEKOR QILISH",
+  "orderCancelledAt": "Bekor qilingan",
+  "orderCancelReasonEmpty": "Sabab ko‘rsatilmagan"
 }

@@ -8,7 +8,10 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/export/file_sharer.dart';
+import '../../../core/utils/date_period.dart';
 import '../../../core/utils/money_formatter.dart';
+import '../../../core/utils/stats_period.dart';
+import '../../../core/widgets/date_range_picker.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../data/models/reports_summary.dart';
@@ -218,28 +221,48 @@ class _ExportButton extends StatelessWidget {
   }
 }
 
-/// Пилюля-селектор периода в шапке отчётов.
+/// Пилюля-селектор периода в шапке отчётов: три пресета и «Свои даты…».
+///
+/// Последний пункт не выбирает готовое значение, а открывает календарь;
+/// выбранный диапазон подписывается на самой пилюле — иначе его негде было
+/// бы увидеть. Пункт помечен [_customChoice], а не `null`: `PopupMenuButton`
+/// принимает `null` за отмену и `onSelected` не зовёт.
 class _PeriodSelector extends StatelessWidget {
   const _PeriodSelector({required this.period, required this.onChanged});
 
   final ReportPeriod period;
   final ValueChanged<ReportPeriod> onChanged;
 
+  /// Маркер пункта «Свои даты…» в меню.
+  static const _customChoice = Object();
+
+  Future<void> _pickCustom(BuildContext context) async {
+    final picked = await pickCustomPeriod(context, current: period);
+    if (picked != null) onChanged(picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    return PopupMenuButton<ReportPeriod>(
-      onSelected: onChanged,
+    final l10n = context.l10n;
+    return PopupMenuButton<Object>(
+      onSelected: (p) => p is StatsPeriod
+          ? onChanged(PresetPeriod(p))
+          : _pickCustom(context),
       color: t.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       itemBuilder: (context) => [
-        for (final p in ReportPeriod.values)
+        for (final p in StatsPeriod.values)
           PopupMenuItem(
             value: p,
-            child: Text(p.label(context.l10n), style: TextStyle(color: t.text)),
+            child: Text(p.label(l10n), style: TextStyle(color: t.text)),
           ),
+        PopupMenuItem(
+          value: _customChoice,
+          child: Text(l10n.periodCustom, style: TextStyle(color: t.text)),
+        ),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(

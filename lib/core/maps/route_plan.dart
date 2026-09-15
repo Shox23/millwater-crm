@@ -1,4 +1,3 @@
-import '../../data/models/enums.dart';
 import '../../data/models/route_models.dart';
 import 'address_geocoder.dart';
 import 'geo_link.dart';
@@ -73,8 +72,7 @@ class RoutePlanner {
   static List<RouteStop> pendingStops(List<RouteStop> stops) {
     final pending = <(int, RouteStop)>[];
     for (final (index, stop) in stops.indexed) {
-      if (stop.status == DeliveryStatus.pending ||
-          stop.status == DeliveryStatus.onWay) {
+      if (stop.status.isOpen) {
         pending.add((index, stop));
       }
     }

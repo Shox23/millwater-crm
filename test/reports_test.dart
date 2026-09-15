@@ -1,3 +1,5 @@
+import 'package:crm_millwater/core/utils/date_period.dart';
+import 'package:crm_millwater/core/utils/stats_period.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/data/models/report_rows.dart';
 import 'package:crm_millwater/data/models/reports_summary.dart';
@@ -106,11 +108,11 @@ void main() {
       await bloc.stream.firstWhere((s) => s.status == ReportsStatus.ready);
       expect(bloc.state.summary, isNotNull);
 
-      bloc.add(const ReportsPeriodChanged(ReportPeriod.month));
+      bloc.add(const ReportsPeriodChanged(PresetPeriod(StatsPeriod.month)));
       // Первое же состояние после смены: период новый, чисел ещё нет.
       final next = await bloc.stream.first;
 
-      expect(next.period, ReportPeriod.month);
+      expect(next.period, const PresetPeriod(StatsPeriod.month));
       expect(next.summary, isNull);
       expect(next.status, ReportsStatus.loading);
     });
@@ -120,11 +122,25 @@ void main() {
       final bloc = ReportsBloc(repo);
       addTearDown(bloc.close);
 
-      bloc.add(const ReportsPeriodChanged(ReportPeriod.month));
+      bloc.add(const ReportsPeriodChanged(PresetPeriod(StatsPeriod.month)));
       await bloc.stream.firstWhere((s) => s.status == ReportsStatus.ready);
 
       // У месяца начало — первое число, а не сегодня.
       expect(repo.ranges.last.from!.day, 1);
+    });
+
+    test('диапазон из календаря уходит в запрос своими границами', () async {
+      final repo = _SlowFirstRepository([Duration.zero]);
+      final bloc = ReportsBloc(repo);
+      addTearDown(bloc.close);
+
+      bloc.add(ReportsPeriodChanged(
+        CustomPeriod(DateTime(2026, 9, 3), DateTime(2026, 9, 12)),
+      ));
+      await bloc.stream.firstWhere((s) => s.status == ReportsStatus.ready);
+
+      expect(repo.ranges.last.from, DateTime(2026, 9, 3));
+      expect(repo.ranges.last.to, DateTime(2026, 9, 12));
     });
   });
 
@@ -140,14 +156,14 @@ void main() {
       addTearDown(bloc.close);
 
       bloc.add(const ReportsRequested());
-      bloc.add(const ReportsPeriodChanged(ReportPeriod.month));
+      bloc.add(const ReportsPeriodChanged(PresetPeriod(StatsPeriod.month)));
 
       await Future<void>.delayed(const Duration(milliseconds: 600));
 
       // Победить должен второй ответ (`totalRevenue == 2`), а не приехавший
       // последним первый.
       expect(bloc.state.summary?.revenue, 2);
-      expect(bloc.state.period, ReportPeriod.month);
+      expect(bloc.state.period, const PresetPeriod(StatsPeriod.month));
     });
   });
 }

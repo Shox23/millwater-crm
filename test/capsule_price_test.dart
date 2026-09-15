@@ -41,7 +41,6 @@ ResponseBody _json(Object body, [int status = 200]) => ResponseBody.fromString(
 Object _price(String water) => {
       'id': 'price-1',
       'water_price': water,
-      'deposit_price': '50000.00',
       'created_at': '2026-08-20T10:00:00Z',
     };
 

@@ -22,6 +22,7 @@ import '../../../data/models/enums.dart';
 import '../../../data/models/notification_event.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/driver_repository.dart';
+import '../../orders/presentation/cancel_order_page.dart';
 import '../../routes/presentation/widgets/build_route_section.dart';
 import '../../routes/presentation/widgets/route_card.dart';
 import '../../routes/presentation/widgets/stop_card.dart';
@@ -119,6 +120,24 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
     await _load();
   }
 
+  /// Отмена точки с причиной — отдельной формой, а не пунктом меню: прежнее
+  /// «Не доставлено» одним касанием оставляло админа без объяснения, и он
+  /// звонил водителю спросить «почему».
+  Future<void> _cancelStop(RouteStop stop) async {
+    final repo = context.read<DriverRepository>();
+    final done = await Navigator.of(context).push<bool>(
+      OverlayPageRoute(
+        builder: (_) => CancelOrderPage(
+          customerName: stop.customerName,
+          cancel: (reason) => repo.cancelOrder(orderId: stop.id, reason: reason),
+        ),
+      ),
+    );
+    if (done != true || !mounted) return;
+    showAppSnackBar(context, context.l10n.orderCancelled);
+    await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
@@ -149,6 +168,7 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
                       route: route,
                       onComplete: _openCompletion,
                       onStatus: _setStatus,
+                      onCancel: _cancelStop,
                     ),
     );
   }
@@ -159,11 +179,13 @@ class _Body extends StatelessWidget {
     required this.route,
     required this.onComplete,
     required this.onStatus,
+    required this.onCancel,
   });
 
   final RouteDetail route;
   final ValueChanged<RouteStop> onComplete;
   final void Function(RouteStop, DeliveryStatus) onStatus;
+  final ValueChanged<RouteStop> onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -258,12 +280,19 @@ class _Body extends StatelessWidget {
             for (final stop in route.stops)
               StopCard(
                 stop: stop,
-                onTap: stop.isCompleted ? null : () => onComplete(stop),
-                trailing: stop.isCompleted
+                // Отменённая точка закрыта на сервере: завершить её уже
+                // нельзя (409), и открывать форму — водить водителя за нос.
+                // «Не доставлено» при этом остаётся открываемой: это старый
+                // статус без отмены, к такой точке ещё возвращаются.
+                onTap: (stop.isCompleted || stop.isCancelled)
+                    ? null
+                    : () => onComplete(stop),
+                trailing: (stop.isCompleted || stop.isCancelled)
                     ? null
                     : _StatusMenu(
                         current: stop.status,
                         onSelected: (s) => onStatus(stop, s),
+                        onCancel: () => onCancel(stop),
                       ),
               ),
           ],
@@ -274,35 +303,51 @@ class _Body extends StatelessWidget {
 }
 
 /// Смена статуса точки без захода в завершение доставки.
+///
+/// Завершение проводится отдельным экраном (нужны капсулы и сумма), отмена —
+/// тоже отдельным (нужна причина). Здесь остаётся только «В пути» и вход в
+/// отмену; прежнего «Не доставлено» одним касанием больше нет.
 class _StatusMenu extends StatelessWidget {
-  const _StatusMenu({required this.current, required this.onSelected});
+  const _StatusMenu({
+    required this.current,
+    required this.onSelected,
+    required this.onCancel,
+  });
 
   final DeliveryStatus current;
   final ValueChanged<DeliveryStatus> onSelected;
-
-  /// Завершение проводится отдельным экраном (нужны капсулы и сумма),
-  /// поэтому здесь только промежуточные статусы.
-  static const _options = [DeliveryStatus.onWay, DeliveryStatus.failed];
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    return PopupMenuButton<DeliveryStatus>(
-      onSelected: onSelected,
+    return PopupMenuButton<_StopAction>(
+      onSelected: (action) => switch (action) {
+        _StopAction.onWay => onSelected(DeliveryStatus.onWay),
+        _StopAction.cancel => onCancel(),
+      },
       color: t.surface,
       tooltip: context.l10n.myRouteChangeStatus,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       itemBuilder: (context) => [
-        for (final s in _options)
-          PopupMenuItem(
-            value: s,
-            enabled: s != current,
-            child: Text(s.label(context.l10n), style: TextStyle(color: t.text)),
-          ),
+        PopupMenuItem(
+          value: _StopAction.onWay,
+          enabled: current != DeliveryStatus.onWay,
+          child: Text(DeliveryStatus.onWay.label(context.l10n),
+              style: TextStyle(color: t.text)),
+        ),
+        PopupMenuItem(
+          value: _StopAction.cancel,
+          child: Text(context.l10n.orderActionCancel,
+              style: TextStyle(color: t.danger)),
+        ),
       ],
       child: Icon(Icons.more_vert, size: 20, color: t.text2),
     );
   }
 }
+
+/// Что можно сделать с точкой из меню.
+enum _StopAction { onWay, cancel }

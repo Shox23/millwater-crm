@@ -28,6 +28,9 @@ class _RecordingSource implements OrdersSource {
   final calls = <_Call>[];
 
   @override
+  Future<void> cancel({required String orderId, String? reason}) async {}
+
+  @override
   Future<ResultPage<Order>> load({
     required int page,
     DeliveryStatus? status,

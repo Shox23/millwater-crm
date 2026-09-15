@@ -318,6 +318,7 @@ Color _statusColor(BuildContext context, DeliveryStatus status) {
     DeliveryStatus.delivered => t.success,
     DeliveryStatus.onWay => t.primary,
     DeliveryStatus.failed => t.danger,
+    DeliveryStatus.cancelled => t.danger,
     DeliveryStatus.pending => t.text2,
   };
 }

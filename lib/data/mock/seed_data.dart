@@ -22,8 +22,8 @@ abstract class SeedData {
   /// Цена капсулы в моках (на сервере задаётся через /admin/prices).
   static const int capsulePrice = 20000;
 
-  /// Залог за тару в моках.
-  static const int depositPrice = 50000;
+  /// Штраф за повреждённую капсулу в моках.
+  static const int damagedBottleFine = 40000;
 
   static List<Driver> drivers() => [
         Driver(

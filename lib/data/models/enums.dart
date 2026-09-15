@@ -2,11 +2,18 @@ import '../../l10n/l10n.dart';
 import 'json.dart';
 
 /// Статус доставки (остановки маршрута). Значения совпадают с API.
+///
+/// `failed` — «не доставлено» без объяснения, как было до появления отмены;
+/// `cancelled` — осознанная отмена с причиной (см. `Order.cancelReason`).
+/// Оба закрывают заказ, но смешивать их нельзя: у старых заказов `failed`
+/// стоит без причины, и показывать их «отменёнными» значило бы приписывать
+/// решение, которого никто не принимал.
 enum DeliveryStatus {
   pending('pending'),
   onWay('on_way'),
   delivered('delivered'),
-  failed('failed');
+  failed('failed'),
+  cancelled('cancelled');
 
   const DeliveryStatus(this.wire);
 
@@ -19,7 +26,15 @@ enum DeliveryStatus {
         DeliveryStatus.onWay => l10n.deliveryOnWay,
         DeliveryStatus.delivered => l10n.deliveryDelivered,
         DeliveryStatus.failed => l10n.deliveryFailed,
+        DeliveryStatus.cancelled => l10n.deliveryCancelled,
       };
+
+  /// Заказ ещё не закрыт: его можно завершить, перенести или отменить.
+  bool get isOpen => this == DeliveryStatus.pending || this == DeliveryStatus.onWay;
+
+  /// Заказ закрыт без доставки — отменён или не доставлен.
+  bool get isClosedWithoutDelivery =>
+      this == DeliveryStatus.failed || this == DeliveryStatus.cancelled;
 
   static DeliveryStatus fromJson(String value) =>
       DeliveryStatus.values.firstWhere(

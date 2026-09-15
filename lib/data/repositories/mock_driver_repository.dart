@@ -32,6 +32,12 @@ class MockDriverRepository implements DriverRepository {
   /// Последний отправленный способ оплаты — для проверок в тестах.
   PaymentMethod? lastMethod;
 
+  /// Сколько полных капсул ушло в последнее завершение — для тестов.
+  int? lastReturnedFullCapsules;
+
+  /// Причина последней отмены — для тестов.
+  String? lastCancelReason;
+
   Future<void> _tick() =>
       Future<void>.delayed(const Duration(milliseconds: 150));
 
@@ -132,6 +138,13 @@ class MockDriverRepository implements DriverRepository {
   }
 
   @override
+  Future<void> cancelOrder({required String orderId, String? reason}) async {
+    await _tick();
+    lastCancelReason = reason;
+    _store.cancelStop(orderId, reason: reason);
+  }
+
+  @override
   Future<void> completeDelivery({
     required String stopId,
     required OrderPurpose purpose,
@@ -139,6 +152,7 @@ class MockDriverRepository implements DriverRepository {
     required PaymentMethod method,
     int capsules = 0,
     int returnedCapsules = 0,
+    int returnedFullCapsules = 0,
     int damagedCapsules = 0,
     int? bottleBalance,
     int bulk5lCount = 0,
@@ -154,6 +168,7 @@ class MockDriverRepository implements DriverRepository {
   }) async {
     await _tick();
     lastBottleBalance = bottleBalance;
+    lastReturnedFullCapsules = returnedFullCapsules;
     lastMethod = method;
     lastPurpose = purpose;
     if (idempotencyKey != null && !seenIdempotencyKeys.add(idempotencyKey)) {
@@ -169,7 +184,10 @@ class MockDriverRepository implements DriverRepository {
         customerLongitude: longitude,
         deliveredCapsules: capsules,
         returnedCapsules: returnedCapsules,
+        returnedFullCapsules: returnedFullCapsules,
         damagedCapsules: damagedCapsules,
+        // Остаток заказчика сервер перезаписывает присланным числом.
+        capsuleBalanceAfter: bottleBalance,
         // Вывоз и опт сервер запоминает у точки так же, как доставку, —
         // иначе закрытая точка вывоза выглядела бы пустой.
         pickedCoolers: pickedCoolers,

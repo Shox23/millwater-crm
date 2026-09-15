@@ -8,11 +8,13 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/export/file_sharer.dart';
 import '../../../core/forms/submit_state.dart';
+import '../../../core/utils/date_period.dart';
 import '../../../core/utils/stats_period.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
+import '../../../core/widgets/date_range_picker.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/section_block.dart';
 import '../../../core/widgets/segmented_toggle.dart';
@@ -123,6 +125,11 @@ class _ReportExportPageState extends State<ReportExportPage> with SubmitState {
     }
   }
 
+  Future<void> _pickCustomPeriod() async {
+    final picked = await pickCustomPeriod(context, current: _period);
+    if (picked != null && mounted) setState(() => _period = picked);
+  }
+
   Future<void> _export() async {
     final repo = context.read<CrmRepository>();
     final l10n = context.l10n;
@@ -181,16 +188,32 @@ class _ReportExportPageState extends State<ReportExportPage> with SubmitState {
           ),
           SectionBlock(
             label: l10n.reportExportPeriod,
-            child: SegmentedToggle<ReportPeriod>(
-              options: [
-                for (final period in StatsPeriod.values)
-                  SegmentOption(value: period, label: period.label(l10n)),
+            child: Column(
+              spacing: AppSpacing.md,
+              children: [
+                // Пресеты сеткой, диапазон — карточкой под ними: подпись с
+                // двумя датами в ячейку на треть ширины не помещается. При
+                // выбранном диапазоне ни один сегмент не подсвечен.
+                SegmentedToggle<StatsPeriod?>(
+                  options: [
+                    for (final period in StatsPeriod.values)
+                      SegmentOption(value: period, label: period.label(l10n)),
+                  ],
+                  value: switch (_period) {
+                    PresetPeriod(:final period) => period,
+                    CustomPeriod() => null,
+                  },
+                  columns: 3,
+                  onChanged: (period) {
+                    if (submitting || period == null) return;
+                    setState(() => _period = PresetPeriod(period));
+                  },
+                ),
+                _CustomPeriodTile(
+                  period: _period,
+                  onTap: submitting ? null : _pickCustomPeriod,
+                ),
               ],
-              value: _period,
-              columns: 3,
-              onChanged: submitting
-                  ? (_) {}
-                  : (period) => setState(() => _period = period),
             ),
           ),
           SectionBlock(
@@ -226,6 +249,46 @@ class _ReportExportPageState extends State<ReportExportPage> with SubmitState {
           label: submitting ? l10n.commonSaving : l10n.reportExportAction,
           onPressed: submitting ? null : _export,
         ),
+      ),
+    );
+  }
+}
+
+/// Карточка «Свои даты»: радио-индикатор, как у разреза и водителя, и
+/// выбранный диапазон подписью. Тап открывает календарь и при уже выбранном
+/// диапазоне — чтобы его поправить, а не выбирать заново с нуля.
+class _CustomPeriodTile extends StatelessWidget {
+  const _CustomPeriodTile({required this.period, required this.onTap});
+
+  final DatePeriod period;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+    final custom = switch (period) { CustomPeriod c => c, _ => null };
+
+    return AppCard(
+      onTap: onTap,
+      child: Row(
+        spacing: AppSpacing.md,
+        children: [
+          Icon(
+            custom != null
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            size: 20,
+            color: custom != null ? t.primary : t.text3,
+          ),
+          Expanded(
+            child: Text(
+              custom == null ? l10n.periodCustom : custom.label(l10n),
+              style: AppTypography.bodyStrong.copyWith(color: t.text),
+            ),
+          ),
+          Icon(Icons.calendar_month_outlined, size: 20, color: t.text2),
+        ],
       ),
     );
   }

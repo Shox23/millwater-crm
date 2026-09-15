@@ -102,9 +102,9 @@ void main() {
     testWidgets('остаток руками не правится: счётчика у него нет',
         (tester) async {
       await pumpPage(tester, stop(balance: 3, delivered: 2));
-      // Счётчики остаются только у количества, возврата и брака — у остатка
-      // своего больше нет.
-      expect(find.byType(QuantityStepper), findsNWidgets(3));
+      // Счётчики остаются только у количества, пустых, возврата с водой и
+      // брака — у остатка своего больше нет.
+      expect(find.byType(QuantityStepper), findsNWidgets(4));
     });
 
     testWidgets('без остатка с сервера считается от нуля', (tester) async {

@@ -167,7 +167,12 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       OverlayPageRoute<bool>(
         builder: (_) => loaded == null
             ? StopDetailPage(stop: stop)
-            : OrderDetailPage(order: loaded, canManage: true),
+            : OrderDetailPage(
+                order: loaded,
+                canManage: true,
+                onCancel: (reason) =>
+                    repo.cancelOrder(orderId: loaded.id, reason: reason),
+              ),
       ),
     );
     // Перенос или правка оплаты меняют маршрут — перечитываем его целиком.

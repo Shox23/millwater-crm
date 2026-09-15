@@ -97,6 +97,7 @@ class _RecordingDriverRepository extends MockDriverRepository {
     required PaymentMethod method,
     int capsules = 0,
     int returnedCapsules = 0,
+    int returnedFullCapsules = 0,
     int damagedCapsules = 0,
     int? bottleBalance,
     int bulk5lCount = 0,

@@ -144,6 +144,15 @@ class ApiDriverRepository implements DriverRepository {
   }
 
   @override
+  Future<void> cancelOrder({required String orderId, String? reason}) =>
+      // Идентификатор тот же, что у точки маршрута: заказ и точка — одна
+      // запись (см. `completeDelivery`).
+      _dio.post(
+        '/driver/orders/$orderId/cancel',
+        data: cancelOrderBody(reason),
+      );
+
+  @override
   Future<void> completeDelivery({
     required String stopId,
     required OrderPurpose purpose,
@@ -151,6 +160,7 @@ class ApiDriverRepository implements DriverRepository {
     required PaymentMethod method,
     int capsules = 0,
     int returnedCapsules = 0,
+    int returnedFullCapsules = 0,
     int damagedCapsules = 0,
     int? bottleBalance,
     int bulk5lCount = 0,
@@ -170,6 +180,9 @@ class ApiDriverRepository implements DriverRepository {
       'payment_method': method.toJson(),
       'delivered_bottles': capsules,
       'returned_bottles': returnedCapsules,
+      // Полные капсулы — только когда вернули: старый стенд поля не знает,
+      // а лишний ноль в multipart ему ни к чему.
+      if (returnedFullCapsules > 0) 'returned_full_bottles': returnedFullCapsules,
       'damaged_bottles': damagedCapsules,
       // Без этого поля сервер отвечает 500, хотя в схеме оно необязательное;
       // у вывоза и опта остаток не меняется, и слать его незачем.

@@ -21,8 +21,13 @@ import 'widgets/language_selector_card.dart';
 import 'widgets/theme_selector_card.dart';
 
 /// Настройки администратора: прайс, тема, пароль и выход из аккаунта.
+///
+/// [showPrices] — показывать ли пункт «Цены». На десктопе прайс — свой
+/// раздел в боковой панели, и второй вход к нему из шторки только путал бы.
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.showPrices = true});
+
+  final bool showPrices;
 
   Future<void> _logout(BuildContext context) async {
     final confirmed = await showConfirmDialog(
@@ -47,10 +52,11 @@ class SettingsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.lg,
         children: [
-          SectionBlock(
-            label: context.l10n.pricesSection,
-            child: const _PricesTile(),
-          ),
+          if (showPrices)
+            SectionBlock(
+              label: context.l10n.pricesSection,
+              child: const _PricesTile(),
+            ),
           SectionBlock(
             label: context.l10n.languageSection,
             child: const LanguageSelectorCard(),

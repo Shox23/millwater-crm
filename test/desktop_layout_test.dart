@@ -7,6 +7,8 @@ import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/app/theme/theme_cubit.dart';
 import 'package:crm_millwater/core/export/file_sharer.dart';
 import 'package:crm_millwater/core/utils/day.dart';
+import 'package:crm_millwater/core/widgets/app_button.dart';
+import 'package:crm_millwater/core/utils/money_formatter.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
@@ -23,9 +25,13 @@ import 'package:crm_millwater/features/desktop/presentation/desktop_section.dart
 import 'package:crm_millwater/features/desktop/presentation/desktop_shell.dart';
 import 'package:crm_millwater/features/desktop/presentation/pages/cash_desktop_page.dart';
 import 'package:crm_millwater/features/desktop/presentation/pages/orders_desktop_page.dart';
+import 'package:crm_millwater/features/desktop/presentation/pages/prices_desktop_page.dart';
 import 'package:crm_millwater/features/desktop/widgets/desktop_table.dart';
+import 'package:crm_millwater/features/orders/presentation/cancel_order_page.dart';
 import 'package:crm_millwater/features/reports/presentation/report_export_page.dart';
 import 'package:crm_millwater/features/routes/presentation/route_form_page.dart';
+import 'package:crm_millwater/features/settings/presentation/settings_page.dart';
+import 'package:crm_millwater/features/auth/presentation/login_page.dart';
 import 'package:crm_millwater/features/desktop/presentation/driver_desktop_stub.dart';
 import 'package:crm_millwater/features/desktop/widgets/desktop_button.dart';
 import 'package:crm_millwater/features/driver/presentation/driver_shell.dart';
@@ -241,6 +247,49 @@ void main() {
       // В отчётах искать нечего — там сводные числа.
       expect(find.text('Поиск'), findsNothing);
     });
+
+    testWidgets('карточка пользователя открывает настройки без пункта «Цены»',
+        (tester) async {
+      useDesktopSurface(tester);
+      await pumpApp(tester, UserRole.admin);
+
+      // Раньше карточка была декоративной, и выйти из аккаунта на десктопе
+      // было негде.
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(find.byType(SettingsPage), findsOneWidget);
+      expect(find.text('Выйти из аккаунта'), findsOneWidget);
+      // Прайс — раздел в боковой панели, в шторке его нет.
+      expect(find.text('ПРАЙС'), findsNothing);
+    });
+
+    testWidgets('выход из настроек возвращает на экран входа', (tester) async {
+      useDesktopSurface(tester);
+      await pumpApp(tester, UserRole.admin);
+
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      await tester.tap(find.text('Выйти из аккаунта'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Выйти из аккаунта?'), findsOneWidget);
+
+      await tester.tap(find.text('Выйти').last);
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(DesktopShell), findsNothing);
+    });
   });
 
   group('Раздел «Маршруты»', () {
@@ -379,6 +428,59 @@ void main() {
       expect(repo.deletedRouteId, isNotNull);
       expect(find.byType(DeliveryDrawer), findsNothing);
       expect(visibleRows(), lessThan(before));
+    });
+
+    testWidgets('отмена доставки из карточки — с причиной, точка гаснет',
+        (tester) async {
+      await pumpShell(tester);
+
+      // Открытая точка: у закрытой кнопки отмены нет — сервер ответит 409.
+      final stop = todayStops().firstWhere((s) => s.status.isOpen);
+      await tester.tap(find.text(stop.customerName).first);
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 150));
+      }
+      expect(find.byType(DeliveryDrawer), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(DesktopButton, 'Отменить заказ'));
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 150));
+      }
+      expect(find.byType(CancelOrderPage), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'Просили перенести');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(AppButton, 'Отменить заказ'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      await tester.pump(const Duration(seconds: 3));
+
+      final cancelled = repo.store.routes
+          .expand((r) => r.stops)
+          .firstWhere((s) => s.id == stop.id);
+      expect(cancelled.isCancelled, isTrue);
+      expect(cancelled.cancelReason, 'Просили перенести');
+      expect(find.byType(CancelOrderPage), findsNothing);
+    });
+
+    testWidgets('у закрытой доставки кнопки отмены нет', (tester) async {
+      await pumpShell(tester);
+
+      final stop = todayStops().firstWhere((s) => s.isCompleted);
+      await tester.tap(find.text(stop.customerName).first);
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 150));
+      }
+
+      expect(find.byType(DeliveryDrawer), findsOneWidget);
+      expect(
+        find.widgetWithText(DesktopButton, 'Отменить заказ'),
+        findsNothing,
+      );
     });
 
     testWidgets('переключение даты перестраивает день', (tester) async {
@@ -643,6 +745,70 @@ void main() {
       for (final label in ['Топливо', 'Обед', 'Ремонт', 'Прочее']) {
         expect(find.text(label), findsWidgets, reason: label);
       }
+    });
+
+    testWidgets('раздел «Цены» показывает прайс и назначает новую цену',
+        (tester) async {
+      await pumpShell(tester);
+      await openSection(tester, 'Цены');
+
+      expect(find.byType(PricesDesktopPage), findsOneWidget);
+      // Действующий прайс и история — на одном экране, без шторки.
+      expect(find.text('ДЕЙСТВУЮЩИЙ ПРАЙС'), findsOneWidget);
+      expect(find.text('ИСТОРИЯ ИЗМЕНЕНИЙ'), findsOneWidget);
+
+      // Поля заполнены действующей ценой — сохранять нечего.
+      final save = find.widgetWithText(DesktopButton, 'Сохранить');
+      expect(tester.widget<DesktopButton>(save).onPressed, isNull);
+
+      // Мок отвечает через `Future.delayed`, а часы в тесте фейковые: запрос
+      // запускаем, прокручиваем время и только потом ждём.
+      Future<int> capsulePrice() {
+        final pending = repo.getPrices();
+        return tester
+            .pump(const Duration(milliseconds: 300))
+            .then((_) => pending)
+            .then((p) => p.capsulePrice);
+      }
+
+      final before = await capsulePrice();
+
+      // Первое поле — цена капсулы.
+      final capsule = find
+          .descendant(
+            of: find.byType(PricesDesktopPage),
+            matching: find.byType(TextField),
+          )
+          .first;
+      await tester.enterText(capsule, '${before + 500}');
+      await tester.pump();
+      expect(tester.widget<DesktopButton>(save).onPressed, isNotNull);
+
+      await tester.tap(save);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      // Подтверждение — не красное: старый прайс остаётся в истории.
+      expect(find.text('Назначить новую цену?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(DesktopButton, 'Назначить'));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(find.text('Цены обновлены'), findsOneWidget);
+      await settleToast(tester);
+
+      // Сервер принял, а прежняя цена ушла в историю без перечитывания.
+      expect(await capsulePrice(), before + 500);
+      expect(
+        find.descendant(
+          of: find.byType(DesktopTable),
+          matching: find.text(
+            MoneyFormatter.sum(lookupAppLocalizations(AppLocales.ru), before),
+          ),
+        ),
+        findsWidgets,
+      );
     });
 
     testWidgets('в разделе «Маршруты» кнопка заводит маршрут', (tester) async {

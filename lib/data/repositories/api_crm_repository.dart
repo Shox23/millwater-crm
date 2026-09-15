@@ -160,7 +160,6 @@ class ApiCrmRepository implements CrmRepository {
   @override
   Future<PriceSettings> setPrices({
     required int capsulePrice,
-    required int depositPrice,
     required int damagedBottleFine,
     String? idempotencyKey,
   }) async {
@@ -168,7 +167,6 @@ class ApiCrmRepository implements CrmRepository {
       '/admin/prices',
       data: {
         'water_price': MoneyParser.toApi(capsulePrice),
-        'deposit_price': MoneyParser.toApi(depositPrice),
         'damaged_bottle_fine': MoneyParser.toApi(damagedBottleFine),
       },
       options: _idempotent(idempotencyKey),
@@ -554,6 +552,13 @@ class ApiCrmRepository implements CrmRepository {
       options: Options(contentType: 'multipart/form-data'),
     );
   }
+
+  @override
+  Future<void> cancelOrder({required String orderId, String? reason}) =>
+      _dio.post(
+        '/admin/orders/$orderId/cancel',
+        data: cancelOrderBody(reason),
+      );
 
   // ---- Расходы ----
   @override

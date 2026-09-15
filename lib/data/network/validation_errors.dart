@@ -112,5 +112,4 @@ Map<String, String> _labels(AppLocalizations l10n) => {
       'payment_method': l10n.apiFieldPaymentMethod,
       'bottle_balance': l10n.apiFieldBalance,
       'water_price': l10n.apiFieldPrice,
-      'deposit_price': l10n.apiFieldDeposit,
     };

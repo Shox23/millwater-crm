@@ -61,13 +61,12 @@ class MockCrmRepository implements CrmRepository {
     PriceSettings(
       id: 'price-seed-2',
       capsulePrice: SeedData.capsulePrice,
-      depositPrice: SeedData.depositPrice,
+      damagedBottleFine: SeedData.damagedBottleFine,
       createdAt: SeedData.today,
     ),
     PriceSettings(
       id: 'price-seed-1',
       capsulePrice: 18000,
-      depositPrice: 45000,
       createdAt: DateTime(2026, 1, 1),
     ),
   ];
@@ -87,7 +86,6 @@ class MockCrmRepository implements CrmRepository {
   @override
   Future<PriceSettings> setPrices({
     required int capsulePrice,
-    required int depositPrice,
     required int damagedBottleFine,
     String? idempotencyKey,
   }) async {
@@ -98,7 +96,6 @@ class MockCrmRepository implements CrmRepository {
     final created = PriceSettings(
       id: store.nextId('price'),
       capsulePrice: capsulePrice,
-      depositPrice: depositPrice,
       damagedBottleFine: damagedBottleFine,
       createdAt: DateTime.now(),
     );
@@ -592,6 +589,12 @@ class MockCrmRepository implements CrmRepository {
       orderId,
       (s) => s.copyWith(paymentAmount: amount, paymentMethod: method),
     );
+  }
+
+  @override
+  Future<void> cancelOrder({required String orderId, String? reason}) async {
+    await _tick();
+    store.cancelStop(orderId, reason: reason);
   }
 
   // ---- Расходы ----

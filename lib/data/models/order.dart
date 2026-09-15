@@ -36,6 +36,16 @@ Map<String, dynamic> orderFilterQuery({
       if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
     };
 
+/// Тело отмены заказа, общее у `/admin/orders/{id}/cancel` и
+/// `/driver/orders/{id}/cancel`.
+///
+/// Пустая причина не отправляется: «без причины» для сервера — отсутствие
+/// поля, а не пустая строка, которую он показал бы в карточке как есть.
+Map<String, dynamic> cancelOrderBody(String? reason) {
+  final trimmed = reason?.trim();
+  return {if (trimmed != null && trimmed.isNotEmpty) 'reason': trimmed};
+}
+
 /// Дата в формате `YYYY-MM-DD`, как ожидают query-параметры API.
 String formatApiDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
     '${d.month.toString().padLeft(2, '0')}-'
@@ -107,6 +117,7 @@ class Order extends Equatable {
     this.paymentMethod,
     this.deliveredCapsules,
     this.returnedCapsules,
+    this.returnedFullCapsules,
     this.damagedCapsules,
     this.capsuleBalanceAfter,
     this.orderAmount,
@@ -124,6 +135,8 @@ class Order extends Equatable {
     this.bottleSellCount,
     this.payments = const [],
     this.completedAt,
+    this.cancelReason,
+    this.cancelledAt,
     required this.createdAt,
     required this.customerId,
     required this.customerName,
@@ -154,6 +167,13 @@ class Order extends Equatable {
   final int? deliveredCapsules;
   final int? returnedCapsules;
   final int? damagedCapsules;
+
+  /// Сколько **полных** капсул заказчик вернул (`returned_full_bottles`).
+  ///
+  /// Не путать с [returnedCapsules] — те пустые, тара. Полные уходят из
+  /// остатка заказчика и из его денег: сервер сам пересчитывает сумму и
+  /// баланс, клиент только отправляет число при завершении.
+  final int? returnedFullCapsules;
 
   /// Остаток капсул у заказчика после заказа (`bottle_balance_after`).
   final int? capsuleBalanceAfter;
@@ -200,6 +220,12 @@ class Order extends Equatable {
   final List<OrderPayment> payments;
 
   final DateTime? completedAt;
+
+  /// Почему заказ отменили и когда. Причина необязательна — отменить можно и
+  /// молча, тогда здесь `null` при статусе `cancelled`.
+  final String? cancelReason;
+  final DateTime? cancelledAt;
+
   final DateTime createdAt;
 
   final String customerId;
@@ -220,6 +246,12 @@ class Order extends Equatable {
 
   /// Заказ закрыт доставкой. `failed` сюда не входит — см. `RouteStop`.
   bool get isCompleted => status == DeliveryStatus.delivered;
+
+  /// Заказ отменён (админом или водителем).
+  bool get isCancelled => status == DeliveryStatus.cancelled;
+
+  /// Отменить можно, пока заказ не закрыт: у закрытого сервер отвечает 409.
+  bool get canCancel => status.isOpen;
 
   /// Заказ закрыли в долг.
   bool get isDebt => paymentMethod == PaymentMethod.debt;
@@ -280,6 +312,7 @@ class Order extends Equatable {
       paymentMethod: PaymentMethod.tryFromJson(json['payment_method']),
       deliveredCapsules: optionalInt(json['delivered_bottles']),
       returnedCapsules: optionalInt(json['returned_bottles']),
+      returnedFullCapsules: optionalInt(json['returned_full_bottles']),
       damagedCapsules: optionalInt(json['damaged_bottles']),
       capsuleBalanceAfter: optionalInt(json['bottle_balance_after']),
       orderAmount: _money(json['order_amount']),
@@ -299,6 +332,10 @@ class Order extends Equatable {
       // справка, из-за неё терять карточку незачем.
       payments: parseList(json['payments'], OrderPayment.fromJson),
       completedAt: optionalDate(json['completed_at']),
+      // Пустую строку причины считаем отсутствием: отмена «молча» не должна
+      // рисовать в карточке пустую строку «Причина: ».
+      cancelReason: _nonEmpty(json['cancel_reason']),
+      cancelledAt: optionalDate(json['cancelled_at']),
       createdAt: dateOr(json['created_at'], epoch),
       customerId: stringOr(firstNonNull([
         customer['customer_id'],
@@ -363,6 +400,11 @@ class Order extends Equatable {
   static int? _money(Object? value) =>
       value == null ? null : MoneyParser.toSum(value);
 
+  static String? _nonEmpty(Object? value) {
+    final text = optionalString(value)?.trim();
+    return (text == null || text.isEmpty) ? null : text;
+  }
+
   @override
   List<Object?> get props => [
         id,
@@ -373,6 +415,7 @@ class Order extends Equatable {
         paymentMethod,
         deliveredCapsules,
         returnedCapsules,
+        returnedFullCapsules,
         damagedCapsules,
         capsuleBalanceAfter,
         orderAmount,
@@ -390,6 +433,8 @@ class Order extends Equatable {
         bottleSellCount,
         payments,
         completedAt,
+        cancelReason,
+        cancelledAt,
         createdAt,
         customerId,
         customerName,

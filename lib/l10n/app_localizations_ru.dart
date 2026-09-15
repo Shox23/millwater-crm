@@ -242,9 +242,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get apiFieldPrice => 'Цена капсулы';
 
   @override
-  String get apiFieldDeposit => 'Залог за тару';
-
-  @override
   String get phoneCallUnavailable => 'Звонок недоступен — номер скопирован';
 
   @override
@@ -418,6 +415,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get periodMonth => 'Месяц';
+
+  @override
+  String get periodCustom => 'Свои даты…';
+
+  @override
+  String dateRangeValue(String from, String to) {
+    return '$from — $to';
+  }
 
   @override
   String get loginTitle => 'Вход в систему';
@@ -1225,17 +1230,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get pricesDeposit => 'Залог за тару';
-
-  @override
-  String get pricesDepositHelper => 'Сум; 0 — залога нет';
-
-  @override
-  String pricesDepositRow(String amount) {
-    return 'залог $amount';
-  }
-
-  @override
   String get pricesEmpty => 'Укажите цену';
 
   @override
@@ -1245,8 +1239,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pricesConfirmTitle => 'Назначить новую цену?';
 
   @override
-  String pricesConfirmMessage(String capsule, String deposit) {
-    return 'Капсула — $capsule, залог — $deposit.';
+  String pricesConfirmMessage(String capsule) {
+    return 'Капсула — $capsule.';
   }
 
   @override
@@ -1256,6 +1250,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String pricesEffectiveFrom(String date) {
     return 'Действует с $date';
   }
+
+  @override
+  String get pricesEffectiveFromColumn => 'Действует с';
 
   @override
   String get pricesHistoryFailed => 'Историю загрузить не удалось.';
@@ -1826,6 +1823,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Укажите, что забрали: кулеры, капсулы или брак';
 
   @override
+  String get completionDeliveryRequired =>
+      'Укажите, что привезли, забрали брак или приняли возврат';
+
+  @override
   String completionFormulaDamaged(
     String capsules,
     String price,
@@ -2196,4 +2197,67 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get errorDateInPast => 'Дата не может быть в прошлом';
+
+  @override
+  String get deliveryCancelled => 'Отменён';
+
+  @override
+  String get orderReturnedFull => 'Возвращено с водой';
+
+  @override
+  String get completionReturnedFull => 'ВОЗВРАЩЕНО С ВОДОЙ';
+
+  @override
+  String get completionReturnedFullCaption =>
+      'полных капсул заказчик вернул — уйдут из его остатка';
+
+  @override
+  String completionBalanceFormulaReturned(
+    int before,
+    int delivered,
+    int returned,
+  ) {
+    return 'было $before + привезено $delivered − возвращено $returned';
+  }
+
+  @override
+  String completionFormulaReturnedPart(String returned, String price) {
+    return '− возврат $returned × $price';
+  }
+
+  @override
+  String get completionReturnedFullHint =>
+      'Итог по возврату посчитает сервер — сумма здесь ориентировочная';
+
+  @override
+  String get orderActionCancel => 'Отменить заказ';
+
+  @override
+  String get orderCancelTitle => 'Отмена заказа';
+
+  @override
+  String get orderCancelWarning =>
+      'Заказ закроется без доставки. Вернуть его в работу нельзя.';
+
+  @override
+  String get orderCancelReason => 'Причина отмены';
+
+  @override
+  String get orderCancelReasonHint =>
+      'Необязательно — останется в карточке заказа';
+
+  @override
+  String get orderCancelled => 'Заказ отменён';
+
+  @override
+  String get orderCancelFailed => 'Не удалось отменить заказ.';
+
+  @override
+  String get orderSectionCancellation => 'ОТМЕНА';
+
+  @override
+  String get orderCancelledAt => 'Отменён';
+
+  @override
+  String get orderCancelReasonEmpty => 'Причина не указана';
 }

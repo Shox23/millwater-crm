@@ -107,6 +107,7 @@ void main() {
         'Заказчики',
         'Касса',
         'Отчёты',
+        'Цены',
       ]) {
         await openSection(tester, section);
       }

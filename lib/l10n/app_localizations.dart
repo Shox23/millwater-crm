@@ -470,12 +470,6 @@ abstract class AppLocalizations {
   /// **'Цена капсулы'**
   String get apiFieldPrice;
 
-  /// No description provided for @apiFieldDeposit.
-  ///
-  /// In ru, this message translates to:
-  /// **'Залог за тару'**
-  String get apiFieldDeposit;
-
   /// No description provided for @phoneCallUnavailable.
   ///
   /// In ru, this message translates to:
@@ -811,6 +805,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Месяц'**
   String get periodMonth;
+
+  /// No description provided for @periodCustom.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свои даты…'**
+  String get periodCustom;
+
+  /// No description provided for @dateRangeValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'{from} — {to}'**
+  String dateRangeValue(String from, String to);
 
   /// No description provided for @loginTitle.
   ///
@@ -2234,24 +2240,6 @@ abstract class AppLocalizations {
   /// **'Капсула {liters} л'**
   String pricesCapsuleRow(int liters);
 
-  /// No description provided for @pricesDeposit.
-  ///
-  /// In ru, this message translates to:
-  /// **'Залог за тару'**
-  String get pricesDeposit;
-
-  /// No description provided for @pricesDepositHelper.
-  ///
-  /// In ru, this message translates to:
-  /// **'Сум; 0 — залога нет'**
-  String get pricesDepositHelper;
-
-  /// No description provided for @pricesDepositRow.
-  ///
-  /// In ru, this message translates to:
-  /// **'залог {amount}'**
-  String pricesDepositRow(String amount);
-
   /// No description provided for @pricesEmpty.
   ///
   /// In ru, this message translates to:
@@ -2273,8 +2261,8 @@ abstract class AppLocalizations {
   /// No description provided for @pricesConfirmMessage.
   ///
   /// In ru, this message translates to:
-  /// **'Капсула — {capsule}, залог — {deposit}.'**
-  String pricesConfirmMessage(String capsule, String deposit);
+  /// **'Капсула — {capsule}.'**
+  String pricesConfirmMessage(String capsule);
 
   /// No description provided for @pricesConfirmAction.
   ///
@@ -2287,6 +2275,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Действует с {date}'**
   String pricesEffectiveFrom(String date);
+
+  /// No description provided for @pricesEffectiveFromColumn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Действует с'**
+  String get pricesEffectiveFromColumn;
 
   /// No description provided for @pricesHistoryFailed.
   ///
@@ -3236,6 +3230,12 @@ abstract class AppLocalizations {
   /// **'Укажите, что забрали: кулеры, капсулы или брак'**
   String get completionPickupRequired;
 
+  /// No description provided for @completionDeliveryRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите, что привезли, забрали брак или приняли возврат'**
+  String get completionDeliveryRequired;
+
   /// No description provided for @completionFormulaDamaged.
   ///
   /// In ru, this message translates to:
@@ -3894,6 +3894,112 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Дата не может быть в прошлом'**
   String get errorDateInPast;
+
+  /// No description provided for @deliveryCancelled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменён'**
+  String get deliveryCancelled;
+
+  /// No description provided for @orderReturnedFull.
+  ///
+  /// In ru, this message translates to:
+  /// **'Возвращено с водой'**
+  String get orderReturnedFull;
+
+  /// No description provided for @completionReturnedFull.
+  ///
+  /// In ru, this message translates to:
+  /// **'ВОЗВРАЩЕНО С ВОДОЙ'**
+  String get completionReturnedFull;
+
+  /// No description provided for @completionReturnedFullCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'полных капсул заказчик вернул — уйдут из его остатка'**
+  String get completionReturnedFullCaption;
+
+  /// No description provided for @completionBalanceFormulaReturned.
+  ///
+  /// In ru, this message translates to:
+  /// **'было {before} + привезено {delivered} − возвращено {returned}'**
+  String completionBalanceFormulaReturned(
+    int before,
+    int delivered,
+    int returned,
+  );
+
+  /// No description provided for @completionFormulaReturnedPart.
+  ///
+  /// In ru, this message translates to:
+  /// **'− возврат {returned} × {price}'**
+  String completionFormulaReturnedPart(String returned, String price);
+
+  /// No description provided for @completionReturnedFullHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Итог по возврату посчитает сервер — сумма здесь ориентировочная'**
+  String get completionReturnedFullHint;
+
+  /// No description provided for @orderActionCancel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить заказ'**
+  String get orderActionCancel;
+
+  /// No description provided for @orderCancelTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена заказа'**
+  String get orderCancelTitle;
+
+  /// No description provided for @orderCancelWarning.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказ закроется без доставки. Вернуть его в работу нельзя.'**
+  String get orderCancelWarning;
+
+  /// No description provided for @orderCancelReason.
+  ///
+  /// In ru, this message translates to:
+  /// **'Причина отмены'**
+  String get orderCancelReason;
+
+  /// No description provided for @orderCancelReasonHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Необязательно — останется в карточке заказа'**
+  String get orderCancelReasonHint;
+
+  /// No description provided for @orderCancelled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказ отменён'**
+  String get orderCancelled;
+
+  /// No description provided for @orderCancelFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось отменить заказ.'**
+  String get orderCancelFailed;
+
+  /// No description provided for @orderSectionCancellation.
+  ///
+  /// In ru, this message translates to:
+  /// **'ОТМЕНА'**
+  String get orderSectionCancellation;
+
+  /// No description provided for @orderCancelledAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменён'**
+  String get orderCancelledAt;
+
+  /// No description provided for @orderCancelReasonEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Причина не указана'**
+  String get orderCancelReasonEmpty;
 }
 
 class _AppLocalizationsDelegate

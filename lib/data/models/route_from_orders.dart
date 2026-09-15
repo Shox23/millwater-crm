@@ -26,8 +26,7 @@ import 'route_models.dart';
 /// Незакрытый заказ означает, что маршрут ещё везут; все закрытые — что день
 /// по нему закончен. `cancelled` отсюда не выводится (см. заметку выше).
 RouteStatus _statusOf(List<Order> orders) {
-  final open = orders.any((o) =>
-      o.status == DeliveryStatus.pending || o.status == DeliveryStatus.onWay);
+  final open = orders.any((o) => o.status.isOpen);
   return open ? RouteStatus.inProgress : RouteStatus.completed;
 }
 
@@ -120,7 +119,10 @@ RouteStop stopFromOrder(Order order) => RouteStop(
       status: order.status,
       deliveredCapsules: order.deliveredCapsules,
       returnedCapsules: order.returnedCapsules,
+      returnedFullCapsules: order.returnedFullCapsules,
       damagedCapsules: order.damagedCapsules,
+      cancelReason: order.cancelReason,
+      cancelledAt: order.cancelledAt,
       pickedCoolers: order.pickedCoolers,
       pickedBottles: order.pickedBottles,
       bulk5lCount: order.bulk5lCount,

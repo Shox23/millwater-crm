@@ -32,6 +32,7 @@ class _RecordingRepository extends MockDriverRepository {
   int? bulk10Price;
   int? coolers;
   int? bottles;
+  int? returnedFull;
 
   @override
   Future<void> completeDelivery({
@@ -41,6 +42,7 @@ class _RecordingRepository extends MockDriverRepository {
     required PaymentMethod method,
     int capsules = 0,
     int returnedCapsules = 0,
+    int returnedFullCapsules = 0,
     int damagedCapsules = 0,
     int? bottleBalance,
     int bulk5lCount = 0,
@@ -58,6 +60,7 @@ class _RecordingRepository extends MockDriverRepository {
     this.amount = amount;
     this.capsules = capsules;
     returned = returnedCapsules;
+    returnedFull = returnedFullCapsules;
     damaged = damagedCapsules;
     balance = bottleBalance;
     bulk5Count = bulk5lCount;
@@ -147,8 +150,9 @@ void main() {
         _stop(effectiveWaterPrice: 20000, damagedBottleFine: 40000),
       );
 
-      // Счётчики по порядку: привезено, забрано пустых, повреждено, остаток.
-      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+      // Счётчики по порядку: привезено, забрано пустых, возвращено с водой,
+      // повреждено.
+      await tapVisible(tester, find.byIcon(Icons.add).at(3));
 
       // 1 × 20 000 + 1 × 40 000
       expect(amountText(tester), '60000');
@@ -158,14 +162,112 @@ void main() {
       await pumpPage(tester, _stop(effectiveWaterPrice: 20000));
 
       await tapVisible(tester, find.byIcon(Icons.add).at(1));
-      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+      await tapVisible(tester, find.byIcon(Icons.add).at(3));
       await tapVisible(tester, find.text('Завершить'));
 
       expect(repo.purpose, OrderPurpose.delivery19l);
       expect(repo.returned, 1);
       expect(repo.damaged, 1);
+      expect(repo.returnedFull, 0);
       // Остаток заказчика правит только доставка.
       expect(repo.balance, isNotNull);
+    });
+  });
+
+  group('Возврат капсул с водой', () {
+    RouteStop stopWithBalance({int balance = 3}) => RouteStop(
+          id: 'stop-1',
+          customerId: 'c-1',
+          customerName: 'Кафе Тест',
+          customerAddress: 'ул. Тестовая, 1',
+          customerPhone: '+998900000002',
+          status: DeliveryStatus.pending,
+          customerBottleBalance: balance,
+          effectiveWaterPrice: 20000,
+        );
+
+    testWidgets('счётчик есть только у доставки 19 л', (tester) async {
+      await pumpPage(tester, _stop(purpose: OrderPurpose.pickup));
+      expect(find.text('ВОЗВРАЩЕНО С ВОДОЙ'), findsNothing);
+
+      await pumpPage(tester, _stop(purpose: OrderPurpose.bulkWater));
+      expect(find.text('ВОЗВРАЩЕНО С ВОДОЙ'), findsNothing);
+
+      await pumpPage(tester, _stop());
+      expect(find.text('ВОЗВРАЩЕНО С ВОДОЙ'), findsOneWidget);
+    });
+
+    testWidgets('возврат уходит на сервер и вычитается из остатка',
+        (tester) async {
+      await pumpPage(tester, stopWithBalance(balance: 3));
+
+      // Привезли 2, вернули 1 полную.
+      await tapVisible(tester, find.byIcon(Icons.add).at(0));
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+
+      // было 3 + привезено 2 − возвращено 1 = 4
+      expect(find.text('было 3 + привезено 2 − возвращено 1'), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
+
+      await tapVisible(tester, find.text('Завершить'));
+
+      expect(repo.returnedFull, 1);
+      expect(repo.capsules, 2);
+      expect(repo.balance, 4);
+    });
+
+    testWidgets('сумма — ориентир: возврат вычитается по цене заказа',
+        (tester) async {
+      await pumpPage(tester, stopWithBalance(balance: 3));
+
+      await tapVisible(tester, find.byIcon(Icons.add).at(0));
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+
+      // (2 − 1) × 20 000
+      expect(amountText(tester), '20000');
+      expect(find.textContaining('− возврат 1 ×'), findsOneWidget);
+      // Итог по возврату считает сервер, и форма об этом говорит.
+      expect(find.textContaining('посчитает сервер'), findsOneWidget);
+    });
+
+    testWidgets('ниже нуля сумма не опускается', (tester) async {
+      await pumpPage(tester, stopWithBalance(balance: 3));
+
+      // Привезли 1, вернули 3: расчёт был бы отрицательным.
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+
+      expect(amountText(tester), '0');
+      // Ноль при наличных сервер не примет — кнопка это знает.
+      expect(submitEnabled(tester), isFalse);
+    });
+
+    testWidgets('больше остатка заказчика вернуть нельзя', (tester) async {
+      await pumpPage(tester, stopWithBalance(balance: 1));
+
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+
+      // Второе нажатие упёрлось в остаток: было 1 + привезено 1 − 1 = 1.
+      expect(find.text('было 1 + привезено 1 − возвращено 1'), findsOneWidget);
+    });
+
+    testWidgets('с возвратом «Доставлено» опускается до нуля', (tester) async {
+      await pumpPage(tester, stopWithBalance(balance: 3));
+
+      // Без возврата единица — нижняя граница.
+      await tapVisible(tester, find.byIcon(Icons.remove).at(0));
+      expect(find.text('было 3 + привезено 1'), findsOneWidget);
+
+      await tapVisible(tester, find.byIcon(Icons.add).at(2));
+      await tapVisible(tester, find.byIcon(Icons.remove).at(0));
+      expect(find.text('было 3 + привезено 0 − возвращено 1'), findsOneWidget);
+
+      // Возврат сняли — ноль капсул снова «не доставлено», счётчик сам
+      // возвращается к единице.
+      await tapVisible(tester, find.byIcon(Icons.remove).at(2));
+      expect(find.text('было 3 + привезено 1'), findsOneWidget);
     });
   });
 

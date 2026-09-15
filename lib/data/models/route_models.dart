@@ -133,7 +133,10 @@ class RouteStop extends Equatable {
     this.sequence,
     this.purpose = OrderPurpose.delivery19l,
     this.returnedCapsules,
+    this.returnedFullCapsules,
     this.damagedCapsules,
+    this.cancelReason,
+    this.cancelledAt,
     this.pickedCoolers,
     this.pickedBottles,
     this.bulk5lCount,
@@ -196,6 +199,15 @@ class RouteStop extends Equatable {
   final int? returnedCapsules;
   final int? damagedCapsules;
 
+  /// Сколько полных капсул заказчик вернул (`returned_full_bottles`).
+  /// Пустая тара — это [returnedCapsules]; здесь вода, которая уходит из
+  /// остатка заказчика.
+  final int? returnedFullCapsules;
+
+  /// Причина и время отмены — у точки со статусом `cancelled`.
+  final String? cancelReason;
+  final DateTime? cancelledAt;
+
   /// Что увезли при цели «вывоз» и что продали при цели «опт».
   ///
   /// Без них закрытая точка вывоза выглядела как «0 капсул»: карточка знала
@@ -231,6 +243,9 @@ class RouteStop extends Equatable {
   /// не удалось, и в «выполнено N из M» ей не место.
   bool get isCompleted => status == DeliveryStatus.delivered;
 
+  /// Точка отменена — админом или самим водителем.
+  bool get isCancelled => status == DeliveryStatus.cancelled;
+
   /// У заказчика стоит кулер — производное от [customerCoolerCount], как и
   /// на сервере.
   bool get customerHasCooler => customerCoolerCount > 0;
@@ -257,7 +272,10 @@ class RouteStop extends Equatable {
     double? customerLongitude,
     int? deliveredCapsules,
     int? returnedCapsules,
+    int? returnedFullCapsules,
     int? damagedCapsules,
+    String? cancelReason,
+    DateTime? cancelledAt,
     int? pickedCoolers,
     int? pickedBottles,
     int? bulk5lCount,
@@ -279,7 +297,10 @@ class RouteStop extends Equatable {
       customerLongitude: customerLongitude ?? this.customerLongitude,
       deliveredCapsules: deliveredCapsules ?? this.deliveredCapsules,
       returnedCapsules: returnedCapsules ?? this.returnedCapsules,
+      returnedFullCapsules: returnedFullCapsules ?? this.returnedFullCapsules,
       damagedCapsules: damagedCapsules ?? this.damagedCapsules,
+      cancelReason: cancelReason ?? this.cancelReason,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
       pickedCoolers: pickedCoolers ?? this.pickedCoolers,
       pickedBottles: pickedBottles ?? this.pickedBottles,
       bulk5lCount: bulk5lCount ?? this.bulk5lCount,
@@ -372,7 +393,10 @@ class RouteStop extends Equatable {
         sequence: optionalInt(json['sequence']) ?? optionalInt(json['order']),
         purpose: OrderPurpose.fromJson(stringOr(json['purpose'])),
         returnedCapsules: optionalInt(json['returned_bottles']),
+        returnedFullCapsules: optionalInt(json['returned_full_bottles']),
         damagedCapsules: optionalInt(json['damaged_bottles']),
+        cancelReason: optionalString(json['cancel_reason'])?.trim(),
+        cancelledAt: optionalDate(json['cancelled_at']),
         pickedCoolers: optionalInt(json['picked_coolers']),
         pickedBottles: optionalInt(json['picked_bottles']),
         bulk5lCount: optionalInt(json['bulk_5l_count']),
@@ -404,9 +428,7 @@ class RouteStop extends Equatable {
     DateTime? completedAt,
     DeliveryStatus status,
   ) {
-    final closed = completedAt != null ||
-        status == DeliveryStatus.delivered ||
-        status == DeliveryStatus.failed;
+    final closed = completedAt != null || !status.isOpen;
     if (!closed) return null;
 
     final ordered = _money(firstNonNull([
@@ -434,7 +456,10 @@ class RouteStop extends Equatable {
         sequence,
         purpose,
         returnedCapsules,
+        returnedFullCapsules,
         damagedCapsules,
+        cancelReason,
+        cancelledAt,
         pickedCoolers,
         pickedBottles,
         bulk5lCount,

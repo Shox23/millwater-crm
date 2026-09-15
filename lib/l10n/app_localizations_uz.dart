@@ -235,9 +235,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get apiFieldPrice => 'Kapsula narxi';
 
   @override
-  String get apiFieldDeposit => 'Idish garovi';
-
-  @override
   String get phoneCallUnavailable => 'Qo‘ng‘iroq imkonsiz — raqam nusxalandi';
 
   @override
@@ -411,6 +408,14 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get periodMonth => 'Oy';
+
+  @override
+  String get periodCustom => 'Boshqa sanalar…';
+
+  @override
+  String dateRangeValue(String from, String to) {
+    return '$from — $to';
+  }
 
   @override
   String get loginTitle => 'Tizimga kirish';
@@ -1215,17 +1220,6 @@ class AppLocalizationsUz extends AppLocalizations {
   }
 
   @override
-  String get pricesDeposit => 'Idish garovi';
-
-  @override
-  String get pricesDepositHelper => 'So‘m; 0 — garov yo‘q';
-
-  @override
-  String pricesDepositRow(String amount) {
-    return 'garov $amount';
-  }
-
-  @override
   String get pricesEmpty => 'Narxni kiriting';
 
   @override
@@ -1235,8 +1229,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get pricesConfirmTitle => 'Yangi narx belgilansinmi?';
 
   @override
-  String pricesConfirmMessage(String capsule, String deposit) {
-    return 'Kapsula — $capsule, garov — $deposit.';
+  String pricesConfirmMessage(String capsule) {
+    return 'Kapsula — $capsule.';
   }
 
   @override
@@ -1246,6 +1240,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String pricesEffectiveFrom(String date) {
     return '$date dan amal qiladi';
   }
+
+  @override
+  String get pricesEffectiveFromColumn => 'Amal qiladi';
 
   @override
   String get pricesHistoryFailed => 'Tarixni yuklab bo‘lmadi.';
@@ -1809,6 +1806,10 @@ class AppLocalizationsUz extends AppLocalizations {
       'Nimani olganingizni kiriting: kuler, kapsula yoki brak';
 
   @override
+  String get completionDeliveryRequired =>
+      'Nima keltirganingizni, brak olganingizni yoki qaytarish qabul qilganingizni kiriting';
+
+  @override
   String completionFormulaDamaged(
     String capsules,
     String price,
@@ -2176,4 +2177,67 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get errorDateInPast => 'Sana o‘tmishda bo‘lishi mumkin emas';
+
+  @override
+  String get deliveryCancelled => 'Bekor qilingan';
+
+  @override
+  String get orderReturnedFull => 'Suv bilan qaytarildi';
+
+  @override
+  String get completionReturnedFull => 'SUV BILAN QAYTARILDI';
+
+  @override
+  String get completionReturnedFullCaption =>
+      'to‘la kapsulalarni buyurtmachi qaytardi — qoldig‘idan chiqadi';
+
+  @override
+  String completionBalanceFormulaReturned(
+    int before,
+    int delivered,
+    int returned,
+  ) {
+    return 'avval $before + keltirildi $delivered − qaytarildi $returned';
+  }
+
+  @override
+  String completionFormulaReturnedPart(String returned, String price) {
+    return '− qaytarish $returned × $price';
+  }
+
+  @override
+  String get completionReturnedFullHint =>
+      'Qaytarish bo‘yicha yakunni server hisoblaydi — bu yerdagi summa taxminiy';
+
+  @override
+  String get orderActionCancel => 'Buyurtmani bekor qilish';
+
+  @override
+  String get orderCancelTitle => 'Buyurtmani bekor qilish';
+
+  @override
+  String get orderCancelWarning =>
+      'Buyurtma yetkazilmasdan yopiladi. Uni qayta ishga qaytarib bo‘lmaydi.';
+
+  @override
+  String get orderCancelReason => 'Bekor qilish sababi';
+
+  @override
+  String get orderCancelReasonHint =>
+      'Majburiy emas — buyurtma kartasida qoladi';
+
+  @override
+  String get orderCancelled => 'Buyurtma bekor qilindi';
+
+  @override
+  String get orderCancelFailed => 'Buyurtmani bekor qilib bo‘lmadi.';
+
+  @override
+  String get orderSectionCancellation => 'BEKOR QILISH';
+
+  @override
+  String get orderCancelledAt => 'Bekor qilingan';
+
+  @override
+  String get orderCancelReasonEmpty => 'Sabab ko‘rsatilmagan';
 }

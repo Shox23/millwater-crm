@@ -13,6 +13,7 @@ export 'initials_avatar.dart';
 export 'labeled_card.dart';
 export 'labeled_text_field.dart';
 export 'money_text.dart';
+export 'network_photo_card.dart';
 export 'photo_attach_tile.dart';
 export 'quantity_stepper.dart';
 export 'screen_header.dart';

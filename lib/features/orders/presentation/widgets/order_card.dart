@@ -106,6 +106,7 @@ class OrderCard extends StatelessWidget {
         DeliveryStatus.delivered => StatusTone.success,
         DeliveryStatus.onWay => StatusTone.progress,
         DeliveryStatus.failed => StatusTone.danger,
+        DeliveryStatus.cancelled => StatusTone.danger,
         DeliveryStatus.pending => StatusTone.neutral,
       };
 }

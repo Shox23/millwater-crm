@@ -25,7 +25,7 @@ class _PricesAdapter implements HttpClientAdapter {
   static const _defaultBody = {
     'id': 'p1',
     'water_price': '25000.00',
-    'deposit_price': '50000.00',
+    'damaged_bottle_fine': '40000.00',
     'created_at': '2026-08-09T10:00:00',
   };
 
@@ -82,7 +82,7 @@ void main() {
 
       expect(adapter.requests.single.path, '/admin/prices/current');
       expect(prices.capsulePrice, 25000);
-      expect(prices.depositPrice, 50000);
+      expect(prices.damagedBottleFine, 40000);
       expect(prices.createdAt, DateTime(2026, 8, 9, 10));
     });
 
@@ -91,13 +91,11 @@ void main() {
         {
           'id': 'p-old',
           'water_price': '18000.00',
-          'deposit_price': '45000.00',
           'created_at': '2026-01-01T09:00:00',
         },
         {
           'id': 'p-new',
           'water_price': '25000.00',
-          'deposit_price': '50000.00',
           'created_at': '2026-08-09T10:00:00',
         },
       ]);
@@ -120,7 +118,7 @@ void main() {
               '00000000000000000000000000000000000000000000000000000000000000'
                   '07453980569682499178063466371692148060635560193550543094645'
                   '633176727620983.10616711045563062953566292341649231024789055126107',
-          'deposit_price': '+00000000000000000753858722068601126425',
+          'damaged_bottle_fine': '+00000000000000000753858722068601126425',
           'created_at': '2026-08-08T22:21:15.101Z',
         },
       ]);
@@ -130,27 +128,26 @@ void main() {
       expect(history, hasLength(1));
       // Значение упирается в потолок int64 — это не ошибка разбора.
       expect(history.single.capsulePrice, isPositive);
-      expect(history.single.depositPrice, isPositive);
+      expect(history.single.damagedBottleFine, isPositive);
     });
 
-    test('новая цена уходит всеми тремя полями и с ключом идемпотентности',
+    test('новая цена уходит обоими полями и с ключом идемпотентности',
         () async {
       final adapter = _PricesAdapter();
       await repositoryWith(adapter).setPrices(
         capsulePrice: 25000,
-        depositPrice: 50000,
         damagedBottleFine: 40000,
         idempotencyKey: 'price-1',
       );
 
       final request = adapter.requests.single;
       expect(request.path, '/admin/prices');
-      // Штраф отправляется вместе с ценами: сервер принимает и подмножество,
-      // но экран показывает все три поля сразу, и «пошлю только изменённое»
-      // значило бы гадать, что админ считал изменением.
+      // Штраф отправляется вместе с ценой: сервер принимает и подмножество,
+      // но экран показывает оба поля сразу, и «пошлю только изменённое»
+      // значило бы гадать, что админ считал изменением. Залога больше нет —
+      // сервер убрал его из прайса.
       expect(request.data, {
         'water_price': '25000',
-        'deposit_price': '50000',
         'damaged_bottle_fine': '40000',
       });
       expect(request.headers['Idempotency-Key'], 'price-1');
@@ -164,13 +161,11 @@ void main() {
 
       await repo.setPrices(
         capsulePrice: 30000,
-        depositPrice: 60000,
         damagedBottleFine: 40000,
       );
       final current = await repo.getPrices();
 
       expect(current.capsulePrice, 30000);
-      expect(current.depositPrice, 60000);
       expect(current.damagedBottleFine, 40000);
     });
 
@@ -180,7 +175,6 @@ void main() {
 
       await repo.setPrices(
         capsulePrice: 30000,
-        depositPrice: 60000,
         damagedBottleFine: 40000,
       );
       final after = await repo.getPriceHistory();
@@ -195,13 +189,11 @@ void main() {
 
       final first = await repo.setPrices(
         capsulePrice: 30000,
-        depositPrice: 60000,
         damagedBottleFine: 40000,
         idempotencyKey: 'price-42',
       );
       final second = await repo.setPrices(
         capsulePrice: 30000,
-        depositPrice: 60000,
         damagedBottleFine: 40000,
         idempotencyKey: 'price-42',
       );
@@ -261,7 +253,8 @@ void main() {
       await pumpPage(tester, repo);
 
       expect(find.text('20 000 сум'), findsOneWidget);
-      expect(find.text('50 000 сум'), findsOneWidget);
+      // Штраф — вторая строка карточки; залога в прайсе больше нет.
+      expect(find.text('40 000 сум'), findsOneWidget);
       expect(find.textContaining('Действует с'), findsOneWidget);
     });
 
@@ -273,7 +266,6 @@ void main() {
       // Прошлая цена из сида — 18 000, действующая 20 000 уже в карточке выше.
       expect(find.text('18 000 сум'), findsOneWidget);
       expect(find.text('20 000 сум'), findsOneWidget);
-      expect(find.text('залог 45 000 сум'), findsOneWidget);
     });
 
     testWidgets('без прошлых записей история объясняет пустоту',

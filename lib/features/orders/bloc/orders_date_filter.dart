@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/utils/date_period.dart';
 import '../../../core/utils/stats_period.dart';
 
 /// За какие даты показывать заказы.
@@ -65,20 +65,9 @@ class OrdersCustomDate extends OrdersDateFilter {
   @override
   (DateTime?, DateTime?) get range => (from, to);
 
-  /// Как подписать диапазон на чипе: две короткие даты.
-  ///
-  /// Год ставим только когда концы приходятся на разные годы — иначе он
-  /// повторяется дважды и удлиняет и без того узкий чип настолько, что
-  /// подпись уезжает за край экрана. Формат общий у телефона и десктопа:
-  /// два места форматирования однажды разошлись бы.
-  (String, String) get labelParts {
-    final sameYear = from.year == to.year;
-    final short = DateFormat('dd.MM');
-    return (
-      short.format(from),
-      sameYear ? short.format(to) : DateFormat('dd.MM.yy').format(to),
-    );
-  }
+  /// Как подписать диапазон на чипе: две короткие даты. Формат общий с
+  /// отчётами — см. [formatDateRangeParts].
+  (String, String) get labelParts => formatDateRangeParts(from, to);
 
   @override
   List<Object?> get props => [from, to];

@@ -89,8 +89,14 @@ class MockStore {
           purpose: OrderPurpose.delivery19l,
           paymentMethod: stop.paymentMethod,
           deliveredCapsules: stop.deliveredCapsules,
+          returnedCapsules: stop.returnedCapsules,
+          returnedFullCapsules: stop.returnedFullCapsules,
+          damagedCapsules: stop.damagedCapsules,
+          capsuleBalanceAfter: stop.capsuleBalanceAfter,
           orderAmount: stop.paymentAmount,
           completedAt: stop.completedAt,
+          cancelReason: stop.cancelReason,
+          cancelledAt: stop.cancelledAt,
           createdAt: route.date,
           customerId: stop.customerId,
           customerName: stop.customerName,
@@ -168,7 +174,9 @@ class MockStore {
       if (si == -1) continue;
       final stops = route.stops.toList();
       stops[si] = update(stops[si]);
-      final allDone = stops.every((s) => s.isCompleted);
+      // Маршрут закрыт, когда закрыта каждая точка — в том числе отменённая:
+      // ехать к ней уже некуда, и держать маршрут «в работе» незачем.
+      final allDone = stops.every((s) => !s.status.isOpen);
       routes[i] = copyRoute(
         route,
         stops: stops,
@@ -176,5 +184,25 @@ class MockStore {
       );
       return;
     }
+  }
+
+  /// Отменяет точку с причиной — как это сделает сервер по
+  /// `POST /{admin,driver}/orders/{id}/cancel`.
+  ///
+  /// Закрытую точку отменить нельзя (409 `ORDER_ALREADY_COMPLETED`): доставка
+  /// состоялась, деньги приняты, и отмена стёрла бы уже случившееся.
+  void cancelStop(String stopId, {String? reason}) {
+    final stop = routes.expand((r) => r.stops).where((s) => s.id == stopId).firstOrNull;
+    if (stop == null) return;
+    if (!stop.status.isOpen) throw StateError('ORDER_ALREADY_COMPLETED');
+    final trimmed = reason?.trim();
+    updateStop(
+      stopId,
+      (s) => s.copyWith(
+        status: DeliveryStatus.cancelled,
+        cancelReason: (trimmed == null || trimmed.isEmpty) ? null : trimmed,
+        cancelledAt: DateTime.now(),
+      ),
+    );
   }
 }

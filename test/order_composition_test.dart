@@ -109,4 +109,53 @@ void main() {
     expect(find.text('Бутыли 10 л'), findsOneWidget);
     expect(find.text('Доставлено'), findsOneWidget);
   });
+
+  group('Фото оплаты', () {
+    testWidgets('платёж с photo_url показывает карточку фото', (tester) async {
+      await pumpOrder(
+        tester,
+        order({
+          'purpose': 'delivery_19l',
+          'status': 'delivered',
+          'delivered_bottles': 5,
+          'payments': [
+            {
+              'id': 'p-1',
+              'amount': '90000.00',
+              'payment_method': 'card',
+              'photo_url': '/uploads/payments/check.jpg',
+              'created_at': '2026-09-04T09:00:00Z',
+            },
+          ],
+        }),
+      );
+
+      // Подпись общая с фото на точке маршрута (`NetworkPhotoCard`) — сервер
+      // отдаёт то же поле `photo_url` в обоих ответах.
+      expect(find.text('ФОТО ОПЛАТЫ'), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+    });
+
+    testWidgets('платёж без фото карточку не показывает', (tester) async {
+      await pumpOrder(
+        tester,
+        order({
+          'purpose': 'delivery_19l',
+          'status': 'delivered',
+          'delivered_bottles': 5,
+          'payments': [
+            {
+              'id': 'p-1',
+              'amount': '90000.00',
+              'payment_method': 'cash',
+              'created_at': '2026-09-04T09:00:00Z',
+            },
+          ],
+        }),
+      );
+
+      expect(find.text('ФОТО ОПЛАТЫ'), findsNothing);
+      expect(find.byType(Image), findsNothing);
+    });
+  });
 }

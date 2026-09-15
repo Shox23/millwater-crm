@@ -158,6 +158,7 @@ class OrdersDesktopPage extends StatelessWidget {
     return switch (status) {
       DeliveryStatus.delivered => t.success,
       DeliveryStatus.failed => t.danger,
+      DeliveryStatus.cancelled => t.danger,
       DeliveryStatus.onWay => t.primary,
       DeliveryStatus.pending => t.text3,
     };

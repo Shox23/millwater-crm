@@ -6,7 +6,7 @@ class ReportsState extends Equatable {
   const ReportsState({
     this.status = ReportsStatus.initial,
     this.summary,
-    this.period = ReportPeriod.today,
+    this.period = const PresetPeriod(StatsPeriod.today),
   });
 
   final ReportsStatus status;

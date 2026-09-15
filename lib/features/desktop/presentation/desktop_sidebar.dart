@@ -22,10 +22,14 @@ class DesktopSidebar extends StatelessWidget {
     required this.section,
     required this.onSectionChanged,
     required this.routesBadge,
+    required this.onOpenSettings,
   });
 
   final DesktopSection section;
   final ValueChanged<DesktopSection> onSectionChanged;
+
+  /// Тап по карточке пользователя внизу: язык, пароль, выход.
+  final VoidCallback onOpenSettings;
 
   /// Незавершённые доставки за выбранный день. `null` — ещё грузятся.
   final int? routesBadge;
@@ -56,7 +60,7 @@ class DesktopSidebar extends StatelessWidget {
           const _OnLineToday(),
           const Spacer(),
           const _ThemeSwitch(),
-          const _UserCard(),
+          _UserCard(onTap: onOpenSettings),
         ],
       ),
     );
@@ -305,42 +309,70 @@ class _ThemeSwitch extends StatelessWidget {
 /// Имени у учётной записи нет: `/auth/me` отдаёт только id, телефон и роль —
 /// поэтому в заголовке телефон, а под ним роль. Аватар с инициалами здесь
 /// был бы выдумкой из цифр.
+/// Карточка пользователя — вход в настройки: язык, пароль, выход.
+///
+/// Раньше была декоративной, и выйти из аккаунта на десктопе было негде
+/// вовсе. Открывает мобильный `SettingsPage` в шторке: все пункты там уже
+/// есть, и вторая их копия под десктоп разошлась бы с первой.
 class _UserCard extends StatelessWidget {
-  const _UserCard();
+  const _UserCard({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: t.surface2,
+    return Material(
+      color: t.surface2,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: t.border),
-      ),
-      child: Row(
-        spacing: AppSpacing.md,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: t.primarySoft,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(Icons.person_outline, size: 20, color: t.primary),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: t.border),
           ),
-          Expanded(
-            child: Text(
-              context.l10n.roleAdmin,
-              style: DesktopTypography.bodyStrong.copyWith(color: t.text),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          child: Row(
+            spacing: AppSpacing.md,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: t.primarySoft,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(Icons.person_outline, size: 20, color: t.primary),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 1,
+                  children: [
+                    Text(
+                      context.l10n.roleAdmin,
+                      style:
+                          DesktopTypography.bodyStrong.copyWith(color: t.text),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      context.l10n.settingsTitle,
+                      style: DesktopTypography.caption.copyWith(color: t.text2),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.settings_outlined, size: 18, color: t.text2),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

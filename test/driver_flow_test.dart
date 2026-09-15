@@ -2,6 +2,7 @@ import 'package:crm_millwater/app/locale_cubit.dart';
 import 'package:crm_millwater/app/settings/settings_storage.dart';
 import 'package:crm_millwater/app/theme/theme_cubit.dart';
 import 'package:crm_millwater/app/theme/app_theme.dart';
+import 'package:crm_millwater/core/widgets/app_button.dart';
 import 'package:crm_millwater/data/mock/mock_store.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/order.dart';
@@ -17,6 +18,7 @@ import 'package:crm_millwater/features/driver/presentation/delivery_completion_p
 import 'package:crm_millwater/features/driver/presentation/driver_shell.dart';
 import 'package:crm_millwater/features/driver/presentation/my_route_detail_page.dart';
 import 'package:crm_millwater/features/driver/presentation/my_routes_page.dart';
+import 'package:crm_millwater/features/orders/presentation/cancel_order_page.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -430,11 +432,12 @@ void main() {
         const MyRouteDetailPage(routeId: 'r1'),
       );
 
-      // Меню есть только у незавершённых точек: их в r1 две.
-      await tester.tap(find.byTooltip('Изменить статус').first);
+      // Меню есть только у незавершённых точек: их в r1 две. Последняя из
+      // них ещё «Новый», поэтому пункт «В пути» доступен.
+      await tester.tap(find.byTooltip('Изменить статус').last);
       await settle(tester);
 
-      await tester.tap(find.text('Не доставлено').last);
+      await tester.tap(find.text('В пути').last);
       // Успех подтверждается снек-баром, он живёт 4 секунды — если его не
       // дождаться, тест падает на «A Timer is still pending».
       await tester.pump();
@@ -442,9 +445,92 @@ void main() {
 
       final route = store.routes.firstWhere((r) => r.id == 'r1');
       expect(
-        route.stops.any((s) => s.status == DeliveryStatus.failed),
-        isTrue,
+        route.stops.where((s) => s.status == DeliveryStatus.onWay).length,
+        2,
       );
+    });
+
+    testWidgets('«Не доставлено» одним касанием из меню больше нет',
+        (tester) async {
+      await pumpPage(
+        tester,
+        MockDriverRepository(driverId: 'd1'),
+        const MyRouteDetailPage(routeId: 'r1'),
+      );
+
+      await tester.tap(find.byTooltip('Изменить статус').first);
+      await settle(tester);
+
+      // Вместо него — отмена с причиной, отдельной формой.
+      expect(find.text('Не доставлено'), findsNothing);
+      expect(find.text('Отменить заказ'), findsOneWidget);
+    });
+
+    testWidgets('отмена из меню открывает форму и уходит с причиной',
+        (tester) async {
+      final store = MockStore();
+      final repo = MockDriverRepository(store: store, driverId: 'd1');
+      await pumpPage(
+        tester,
+        repo,
+        const MyRouteDetailPage(routeId: 'r1'),
+      );
+
+      await tester.tap(find.byTooltip('Изменить статус').first);
+      await settle(tester);
+      await tester.tap(find.text('Отменить заказ').last);
+      await settle(tester);
+
+      expect(find.byType(CancelOrderPage), findsOneWidget);
+      // Предупреждение о необратимости — до нажатия, а не после.
+      expect(
+        find.textContaining('Вернуть его в работу нельзя'),
+        findsOneWidget,
+      );
+
+      await tester.enterText(find.byType(TextField), 'Не открыл дверь');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(AppButton, 'Отменить заказ'));
+      // Запрос в моке идёт 150 мс, затем форма закрывается, а маршрут
+      // перечитывается; снек-бар живёт 4 секунды — его тоже дожидаемся.
+      await settle(tester);
+      await settle(tester);
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(repo.lastCancelReason, 'Не открыл дверь');
+      expect(find.byType(CancelOrderPage), findsNothing);
+
+      final route = store.routes.firstWhere((r) => r.id == 'r1');
+      final cancelled =
+          route.stops.where((s) => s.status == DeliveryStatus.cancelled);
+      expect(cancelled.length, 1);
+      expect(cancelled.single.cancelReason, 'Не открыл дверь');
+      expect(cancelled.single.cancelledAt, isNotNull);
+      // Причина видна прямо в списке точек.
+      expect(find.text('Не открыл дверь'), findsOneWidget);
+    });
+
+    testWidgets('отменённая точка на завершение не открывается и без меню',
+        (tester) async {
+      final store = MockStore();
+      final route = store.routes.firstWhere((r) => r.id == 'r1');
+      final open = route.stops.firstWhere((s) => s.status.isOpen);
+      store.cancelStop(open.id, reason: 'Переехал');
+
+      await pumpPage(
+        tester,
+        MockDriverRepository(store: store, driverId: 'd1'),
+        const MyRouteDetailPage(routeId: 'r1'),
+      );
+
+      expect(find.text('Отменён'), findsOneWidget);
+      expect(find.text('Переехал'), findsOneWidget);
+      // В r1 было две открытые точки, одна отменена — меню осталось у одной.
+      expect(find.byTooltip('Изменить статус'), findsOneWidget);
+
+      await tester.tap(find.text('Переехал'));
+      await settle(tester);
+      expect(find.byType(DeliveryCompletionPage), findsNothing);
     });
   });
 

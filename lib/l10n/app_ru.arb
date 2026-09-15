@@ -85,27 +85,51 @@
   "validationGeneric": "Проверьте правильность заполнения",
   "validationRequired": "Заполните поле «{field}»",
   "@validationRequired": {
-    "placeholders": { "field": { "type": "String" } }
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
   },
   "validationTooShort": "Слишком короткое значение в поле «{field}»",
   "@validationTooShort": {
-    "placeholders": { "field": { "type": "String" } }
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
   },
   "validationTooLong": "Слишком длинное значение в поле «{field}»",
   "@validationTooLong": {
-    "placeholders": { "field": { "type": "String" } }
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
   },
   "validationNotNumber": "В поле «{field}» нужно число",
   "@validationNotNumber": {
-    "placeholders": { "field": { "type": "String" } }
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
   },
   "validationOutOfRange": "Значение в поле «{field}» вне допустимых границ",
   "@validationOutOfRange": {
-    "placeholders": { "field": { "type": "String" } }
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
   },
   "validationBadFormat": "Неверный формат в поле «{field}»",
   "@validationBadFormat": {
-    "placeholders": { "field": { "type": "String" } }
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
   },
   "apiFieldFullName": "Имя или название",
   "apiFieldPhone": "Телефон",
@@ -122,7 +146,6 @@
   "apiFieldPaymentMethod": "Способ оплаты",
   "apiFieldBalance": "Остаток капсул",
   "apiFieldPrice": "Цена капсулы",
-  "apiFieldDeposit": "Залог за тару",
   "phoneCallUnavailable": "Звонок недоступен — номер скопирован",
   "phoneCopied": "Номер скопирован",
   "phoneCopy": "Скопировать номер",
@@ -200,6 +223,18 @@
   "periodToday": "Сегодня",
   "periodWeek": "Неделя",
   "periodMonth": "Месяц",
+  "periodCustom": "Свои даты…",
+  "dateRangeValue": "{from} — {to}",
+  "@dateRangeValue": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
   "loginTitle": "Вход в систему",
   "loginPhone": "Номер телефона",
   "loginPassword": "Пароль",
@@ -305,10 +340,22 @@
   "routeFormBottleSellRequired": "Укажите, сколько капсул везти",
   "routeFormBottleSellLocked": "Задано при добавлении точки — сервер менять его не умеет",
   "stopBottleSell": "Везём {count} капсул",
-  "@stopBottleSell": {"placeholders": {"count": {"type": "int"}}},
+  "@stopBottleSell": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "completionBottleSell": "НАЗНАЧЕНО К ДОСТАВКЕ",
   "completionBottleSellValue": "{count, plural, one{{count} капсула} few{{count} капсулы} other{{count} капсул}}",
-  "@completionBottleSellValue": {"placeholders": {"count": {"type": "int"}}},
+  "@completionBottleSellValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "completionBottleSellHint": "Столько назначил админ. Ниже отметьте, сколько привезли на самом деле",
   "routeFormDriver": "ВОДИТЕЛЬ",
   "routeFormNoDrivers": "Сначала добавьте водителей",
@@ -557,8 +604,12 @@
   "profileStatsBulkValue": "{five} / {ten}",
   "@profileStatsBulkValue": {
     "placeholders": {
-      "five": {"type": "int"},
-      "ten": {"type": "int"}
+      "five": {
+        "type": "int"
+      },
+      "ten": {
+        "type": "int"
+      }
     }
   },
   "profileAccountSection": "АККАУНТ",
@@ -608,26 +659,13 @@
       }
     }
   },
-  "pricesDeposit": "Залог за тару",
-  "pricesDepositHelper": "Сум; 0 — залога нет",
-  "pricesDepositRow": "залог {amount}",
-  "@pricesDepositRow": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "pricesEmpty": "Укажите цену",
   "pricesZero": "Цена капсулы должна быть больше нуля",
   "pricesConfirmTitle": "Назначить новую цену?",
-  "pricesConfirmMessage": "Капсула — {capsule}, залог — {deposit}.",
+  "pricesConfirmMessage": "Капсула — {capsule}.",
   "@pricesConfirmMessage": {
     "placeholders": {
       "capsule": {
-        "type": "String"
-      },
-      "deposit": {
         "type": "String"
       }
     }
@@ -641,6 +679,7 @@
       }
     }
   },
+  "pricesEffectiveFromColumn": "Действует с",
   "pricesHistoryFailed": "Историю загрузить не удалось.",
   "pricesHistoryEmpty": "Прайс ещё не меняли — это первая цена.",
   "reportsLabel": "Аналитика",
@@ -849,9 +888,21 @@
   "orderPurposeBulkShort": "Опт",
   "orderPurposeBulk": "Опт 5/10 л",
   "coolersCount": "{count, plural, one{{count} кулер} few{{count} кулера} other{{count} кулеров}}",
-  "@coolersCount": {"placeholders": {"count": {"type": "int"}}},
+  "@coolersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "customerCustomPrice": "Своя цена: {price}",
-  "@customerCustomPrice": {"placeholders": {"price": {"type": "String"}}},
+  "@customerCustomPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "customerFormCoolers": "Кулеров у заказчика",
   "customerFormCoolersHint": "К кулеру капсулу ставят, без него воду переливают",
   "customerFormCapsules": "Капсул у заказчика",
@@ -870,7 +921,13 @@
   "customerFormPriceValue": "Цена для заказчика",
   "customerFormPriceEmpty": "Введите цену",
   "customerFormPriceHelper": "Общая цена: {price}",
-  "@customerFormPriceHelper": {"placeholders": {"price": {"type": "String"}}},
+  "@customerFormPriceHelper": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "pricesDamagedFine": "Штраф за брак",
   "pricesDamagedFineHelper": "Сум за одну повреждённую капсулу",
   "pricesDamagedFineRow": "Штраф за капсулу",
@@ -892,8 +949,24 @@
   "completionPickupHint": "Вывоз без оплаты: оставьте сумму нулевой",
   "completionZeroNeedsDebt": "Нулевую сумму сервер принимает только со способом «В долг»",
   "completionPickupRequired": "Укажите, что забрали: кулеры, капсулы или брак",
+  "completionDeliveryRequired": "Укажите, что привезли, забрали брак или приняли возврат",
   "completionFormulaDamaged": "{capsules} × {price} + брак {damaged} × {fine}",
-  "@completionFormulaDamaged": {"placeholders": {"capsules": {"type": "String"}, "price": {"type": "String"}, "damaged": {"type": "String"}, "fine": {"type": "String"}}},
+  "@completionFormulaDamaged": {
+    "placeholders": {
+      "capsules": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "damaged": {
+        "type": "String"
+      },
+      "fine": {
+        "type": "String"
+      }
+    }
+  },
   "errorBothBalances": "У заказчика не может быть долга и предоплаты одновременно",
   "errorOrderCompleted": "Заказ уже закрыт",
   "errorOrderNotCompleted": "Заказ ещё не закрыт",
@@ -913,17 +986,33 @@
   "ordersDateRangeValue": "{from} — {to}",
   "@ordersDateRangeValue": {
     "placeholders": {
-      "from": {"type": "String"},
-      "to": {"type": "String"}
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
     }
   },
   "ordersSearch": "Заказчик, телефон, адрес",
   "ordersEmpty": "Заказов пока нет",
   "ordersLoadFailed": "Не удалось загрузить заказы",
   "ordersCount": "{count, plural, one{{count} заказ} few{{count} заказа} other{{count} заказов}}",
-  "@ordersCount": {"placeholders": {"count": {"type": "int"}}},
+  "@ordersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "orderNumber": "Заказ №{number}",
-  "@orderNumber": {"placeholders": {"number": {"type": "int"}}},
+  "@orderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "orderNoDriver": "Водитель не назначен",
   "orderBulk5l": "Бутыли 5 л",
   "orderBulk10l": "Бутыли 10 л",
@@ -952,9 +1041,21 @@
   "driverOrdersTitle": "Мои заказы",
   "driverOrdersTileHint": "История заказов за всё время",
   "pricesFineRow": "штраф {amount}",
-  "@pricesFineRow": {"placeholders": {"amount": {"type": "String"}}},
+  "@pricesFineRow": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "pricesConfirmFine": "Штраф за повреждённую капсулу — {fine}.",
-  "@pricesConfirmFine": {"placeholders": {"fine": {"type": "String"}}},
+  "@pricesConfirmFine": {
+    "placeholders": {
+      "fine": {
+        "type": "String"
+      }
+    }
+  },
   "orderMoveTitle": "Перенести заказ",
   "orderMoveDate": "Дата",
   "orderMoveRoutes": "МАРШРУТ НА ЭТУ ДАТУ",
@@ -967,14 +1068,32 @@
   "orderMoveFailed": "Не удалось перенести заказ.",
   "orderMoved": "Заказ перенесён",
   "orderRouteStops": "{count, plural, one{{count} точка} few{{count} точки} other{{count} точек}} · {driver}",
-  "@orderRouteStops": {"placeholders": {"count": {"type": "int"}, "driver": {"type": "String"}}},
+  "@orderRouteStops": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
   "orderNoDriverShort": "без водителя",
   "orderPaymentTitle": "Изменение оплаты",
   "orderPaymentAmount": "Итоговая сумма заказа",
   "orderPaymentAmountHint": "Не доплата, а вся сумма заказа: разницу сервер посчитает сам",
   "orderPaymentAmountEmpty": "Введите сумму",
   "orderPaymentWasBecomes": "Было {before} → станет {after}",
-  "@orderPaymentWasBecomes": {"placeholders": {"before": {"type": "String"}, "after": {"type": "String"}}},
+  "@orderPaymentWasBecomes": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "orderPaymentNote": "Комментарий",
   "orderPaymentNoteHint": "Зачем правите — останется в истории платежей",
   "orderPaymentBalanceNow": "Баланс заказчика сейчас",
@@ -1013,5 +1132,45 @@
   "expenseDelete": "Удалить расход",
   "expenseDeleteConfirm": "Расход вычтется из кассы обратно. Удалить?",
   "expenseDeleteFailed": "Не удалось удалить расход.",
-  "errorDateInPast": "Дата не может быть в прошлом"
+  "errorDateInPast": "Дата не может быть в прошлом",
+  "deliveryCancelled": "Отменён",
+  "orderReturnedFull": "Возвращено с водой",
+  "completionReturnedFull": "ВОЗВРАЩЕНО С ВОДОЙ",
+  "completionReturnedFullCaption": "полных капсул заказчик вернул — уйдут из его остатка",
+  "completionBalanceFormulaReturned": "было {before} + привезено {delivered} − возвращено {returned}",
+  "@completionBalanceFormulaReturned": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "delivered": {
+        "type": "int"
+      },
+      "returned": {
+        "type": "int"
+      }
+    }
+  },
+  "completionFormulaReturnedPart": "− возврат {returned} × {price}",
+  "@completionFormulaReturnedPart": {
+    "placeholders": {
+      "returned": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "completionReturnedFullHint": "Итог по возврату посчитает сервер — сумма здесь ориентировочная",
+  "orderActionCancel": "Отменить заказ",
+  "orderCancelTitle": "Отмена заказа",
+  "orderCancelWarning": "Заказ закроется без доставки. Вернуть его в работу нельзя.",
+  "orderCancelReason": "Причина отмены",
+  "orderCancelReasonHint": "Необязательно — останется в карточке заказа",
+  "orderCancelled": "Заказ отменён",
+  "orderCancelFailed": "Не удалось отменить заказ.",
+  "orderSectionCancellation": "ОТМЕНА",
+  "orderCancelledAt": "Отменён",
+  "orderCancelReasonEmpty": "Причина не указана"
 }

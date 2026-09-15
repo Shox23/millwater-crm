@@ -58,6 +58,7 @@ class OrdersPage extends StatelessWidget {
         notifications: notifications?.cast(),
       )..add(const OrdersRequested()),
       child: _OrdersView(
+        source: source,
         title: title,
         showBack: showBack,
         canManage: canManage,
@@ -68,11 +69,13 @@ class OrdersPage extends StatelessWidget {
 
 class _OrdersView extends StatelessWidget {
   const _OrdersView({
+    required this.source,
     required this.title,
     required this.showBack,
     required this.canManage,
   });
 
+  final OrdersSource source;
   final String title;
   final bool showBack;
   final bool canManage;
@@ -167,6 +170,7 @@ class _OrdersView extends StatelessWidget {
                   child: _OrdersList(
                     state: state,
                     bloc: bloc,
+                    source: source,
                     canManage: canManage,
                   ),
                 ),
@@ -183,11 +187,13 @@ class _OrdersList extends StatelessWidget {
   const _OrdersList({
     required this.state,
     required this.bloc,
+    required this.source,
     required this.canManage,
   });
 
   final OrdersState state;
   final OrdersBloc bloc;
+  final OrdersSource source;
   final bool canManage;
 
   @override
@@ -257,6 +263,9 @@ class _OrdersList extends StatelessWidget {
                     builder: (_) => OrderDetailPage(
                       order: order,
                       canManage: canManage,
+                      // Отмена — у обеих ролей, каждой своей ручкой.
+                      onCancel: (reason) =>
+                          source.cancel(orderId: order.id, reason: reason),
                     ),
                   ),
                 );

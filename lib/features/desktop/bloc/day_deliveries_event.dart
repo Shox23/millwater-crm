@@ -9,7 +9,8 @@ enum DeliveryFilter {
   onWay(DeliveryStatus.onWay),
   delivered(DeliveryStatus.delivered),
   pending(DeliveryStatus.pending),
-  failed(DeliveryStatus.failed);
+  failed(DeliveryStatus.failed),
+  cancelled(DeliveryStatus.cancelled);
 
   const DeliveryFilter(this.status);
 
@@ -22,6 +23,7 @@ enum DeliveryFilter {
         DeliveryFilter.delivered => l10n.filterDelivered,
         DeliveryFilter.pending => l10n.filterNew,
         DeliveryFilter.failed => l10n.filterFailed,
+        DeliveryFilter.cancelled => l10n.filterCancelled,
       };
 }
 

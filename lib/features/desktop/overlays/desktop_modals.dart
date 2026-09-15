@@ -200,11 +200,16 @@ class _DesktopSuccessModalState extends State<DesktopSuccessModal>
 ///
 /// Своя, а не мобильная `showConfirmDialog`: та собрана мобильной
 /// типографикой, и в десктопном окне рядом с Onest выглядела бы чужой.
+///
+/// [destructive] — красная кнопка подтверждения. Выключается для действий,
+/// которые просто хочется переспросить (смена прайса): старая цена остаётся
+/// в истории, и красить «Назначить» в опасный цвет было бы враньём.
 Future<bool> showDesktopConfirm(
   BuildContext context, {
   required String title,
   required String message,
   required String confirmLabel,
+  bool destructive = true,
 }) async {
   final confirmed = await showDesktopModal<bool>(
     context,
@@ -226,7 +231,9 @@ Future<bool> showDesktopConfirm(
           ),
           DesktopButton(
             label: confirmLabel,
-            variant: DesktopButtonVariant.danger,
+            variant: destructive
+                ? DesktopButtonVariant.danger
+                : DesktopButtonVariant.primary,
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],

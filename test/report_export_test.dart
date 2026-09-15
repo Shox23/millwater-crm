@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crm_millwater/app/theme/app_theme.dart';
+import 'package:crm_millwater/core/utils/date_period.dart';
+import 'package:crm_millwater/core/utils/stats_period.dart';
 import 'package:crm_millwater/core/export/file_sharer.dart';
 import 'package:crm_millwater/data/models/customer.dart';
 import 'package:crm_millwater/core/widgets/app_button.dart';
@@ -10,6 +12,7 @@ import 'package:crm_millwater/data/repositories/api_crm_repository.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/features/drivers/presentation/driver_detail_page.dart';
+import 'package:crm_millwater/features/reports/presentation/report_export_page.dart';
 import 'package:crm_millwater/features/reports/presentation/reports_page.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:dio/dio.dart';
@@ -76,6 +79,24 @@ class _DriverExportRepository extends MockCrmRepository {
   }) {
     this.driverId = driverId;
     return super.exportDriversReport(
+        dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
+  }
+}
+
+/// Запоминает границы, с которыми запросили общий отчёт.
+class _RangeExportRepository extends MockCrmRepository {
+  DateTime? from;
+  DateTime? to;
+
+  @override
+  Future<ReportExport> exportGeneralReport({
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    String? driverId,
+  }) {
+    from = dateFrom;
+    to = dateTo;
+    return super.exportGeneralReport(
         dateFrom: dateFrom, dateTo: dateTo, driverId: driverId);
   }
 }
@@ -218,6 +239,139 @@ void main() {
       expect(find.text('Не удалось выгрузить отчёт.'), findsOneWidget);
       // Кнопка вернулась в рабочее состояние — экран не превратился в тупик.
       expect(find.widgetWithText(AppButton, 'Выгрузить'), findsOneWidget);
+    });
+  });
+
+  group('Свои даты на экране отчётов', () {
+    testWidgets('пункт меню открывает календарь диапазона', (tester) async {
+      tester.view.physicalSize = const Size(1290, 2796);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        RepositoryProvider<CrmRepository>.value(
+          value: MockCrmRepository(),
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
+            home: ReportsPage(fileSharer: RecordingFileSharer()),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      // Пилюля подписана периодом по умолчанию — «Сегодня».
+      await tester.tap(find.text('Сегодня'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Свои даты…'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(DateRangePickerDialog), findsOneWidget);
+    });
+  });
+
+  group('Свои даты на экране выгрузки', () {
+    Future<void> pumpExport(
+      WidgetTester tester,
+      CrmRepository repo,
+      FileSharer sharer, {
+      required DatePeriod period,
+    }) async {
+      tester.view.physicalSize = const Size(1290, 2796);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        RepositoryProvider<CrmRepository>.value(
+          value: repo,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            locale: AppLocales.ru,
+            home: ReportExportPage(period: period, fileSharer: sharer),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    testWidgets('диапазон из шапки отчётов показан и уходит в выгрузку',
+        (tester) async {
+      final repo = _RangeExportRepository();
+      final sharer = RecordingFileSharer();
+      await pumpExport(
+        tester,
+        repo,
+        sharer,
+        period: CustomPeriod(DateTime(2026, 9, 3), DateTime(2026, 9, 12)),
+      );
+
+      // Карточка подписана датами, а не «Свои даты…».
+      expect(find.text('03.09 — 12.09'), findsOneWidget);
+      expect(find.text('Свои даты…'), findsNothing);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Выгрузить'));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(repo.from, DateTime(2026, 9, 3));
+      expect(repo.to, DateTime(2026, 9, 12));
+      expect(sharer.shared, hasLength(1));
+    });
+
+    testWidgets('карточка «Свои даты» открывает календарь диапазона',
+        (tester) async {
+      await pumpExport(
+        tester,
+        MockCrmRepository(),
+        RecordingFileSharer(),
+        period: const PresetPeriod(StatsPeriod.month),
+      );
+
+      await tester.tap(find.text('Свои даты…'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(DateRangePickerDialog), findsOneWidget);
+    });
+
+    testWidgets('пресет после диапазона возвращает готовый период',
+        (tester) async {
+      final repo = _RangeExportRepository();
+      await pumpExport(
+        tester,
+        repo,
+        RecordingFileSharer(),
+        period: CustomPeriod(DateTime(2026, 9, 3), DateTime(2026, 9, 12)),
+      );
+
+      await tester.tap(find.text('Сегодня'));
+      await tester.pump();
+      // Карточка диапазона снова без дат.
+      expect(find.text('Свои даты…'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Выгрузить'));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      final (from, to) = StatsPeriod.today.range;
+      expect(repo.from, from);
+      expect(repo.to, to);
     });
   });
 

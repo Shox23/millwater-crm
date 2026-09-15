@@ -36,11 +36,15 @@ import '../../../core/utils/money_formatter.dart';
 import '../../../data/models/order.dart';
 import '../../orders/bloc/orders_bloc.dart';
 import '../../routes/presentation/route_form_page.dart';
+import '../../settings/presentation/settings_page.dart';
 import '../../orders/bloc/orders_source.dart';
+import '../../orders/presentation/cancel_order_page.dart';
 import '../../orders/presentation/order_detail_page.dart';
+import '../../prices/bloc/prices_cubit.dart';
 import '../bloc/expenses_bloc.dart';
 import 'pages/cash_desktop_page.dart';
 import 'pages/orders_desktop_page.dart';
+import 'pages/prices_desktop_page.dart';
 import 'pages/reports_desktop_page.dart';
 import 'pages/routes_desktop_page.dart';
 
@@ -98,6 +102,11 @@ class DesktopShell extends StatelessWidget {
           BlocProvider(
             create: (_) =>
                 WeekRevenueBloc(repository)..add(const WeekRevenueRequested()),
+          ),
+          // Ленивый: прайс тянется, когда раздел откроют, — в отличие от
+          // остальных, он не нужен ни бейджам, ни шапке.
+          BlocProvider(
+            create: (_) => PricesCubit(repository)..load(),
           ),
         ],
         child: _DesktopShellView(fileSharer: fileSharer),
@@ -166,6 +175,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
         context.read<OrdersBloc>().add(OrdersSearchChanged(query));
       case DesktopSection.cash:
       case DesktopSection.reports:
+      case DesktopSection.prices:
         break;
     }
   }
@@ -186,8 +196,29 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
           Navigator.of(drawerContext).pop();
           _deleteRoute(row.route);
         },
+        onCancelOrder: () {
+          Navigator.of(drawerContext).pop();
+          _cancelOrder(row.stop);
+        },
       ),
     );
+  }
+
+  /// Отмена заказа с причиной — прямо из таблицы доставок, не заходя в
+  /// раздел заказов: оператор видит точку здесь и здесь же решает её снять.
+  Future<void> _cancelOrder(RouteStop stop) async {
+    final repo = context.read<CrmRepository>();
+    final done = await showDesktopDrawer<bool>(
+      context,
+      builder: (_) => CancelOrderPage(
+        customerName: stop.customerName,
+        cancel: (reason) => repo.cancelOrder(orderId: stop.id, reason: reason),
+      ),
+    );
+    if (done != true || !mounted) return;
+    context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
+    context.read<OrdersBloc>().add(const OrdersRequested());
+    showDesktopToast(context, context.l10n.orderCancelled);
   }
 
   /// Безвозвратное удаление маршрута — см. пояснение у [DeliveryDrawer].
@@ -252,12 +283,17 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
   /// оплаты. Экран общий с телефоном — заводить вторую его копию под десктоп
   /// значило бы вести два описания одного заказа.
   Future<void> _openOrder(Order order) async {
+    final repo = context.read<CrmRepository>();
     final changed = await showDesktopDrawer<bool>(
       context,
-      builder: (_) => OrderDetailPage(order: order, canManage: true),
+      builder: (_) => OrderDetailPage(
+        order: order,
+        canManage: true,
+        onCancel: (reason) => repo.cancelOrder(orderId: order.id, reason: reason),
+      ),
     );
     if (changed != true || !mounted) return;
-    // Перенос и правка оплаты меняют и заказ, и день маршрутов.
+    // Перенос, отмена и правка оплаты меняют и заказ, и день маршрутов.
     context.read<OrdersBloc>().add(const OrdersRequested());
     context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
   }
@@ -394,6 +430,18 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
     );
   }
 
+  /// Настройки: язык, пароль, диагностика сессии, выход из аккаунта.
+  ///
+  /// Экран общий с телефоном. Выход он делает сам: шлёт `AuthLogoutRequested`
+  /// и закрывает себя, а на вход возвращает корневой `BlocBuilder`. «Цены»
+  /// в нём спрятаны — на десктопе это раздел в боковой панели.
+  Future<void> _openSettings() async {
+    await showDesktopDrawer<void>(
+      context,
+      builder: (_) => const SettingsPage(showPrices: false),
+    );
+  }
+
   /// Перечитать то, что сейчас на экране.
   void _refresh() {
     setState(() => _freshEvents = false);
@@ -408,6 +456,8 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
         context.read<OrdersBloc>().add(const OrdersRequested());
       case DesktopSection.cash:
         context.read<ExpensesBloc>().add(const ExpensesRequested());
+      case DesktopSection.prices:
+        context.read<PricesCubit>().load();
       case DesktopSection.reports:
         break;
     }
@@ -432,6 +482,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
         context.watch<ExpensesBloc>().state.total,
       ),
       DesktopSection.reports => l10n.reportsLabel,
+      DesktopSection.prices => l10n.pricesTileHint,
     };
   }
 
@@ -458,6 +509,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
             section: _section,
             onSectionChanged: _selectSection,
             routesBadge: context.watch<DayDeliveriesBloc>().state.pending,
+            onOpenSettings: _openSettings,
           ),
           Expanded(
             child: Column(
@@ -526,6 +578,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
                         ),
                         DesktopSection.cash => const CashDesktopPage(),
                         DesktopSection.reports => const ReportsDesktopPage(),
+                        DesktopSection.prices => const PricesDesktopPage(),
                       },
                     ),
                   ),

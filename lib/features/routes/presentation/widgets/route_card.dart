@@ -18,6 +18,7 @@ StatusTone deliveryTone(DeliveryStatus status) => switch (status) {
       DeliveryStatus.onWay => StatusTone.progress,
       DeliveryStatus.pending => StatusTone.neutral,
       DeliveryStatus.failed => StatusTone.danger,
+      DeliveryStatus.cancelled => StatusTone.danger,
     };
 
 /// Цвет-индикатор статуса доставки.
@@ -28,6 +29,7 @@ Color deliveryColor(BuildContext context, DeliveryStatus status) {
     DeliveryStatus.onWay => t.primary,
     DeliveryStatus.pending => t.text3,
     DeliveryStatus.failed => t.danger,
+    DeliveryStatus.cancelled => t.danger,
   };
 }
 

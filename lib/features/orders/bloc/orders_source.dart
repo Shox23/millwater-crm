@@ -4,13 +4,17 @@ import '../../../data/models/result_page.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../../../data/repositories/driver_repository.dart';
 
-/// Откуда экран заказов берёт страницы.
+/// Откуда экран заказов берёт страницы и куда шлёт отмену.
 ///
-/// Узкий интерфейс на одно чтение, потому что репозитории у ролей разные и
-/// общего предка у них нет — и не должно быть: доступ по ролям держится тем,
-/// что админского репозитория в дереве водителя физически нет (см. `app.dart`).
-/// Блок один на обе роли, а какой источник ему достался — решает экран,
-/// который его создаёт, там же, где нужный репозиторий и лежит.
+/// Узкий интерфейс на чтение и одно действие, потому что репозитории у ролей
+/// разные и общего предка у них нет — и не должно быть: доступ по ролям
+/// держится тем, что админского репозитория в дереве водителя физически нет
+/// (см. `app.dart`). Блок один на обе роли, а какой источник ему достался —
+/// решает экран, который его создаёт, там же, где нужный репозиторий и лежит.
+///
+/// Отмена здесь же, а не в карточке заказа: это единственное действие над
+/// заказом, которое есть у обеих ролей, и ручки у них разные
+/// (`/admin/orders/{id}/cancel` и `/driver/orders/{id}/cancel`).
 abstract class OrdersSource {
   Future<ResultPage<Order>> load({
     required int page,
@@ -20,6 +24,9 @@ abstract class OrdersSource {
     DateTime? dateFrom,
     DateTime? dateTo,
   });
+
+  /// Отменяет заказ с необязательной причиной.
+  Future<void> cancel({required String orderId, String? reason});
 }
 
 /// Все заказы компании (`GET /admin/orders`).
@@ -45,6 +52,10 @@ class AdminOrdersSource implements OrdersSource {
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
+
+  @override
+  Future<void> cancel({required String orderId, String? reason}) =>
+      _repository.cancelOrder(orderId: orderId, reason: reason);
 }
 
 /// Свои заказы за всё время (`GET /driver/orders`).
@@ -73,4 +84,8 @@ class DriverOrdersSource implements OrdersSource {
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
+
+  @override
+  Future<void> cancel({required String orderId, String? reason}) =>
+      _repository.cancelOrder(orderId: orderId, reason: reason);
 }

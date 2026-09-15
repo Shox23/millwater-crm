@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/utils/date_period.dart';
 import '../../../core/utils/stats_period.dart';
 import '../../../core/utils/throttle.dart';
 import '../../../data/models/notification_event.dart';
@@ -90,7 +91,7 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
   ///
   /// Публичная, потому что теми же границами выгружается Excel: посчитай их
   /// кнопка экспорта сама — и однажды выгрузила бы не тот период, который
-  /// показан на экране. Сам расчёт живёт в [StatsPeriod.range].
+  /// показан на экране. Сам расчёт живёт в [DatePeriod.range].
   static (DateTime, DateTime) rangeFor(ReportPeriod period) => period.range;
 
 }

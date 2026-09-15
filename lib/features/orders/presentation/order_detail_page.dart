@@ -13,36 +13,49 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/detail_scaffold.dart';
+import '../../../core/widgets/network_photo_card.dart';
 import '../../../core/widgets/phone_contact_row.dart';
 import '../../../core/widgets/section_block.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/models/order.dart';
+import 'cancel_order_page.dart';
 import 'move_order_page.dart';
 import 'order_payment_page.dart';
 
 /// Карточка заказа: состав, расчёт и маршрут, которым его везли.
 ///
-/// [canManage] — админ: ему доступны перенос заказа и правка оплаты. У
-/// водителя эти ручки под `/admin/*`, и кнопки ему показывать нечестно.
-/// Каждая из них к тому же работает не всегда: перенести можно только
-/// незакрытый заказ, править оплату — только закрытый. Сервер это проверяет
-/// (409 `ORDER_ALREADY_COMPLETED` и `ORDER_NOT_COMPLETED`), но упираться в
-/// отказ после заполнения формы — не дело, поэтому кнопки прячутся заранее.
+/// [canManage] — админ: ему доступны перенос и правка оплаты. У водителя
+/// эти ручки под `/admin/*`, и кнопки ему показывать нечестно.
+///
+/// Отмена — иначе: она есть у обеих ролей, но ручки у них разные, поэтому
+/// карточка сама её не вызывает, а получает [onCancel] от вызывающего экрана
+/// (у которого нужный репозиторий и лежит). Без [onCancel] кнопки нет.
+///
+/// Каждая кнопка к тому же работает не всегда: перенести и отменить можно
+/// только незакрытый заказ, править оплату — только закрытый. Сервер это
+/// проверяет (409 `ORDER_ALREADY_COMPLETED` и `ORDER_NOT_COMPLETED`), но
+/// упираться в отказ после заполнения формы — не дело, поэтому кнопки
+/// прячутся заранее.
 class OrderDetailPage extends StatelessWidget {
   const OrderDetailPage({
     super.key,
     required this.order,
     this.canManage = false,
+    this.onCancel,
   });
 
   final Order order;
   final bool canManage;
 
+  /// Запрос отмены с причиной (`null` — без причины).
+  final Future<void> Function(String? reason)? onCancel;
+
   /// Перенести можно, пока заказ не закрыт: у закрытого сервер отвечает 409.
-  bool get _canMove =>
-      order.status == DeliveryStatus.pending ||
-      order.status == DeliveryStatus.onWay;
+  bool get _canMove => order.status.isOpen;
+
+  /// Отменить — по тому же правилу: закрытый заказ уже состоялся.
+  bool get _canCancel => onCancel != null && order.canCancel;
 
   /// Править оплату — наоборот, только у закрытого.
   bool get _canEditPayment => order.status == DeliveryStatus.delivered;
@@ -56,6 +69,7 @@ class OrderDetailPage extends StatelessWidget {
       OrderPurpose.delivery19l => [
           (l10n.orderDelivered, order.deliveredCapsules),
           (l10n.orderReturned, order.returnedCapsules),
+          (l10n.orderReturnedFull, order.returnedFullCapsules),
           (l10n.orderDamaged, order.damagedCapsules),
           (l10n.orderBalanceAfter, order.capsuleBalanceAfter),
         ],
@@ -76,6 +90,7 @@ class OrderDetailPage extends StatelessWidget {
     final rest = <(String, int?)>[
       (l10n.orderDelivered, order.deliveredCapsules),
       (l10n.orderReturned, order.returnedCapsules),
+      (l10n.orderReturnedFull, order.returnedFullCapsules),
       (l10n.orderDamaged, order.damagedCapsules),
       (l10n.orderPickedCoolers, order.pickedCoolers),
       (l10n.orderPickedBottles, order.pickedBottles),
@@ -98,6 +113,12 @@ class OrderDetailPage extends StatelessWidget {
     Navigator.of(context).pop(true);
   }
 
+  Future<void> _cancel(BuildContext context) => _open(
+        context,
+        CancelOrderPage(customerName: order.customerName, cancel: onCancel!),
+        context.l10n.orderCancelled,
+      );
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -114,8 +135,12 @@ class OrderDetailPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: AppSpacing.md,
               children: [
-                Row(
+                // Wrap, а не Row: «Не доставлено» вместе с «Доставка 19 л»
+                // на телефонной ширине не помещаются в строку и вылезали за
+                // карточку, а не переносились.
+                Wrap(
                   spacing: AppSpacing.sm,
+                  runSpacing: 4,
                   children: [
                     StatusBadge(
                       text: order.status.label(l10n),
@@ -123,6 +148,7 @@ class OrderDetailPage extends StatelessWidget {
                         DeliveryStatus.delivered => StatusTone.success,
                         DeliveryStatus.onWay => StatusTone.progress,
                         DeliveryStatus.failed => StatusTone.danger,
+                        DeliveryStatus.cancelled => StatusTone.danger,
                         DeliveryStatus.pending => StatusTone.neutral,
                       },
                       showDot: true,
@@ -252,6 +278,17 @@ class OrderDetailPage extends StatelessWidget {
                       ],
                     ),
             ),
+          // Отменённый заказ обязан объяснять себя сам: причина и время —
+          // это то, что админ спросит первым делом, а звонить водителю
+          // ради «почему» — не дело.
+          if (order.isCancelled)
+            SectionBlock(
+              label: l10n.orderSectionCancellation,
+              child: _CancellationCard(
+                reason: order.cancelReason,
+                cancelledAt: order.cancelledAt,
+              ),
+            ),
           SectionBlock(
             label: l10n.orderSectionRoute,
             child: AppCard(
@@ -289,16 +326,26 @@ class OrderDetailPage extends StatelessWidget {
           ),
         ],
       ),
-      bottomBar: (canManage && (_canMove || _canEditPayment))
+      bottomBar: (_canCancel || (canManage && (_canMove || _canEditPayment)))
           ? BottomActionBar(
               child: Row(
                 spacing: AppSpacing.md,
                 children: [
-                  if (_canMove)
+                  // Отмена — вторичной кнопкой и первой слева: действие
+                  // необратимое, и акцентировать его нельзя, но и прятать в
+                  // меню тоже — водитель уже у двери, а заказ снят.
+                  if (_canCancel)
+                    Expanded(
+                      child: AppButton(
+                        label: l10n.commonCancel,
+                        variant: AppButtonVariant.secondary,
+                        onPressed: () => _cancel(context),
+                      ),
+                    ),
+                  if (canManage && _canMove)
                     Expanded(
                       child: AppButton(
                         label: l10n.orderActionMove,
-                        variant: AppButtonVariant.secondary,
                         onPressed: () => _open(
                           context,
                           MoveOrderPage(order: order),
@@ -306,7 +353,7 @@ class OrderDetailPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (_canEditPayment)
+                  if (canManage && _canEditPayment)
                     Expanded(
                       child: AppButton(
                         label: l10n.orderActionPayment,
@@ -420,22 +467,34 @@ class _PaymentRow extends StatelessWidget {
         children: [
           Row(
             spacing: AppSpacing.sm,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                DateFormat('dd.MM.yyyy HH:mm').format(payment.createdAt),
-                style: AppTypography.secondary.copyWith(color: t.text2),
+              // Wrap, а не Row+Spacer: дата вместе с двумя бейджами не
+              // помещается в одну строку на телефонной ширине — раньше это
+              // вылезало за карточку, а не переносилось.
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      DateFormat('dd.MM.yyyy HH:mm').format(payment.createdAt),
+                      style: AppTypography.secondary.copyWith(color: t.text2),
+                    ),
+                    if (payment.method case final PaymentMethod method)
+                      StatusBadge(
+                        text: method.label(l10n),
+                        tone: StatusTone.neutral,
+                      ),
+                    if (payment.isRefund)
+                      StatusBadge(
+                        text: l10n.orderPaymentRefund,
+                        tone: StatusTone.warn,
+                      ),
+                  ],
+                ),
               ),
-              if (payment.method case final PaymentMethod method)
-                StatusBadge(
-                  text: method.label(l10n),
-                  tone: StatusTone.neutral,
-                ),
-              if (payment.isRefund)
-                StatusBadge(
-                  text: l10n.orderPaymentRefund,
-                  tone: StatusTone.warn,
-                ),
-              const Spacer(),
               Text(
                 MoneyFormatter.sum(l10n, payment.amount),
                 style: AppTypography.bodyStrong.copyWith(
@@ -448,6 +507,47 @@ class _PaymentRow extends StatelessWidget {
                 style: AppTypography.secondary.copyWith(color: t.text2),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),
+          // Фото прикладывает водитель при оплате картой (см.
+          // `PaymentMethod.needsPhoto`); у наличных и долга его не бывает.
+          if (payment.photoUrl case final String photo)
+            NetworkPhotoCard(label: l10n.stopPhotoLabel, url: photo),
+        ],
+      ),
+    );
+  }
+}
+
+/// Карточка отмены: когда и почему.
+///
+/// Причина может отсутствовать — отменить разрешено и молча. Тогда так и
+/// пишем, а не оставляем пустую строку: пустота читается как «данные не
+/// пришли», а не как «причины не было».
+class _CancellationCard extends StatelessWidget {
+  const _CancellationCard({required this.reason, required this.cancelledAt});
+
+  final String? reason;
+  final DateTime? cancelledAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.md,
+        children: [
+          if (cancelledAt case final DateTime at)
+            _TextRow(
+              label: l10n.orderCancelledAt,
+              value: DateFormat('dd.MM.yyyy HH:mm').format(at),
+            ),
+          Text(
+            reason ?? l10n.orderCancelReasonEmpty,
+            style: reason == null
+                ? AppTypography.secondary.copyWith(color: t.text2)
+                : AppTypography.body.copyWith(color: t.text),
+          ),
         ],
       ),
     );

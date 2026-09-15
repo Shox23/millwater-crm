@@ -38,10 +38,19 @@ abstract class DriverRepository {
   Future<Order?> getMyOrder(String id);
 
   /// Смена статуса доставки на точке.
+  ///
+  /// Только промежуточные статусы: завершение идёт через [completeDelivery],
+  /// отмена — через [cancelOrder], чтобы причина не терялась.
   Future<void> updateDeliveryStatus({
     required String stopId,
     required DeliveryStatus status,
   });
+
+  /// Отменяет свой заказ с причиной (`POST /driver/orders/{id}/cancel`).
+  ///
+  /// [reason] необязательна. Чужой заказ — 403, закрытый — 409
+  /// `ORDER_ALREADY_COMPLETED`.
+  Future<void> cancelOrder({required String orderId, String? reason});
 
   /// Завершение доставки.
   ///
@@ -49,6 +58,9 @@ abstract class DriverRepository {
   /// принимает: доставке нужны капсулы и остаток, вывозу — забранные кулеры
   /// и капсулы, опту — количество и **цена** пятилитровых и десятилитровых
   /// бутылей (цена договорная, её вводит водитель).
+  /// [returnedFullCapsules] — сколько **полных** капсул заказчик вернул
+  /// (`returned_full_bottles`); они уходят из его остатка и из суммы заказа,
+  /// и считает это сервер — клиент только сообщает число.
   /// [bottleBalance] — сколько капсул остаётся у заказчика после доставки.
   /// В OpenAPI поле помечено необязательным, но без него сервер отвечает 500,
   /// а полученным значением он **перезаписывает** остаток заказчика.
@@ -68,6 +80,7 @@ abstract class DriverRepository {
     required PaymentMethod method,
     int capsules = 0,
     int returnedCapsules = 0,
+    int returnedFullCapsules = 0,
     int damagedCapsules = 0,
     int? bottleBalance,
     int bulk5lCount = 0,
