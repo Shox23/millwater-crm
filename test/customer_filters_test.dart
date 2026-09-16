@@ -32,9 +32,10 @@ class _RecordingRepository extends MockCrmRepository {
 
 void main() {
   group('Чипы отбора', () {
-    test('«Все» не отправляет ни одного фильтра', () {
+    test('«Все» — это все активные', () {
       expect(CustomerFilter.all.hasDebt, isNull);
-      expect(CustomerFilter.all.isActive, isNull);
+      // Отключённых в общем списке нет: страница про тех, с кем работают.
+      expect(CustomerFilter.all.isActive, isTrue);
       expect(CustomerFilter.all.filtersCoolerLocally, isFalse);
     });
 
@@ -46,10 +47,11 @@ void main() {
       // серверных параметров он не задаёт вовсе.
       expect(CustomerFilter.withCooler.filtersCoolerLocally, isTrue);
       expect(CustomerFilter.withCooler.hasDebt, isNull);
-      expect(CustomerFilter.withCooler.isActive, isNull);
+      expect(CustomerFilter.withCooler.isActive, isTrue);
+      expect(CustomerFilter.withDebt.isActive, isTrue);
 
-      // Единственный, кто спрашивает про `false`: пустое значение сервер
-      // понял бы как «активные».
+      // Единственный, кто спрашивает про `false`, — и единственный путь к
+      // отключённому заказчику, чтобы включить его обратно.
       expect(CustomerFilter.inactive.isActive, isFalse);
       expect(CustomerFilter.inactive.hasDebt, isNull);
     });
@@ -76,6 +78,8 @@ void main() {
       bloc.add(const CustomersRequested());
       await loaded();
       expect(repo.calls.last.hasDebt, isNull);
+      // Без единого чипа список всё равно просит только активных.
+      expect(repo.calls.last.isActive, isTrue);
 
       bloc.add(const CustomersFilterChanged(CustomerFilter.withDebt));
       await loaded();
@@ -117,9 +121,9 @@ void main() {
 
       // Параметра `has_cooler` у сервера больше нет, а неизвестный
       // query-параметр он молча игнорирует — отправлять его значило бы
-      // показывать всех подряд под видом отбора.
+      // показывать всех подряд под видом отбора. Активность — как у всех.
       expect(repo.calls.last.hasDebt, isNull);
-      expect(repo.calls.last.isActive, isNull);
+      expect(repo.calls.last.isActive, isTrue);
       expect(bloc.state.customers.every((c) => c.hasCooler), isTrue);
       // Счётчик в шапке считает найденное, а не всю базу: серверный `total`
       // про кулеры ничего не знает.
@@ -139,6 +143,28 @@ void main() {
   });
 
   group('Мок отбирает так же, как сервер', () {
+    test('отключённый заказчик виден только под «Неактивные»', () async {
+      final repo = _RecordingRepository();
+      final off = repo.store.customers.first.copyWith(isActive: false);
+      repo.store.customers[0] = off;
+      final bloc = CustomersBloc(repo);
+      addTearDown(bloc.close);
+
+      Future<void> loaded() async {
+        await bloc.stream
+            .firstWhere((s) => s.status == CustomersStatus.loading);
+        await bloc.stream.firstWhere((s) => s.status == CustomersStatus.ready);
+      }
+
+      bloc.add(const CustomersRequested());
+      await loaded();
+      expect(bloc.state.customers.map((c) => c.id), isNot(contains(off.id)));
+
+      bloc.add(const CustomersFilterChanged(CustomerFilter.inactive));
+      await loaded();
+      expect(bloc.state.customers.map((c) => c.id), [off.id]);
+    });
+
     test('«Неактивные» отсекают по своему полю', () async {
       final repo = MockCrmRepository();
       final all = await repo.getCustomers();
