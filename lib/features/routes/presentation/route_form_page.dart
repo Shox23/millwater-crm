@@ -10,6 +10,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/forms/submit_state.dart';
+import '../../../core/utils/day.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
@@ -150,11 +151,20 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
         .toList();
   }
 
+  /// Дата нового маршрута — завтра: маршруты планируют накануне, и
+  /// «сегодня» по умолчанию заставляло каждый раз лезть в календарь.
+  /// Через день месяца, а не `add(Duration(days: 1))`, — так дата остаётся
+  /// календарной, без часов.
+  static DateTime _tomorrow() {
+    final today = dayOnly(DateTime.now());
+    return DateTime(today.year, today.month, today.day + 1);
+  }
+
   @override
   void initState() {
     super.initState();
     final route = widget.route;
-    _date = route?.date ?? DateTime.now();
+    _date = route?.date ?? _tomorrow();
     _driverId = route?.driverId;
     _customerIds.addAll(_initialCustomerIds);
     _load();

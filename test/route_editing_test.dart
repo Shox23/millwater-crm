@@ -9,6 +9,7 @@ import 'package:crm_millwater/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 /// Записывает, какие операции правки и в каком порядке дошли до репозитория.
 class _RecordingRepository extends MockCrmRepository {
@@ -298,6 +299,42 @@ void main() {
 
       final updated = current(repo, route.id);
       expect(updated.stops.any((s) => s.customerId == existing.id), isTrue);
+    });
+  });
+
+  group('Новый маршрут', () {
+    Future<void> pumpNewForm(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1290, 2796);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        RepositoryProvider<CrmRepository>.value(
+          value: MockCrmRepository(),
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocales.supported,
+            home: const RouteFormPage(),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    testWidgets('по умолчанию стоит завтрашний день', (tester) async {
+      await pumpNewForm(tester);
+
+      // Маршруты планируют накануне: «сегодня» заставляло каждый раз лезть
+      // в календарь.
+      final now = DateTime.now();
+      final tomorrow = DateTime(now.year, now.month, now.day + 1);
+      expect(find.text(DateFormat('dd.MM.yyyy').format(tomorrow)),
+          findsOneWidget);
+      expect(find.text(DateFormat('dd.MM.yyyy').format(now)), findsNothing);
     });
   });
 }

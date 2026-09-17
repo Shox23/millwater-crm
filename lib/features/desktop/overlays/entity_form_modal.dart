@@ -395,6 +395,16 @@ class _CustomerFormModalState extends State<CustomerFormModal>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: AppSpacing.lg,
           children: [
+            // Адрес первым, как и на мобильной форме: заказчика заводят с
+            // точки доставки. Отдельной строкой: в него влезает «район,
+            // улица, дом», и в половине ширины он обрезался бы на первом же
+            // слове.
+            LabeledTextField(
+              label: l10n.customerFormAddress,
+              hint: l10n.customerFormAddressHint,
+              controller: _address,
+              validator: _v.notEmpty(l10n.customerFormAddressEmpty),
+            ),
             LabeledTextField(
               label: l10n.customerFormName,
               hint: l10n.customerFormNameHint,
@@ -410,14 +420,6 @@ class _CustomerFormModalState extends State<CustomerFormModal>
               keyboardType: TextInputType.phone,
               inputFormatters: [UzPhoneInputFormatter()],
               validator: _v.phone,
-            ),
-            // Адрес отдельной строкой: в него влезает «район, улица, дом»,
-            // и в половине ширины он обрезался бы на первом же слове.
-            LabeledTextField(
-              label: l10n.customerFormAddress,
-              hint: l10n.customerFormAddressHint,
-              controller: _address,
-              validator: _v.notEmpty(l10n.customerFormAddressEmpty),
             ),
             // «Тип заказчика» из макета: в API его нет, зато есть кулер —
             // именно он и определяет, что водителю делать на точке.

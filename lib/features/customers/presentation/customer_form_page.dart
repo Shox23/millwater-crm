@@ -280,10 +280,13 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   /// Поля и их текущие ошибки — один источник и для кнопки, и для перехода
   /// к первой ошибке. Разъедься эти два списка, кнопка разрешала бы
   /// отправку формы, которую `validate()` тут же отклонит.
+  ///
+  /// Порядок — как на экране, адрес первым: иначе «первая ошибка» оказалась
+  /// бы не верхней.
   List<(FocusNode, String?)> get _checks => [
+        (_addressFocus, _addressRule(_address.text)),
         (_nameFocus, _nameRule(_name.text)),
         (_phoneFocus, _v.phone(_phone.text)),
-        (_addressFocus, _addressRule(_address.text)),
         (_commentFocus, _commentRule(_comment.text)),
         (_balanceFocus, _balanceRule(_balance.text)),
         (_priceFocus, _priceRule(_price.text)),
@@ -405,6 +408,20 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: AppSpacing.lg,
             children: [
+              // Адрес первым: заказчика заводят с точки доставки, название
+              // узнают уже на месте. Вместе с полем наверх уехали автофокус
+              // и первый шаг цепочки «Далее» — курсор идёт сверху вниз.
+              LabeledTextField(
+                label: context.l10n.customerFormAddress,
+                hint: context.l10n.customerFormAddressHint,
+                controller: _address,
+                focusNode: _addressFocus,
+                validator: _addressRule,
+                maxLength: 200,
+                autofocus: !widget.isEdit,
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) => _nameFocus.requestFocus(),
+              ),
               LabeledTextField(
                 label: context.l10n.customerFormName,
                 hint: context.l10n.customerFormNameHint,
@@ -412,7 +429,6 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 focusNode: _nameFocus,
                 validator: _nameRule,
                 maxLength: 120,
-                autofocus: !widget.isEdit,
                 textInputAction: TextInputAction.next,
                 onSubmitted: (_) => _phoneFocus.requestFocus(),
               ),
@@ -425,16 +441,6 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 keyboardType: TextInputType.phone,
                 inputFormatters: const [UzPhoneInputFormatter()],
                 autofillHints: const [AutofillHints.telephoneNumber],
-                textInputAction: TextInputAction.next,
-                onSubmitted: (_) => _addressFocus.requestFocus(),
-              ),
-              LabeledTextField(
-                label: context.l10n.customerFormAddress,
-                hint: context.l10n.customerFormAddressHint,
-                controller: _address,
-                focusNode: _addressFocus,
-                validator: _addressRule,
-                maxLength: 200,
                 textInputAction: TextInputAction.next,
                 onSubmitted: (_) => _commentFocus.requestFocus(),
               ),

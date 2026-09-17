@@ -559,7 +559,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
     }
 
-    /// Поля формы заказчика по порядку: имя, телефон, адрес, комментарий.
+    /// Поля формы заказчика по порядку: адрес, имя, телефон, комментарий.
     Finder customerField(int index) => find
         .descendant(
           of: find.byType(CustomerFormModal),
@@ -579,9 +579,9 @@ void main() {
       }
       expect(find.byType(CustomerFormModal), findsOneWidget);
 
-      await tester.enterText(customerField(0), 'Кафе «Тест»');
-      await tester.enterText(customerField(1), '+998 90 111 22 33');
-      await tester.enterText(customerField(2), 'Мирабад, 5');
+      await tester.enterText(customerField(0), 'Мирабад, 5');
+      await tester.enterText(customerField(1), 'Кафе «Тест»');
+      await tester.enterText(customerField(2), '+998 90 111 22 33');
       await tester.pump();
 
       // По умолчанию кулеров нет — добавляем один степпером. Переключатель
@@ -633,7 +633,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 150));
       }
 
-      await tester.enterText(customerField(0), 'Кафе «Новое имя»');
+      await tester.enterText(customerField(1), 'Кафе «Новое имя»');
       await tester.pump();
 
       // Водитель закрыл доставку, пока форма была открыта.
