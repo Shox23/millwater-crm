@@ -651,7 +651,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String stopBottleSell(int count) {
-    return 'Везём $count капсул';
+    return 'Ожидаемое кол-во капсул: $count';
   }
 
   @override
@@ -978,6 +978,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get customerFormAddressEmpty => 'Введите адрес доставки';
+
+  @override
+  String get customerFormPhoneSecondary => 'Дополнительный телефон';
 
   @override
   String get customerFormComment => 'Комментарий';
@@ -1520,6 +1523,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get desktopKpiPlannedStops => 'Точек в плане';
 
   @override
+  String get desktopExpectedWholeDay => 'Весь день';
+
+  @override
   String get desktopKpiPlannedDrivers => 'Водителей на день';
 
   @override
@@ -1826,7 +1832,8 @@ class AppLocalizationsRu extends AppLocalizations {
       'Укажите цену за бутыль — сервер иначе не примет';
 
   @override
-  String get completionPickupHint => 'Вывоз без оплаты: оставьте сумму нулевой';
+  String get completionPickupHint =>
+      'Сумма за вывоз — по договорённости с заказчиком';
 
   @override
   String get completionZeroNeedsDebt =>
@@ -1961,6 +1968,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get orderUnpaid => 'Осталось получить';
+
+  @override
+  String get orderSectionExpected => 'ОЖИДАЕТСЯ';
+
+  @override
+  String get orderExpectedCapsules => 'Ожидаемое кол-во капсул';
+
+  @override
+  String get orderExpectedAmount => 'Ожидаемая сумма';
 
   @override
   String get orderSectionComposition => 'СОСТАВ';
@@ -2293,8 +2309,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeFormCustomPriceInvalid => 'Сумма должна быть больше нуля';
 
   @override
+  String get routeFormPickupPriceHint => 'Без оплаты';
+
+  @override
+  String get routeFormPickupPriceHelper =>
+      'Сум за вывоз кулера или капсул. Пусто — вывоз без оплаты';
+
+  @override
   String stopCustomPrice(String amount) {
-    return 'Цена заказа: $amount';
+    return 'Ожидаемая сумма: $amount';
   }
 
   @override
@@ -2306,6 +2329,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get completionCustomPriceCaption =>
       'Договорная сумма за весь заказ — капсулы, брак и возврат её не меняют';
+
+  @override
+  String get completionPickupCustomPriceCaption =>
+      'Договорная сумма за вывоз — кулеры, капсулы и брак её не меняют';
 
   @override
   String completionByCustomPrice(String amount) {

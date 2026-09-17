@@ -26,6 +26,7 @@ class Customer extends Equatable {
     required this.id,
     required this.name,
     required this.phone,
+    this.phoneSecondary,
     required this.address,
     this.comment,
     this.capsuleBalance = 0,
@@ -43,6 +44,12 @@ class Customer extends Equatable {
   /// Серверное поле `full_name` (название организации или ФИО).
   final String name;
   final String phone;
+
+  /// Дополнительный телефон (`phone_secondary`) — второй контакт, по
+  /// которому дозваниваются, когда основной молчит: бухгалтер офиса, муж
+  /// заказчицы. `null` — нет; пустой строкой сервер не отдаёт и не примет
+  /// (минимум 5 символов), на провод уходит либо E.164, либо `null`.
+  final String? phoneSecondary;
   final String address;
   final String? comment;
 
@@ -109,12 +116,14 @@ class Customer extends Equatable {
   /// стирал текст, видел «Изменения сохранены», а на сервер уходил прежний.
   /// У [customWaterPrice] ровно та же история: `null` значит «вернуть на
   /// общий прайс», и потерять этот вход нельзя — заказчик остался бы на
-  /// старой индивидуальной цене.
+  /// старой индивидуальной цене. И у [phoneSecondary]: `null` — «второго
+  /// телефона больше нет».
   static const Object _unchanged = Object();
 
   Customer copyWith({
     String? name,
     String? phone,
+    Object? phoneSecondary = _unchanged,
     String? address,
     Object? comment = _unchanged,
     int? capsuleBalance,
@@ -129,6 +138,9 @@ class Customer extends Equatable {
       id: id,
       name: name ?? this.name,
       phone: phone ?? this.phone,
+      phoneSecondary: identical(phoneSecondary, _unchanged)
+          ? this.phoneSecondary
+          : phoneSecondary as String?,
       address: address ?? this.address,
       comment:
           identical(comment, _unchanged) ? this.comment : comment as String?,
@@ -155,6 +167,7 @@ class Customer extends Equatable {
         id: requireString(json['id'], 'id'),
         name: stringOr(json['full_name']),
         phone: stringOr(json['phone']),
+        phoneSecondary: optionalString(json['phone_secondary']),
         address: stringOr(json['address']),
         comment: optionalString(json['comment']),
         capsuleBalance: intOr(json['bottle_balance']),
@@ -200,6 +213,9 @@ class Customer extends Equatable {
   }) => {
         'full_name': name,
         'phone': phone,
+        // Ключ уходит всегда: `null` — «стереть второй телефон», а сервер
+        // непереданное поле оставляет как было.
+        'phone_secondary': phoneSecondary,
         'address': address,
         'comment': comment,
         'is_active': isActive,
@@ -228,6 +244,7 @@ class Customer extends Equatable {
         id,
         name,
         phone,
+        phoneSecondary,
         address,
         comment,
         capsuleBalance,

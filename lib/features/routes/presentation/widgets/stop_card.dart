@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../data/models/enums.dart';
 import '../../../../data/models/route_models.dart';
+import '../../../orders/presentation/widgets/order_expectations.dart';
 import 'route_card.dart';
 
 /// Карточка точки маршрута — общая для админской и водительской карточек.
@@ -111,32 +112,17 @@ class StopCard extends StatelessWidget {
               ),
             ],
           ),
-          // Задание к доставке: сколько капсул везти. Показываем, пока точка
-          // не закрыта, — после закрытия важнее факт, а не план.
-          if (stop.status.isOpen && (stop.bottleSellCount ?? 0) > 0)
-            Row(
-              spacing: 4,
-              children: [
-                Icon(Icons.water_drop_outlined, size: 16, color: t.primary),
-                Text(
-                  context.l10n.stopBottleSell(stop.bottleSellCount!),
-                  style: AppTypography.secondary.copyWith(color: t.primary),
-                ),
-              ],
-            ),
-          // Договорная сумма — рядом с заданием, пока точка открыта: после
-          // закрытия она уже в итоге внизу.
-          if (stop.status.isOpen && stop.customPrice != null)
-            Row(
-              spacing: 4,
-              children: [
-                Icon(Icons.sell_outlined, size: 16, color: t.primary),
-                Text(
-                  context.l10n.stopCustomPrice(
-                      MoneyFormatter.sum(context.l10n, stop.customPrice!)),
-                  style: AppTypography.secondary.copyWith(color: t.primary),
-                ),
-              ],
+          // Задание к точке: сколько капсул везти и договорная сумма.
+          // Показываем, пока точка не закрыта, — после закрытия важнее
+          // факт, а не план: он уже в итоге внизу.
+          if (stop.status.isOpen &&
+              OrderExpectations.hasAny(
+                capsules: stop.bottleSellCount,
+                amount: stop.customPrice,
+              ))
+            OrderExpectations(
+              capsules: stop.bottleSellCount,
+              amount: stop.customPrice,
             ),
           // Причина отмены — прямо в списке: у водителя это напоминание,
           // почему сюда не едем, у админа — ответ без звонка.

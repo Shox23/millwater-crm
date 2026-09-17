@@ -108,9 +108,11 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// Так закрываются частичная оплата и долг: цифра остаётся его.
   bool _amountLocked = false;
 
-  /// Способ оплаты. У вывоза по умолчанию «в долг»: денег за него не берут,
-  /// а нулевую сумму сервер принимает только с этим способом — при наличных
-  /// он отвечает 422 «payment_amount must be greater than 0».
+  /// Способ оплаты. У вывоза по умолчанию «в долг»: денег за него обычно не
+  /// берут, а нулевую сумму сервер принимает только с этим способом — при
+  /// наличных он отвечает 422 «payment_amount must be greater than 0». Так
+  /// и при договорной сумме: она в долг уйдёт заказчику, а водитель, приняв
+  /// деньги, сам переключит способ — и сумма подставится.
   late PaymentMethod _method = widget.stop.purpose == OrderPurpose.pickup
       ? PaymentMethod.debt
       : PaymentMethod.cash;
@@ -138,7 +140,11 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     _bulk5Price = TextEditingController();
     _bulk10Price = TextEditingController();
     // Ранее введённая сумма важнее расчёта: значит, доставку уже проводили.
-    final amount = widget.stop.paymentAmount ?? _calculatedAmount;
+    // В долг стартуем с нуля даже при договорной сумме: сервер с этим
+    // способом принимает только ноль, а сумма подставится при переходе на
+    // наличные (см. [_onMethodChanged]).
+    final amount =
+        widget.stop.paymentAmount ?? (_isDebt ? 0 : _calculatedAmount);
     _amountLocked = widget.stop.paymentAmount != null;
     _amountController = TextEditingController(text: '$amount');
     _loadPrice();
@@ -185,11 +191,13 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   /// возвращённые с водой по той же цене — ниже нуля не опускается, деньги
   /// водитель не выдаёт, остаток сервер запишет заказчику сам. Это ориентир:
   /// итог по возврату считает сервер, а водитель может переписать сумму.
-  /// Вывоз денег не приносит. Опт считается по договорным ценам, которые
-  /// водитель вводит сам.
+  /// Вывоз денег не приносит, если админ не назначил ему сумму. Опт
+  /// считается по договорным ценам, которые водитель вводит сам.
   int get _calculatedAmount => switch (_purpose) {
         // Договорная сумма перекрывает формулу целиком — как на сервере.
-        OrderPurpose.delivery19l when _customPrice != null => _customPrice!,
+        OrderPurpose.delivery19l || OrderPurpose.pickup
+            when _customPrice != null =>
+          _customPrice!,
         OrderPurpose.delivery19l => _atLeastZero(
             (_capsules - _returnedFull) * _capsulePrice + _damaged * _damagedFine),
         OrderPurpose.pickup => 0,
@@ -389,6 +397,31 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     if (completed && mounted) Navigator.of(context).pop(true);
   }
 
+  /// Договорная сумма от админа — только показ: водитель должен видеть, что
+  /// считать здесь нечего. [caption] у каждой цели свой: что именно сумму
+  /// не двигает.
+  Widget _customPriceCard(BuildContext context, int customPrice,
+          {required String caption}) =>
+      LabeledCard(
+        label: context.l10n.completionCustomPrice,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 2,
+          children: [
+            Text(
+              MoneyFormatter.sum(context.l10n, customPrice),
+              style:
+                  AppTypography.statNumber.copyWith(color: context.tokens.text),
+            ),
+            Text(
+              caption,
+              style:
+                  AppTypography.secondary.copyWith(color: context.tokens.text2),
+            ),
+          ],
+        ),
+      );
+
   /// Поля, которые спрашиваются под конкретную цель заказа.
   ///
   /// Три лика одного экрана: доставке нужны капсулы, возврат, брак и остаток
@@ -405,25 +438,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             // Договорная сумма — тоже от админа и тоже только показ: водитель
             // должен видеть, что считать по прайсу здесь не надо.
             if (_customPrice case final int customPrice)
-              LabeledCard(
-                label: context.l10n.completionCustomPrice,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 2,
-                  children: [
-                    Text(
-                      MoneyFormatter.sum(context.l10n, customPrice),
-                      style: AppTypography.statNumber
-                          .copyWith(color: context.tokens.text),
-                    ),
-                    Text(
-                      context.l10n.completionCustomPriceCaption,
-                      style: AppTypography.secondary
-                          .copyWith(color: context.tokens.text2),
-                    ),
-                  ],
-                ),
-              ),
+              _customPriceCard(context, customPrice,
+                  caption: context.l10n.completionCustomPriceCaption),
             LabeledCard(
               label: context.l10n.completionCapsules,
               child: QuantityStepper(
@@ -484,6 +500,12 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             ),
           ],
         OrderPurpose.pickup => [
+            // У вывоза своей цены нет, и сумма от админа — единственный
+            // источник денег. Показ, как у доставки: в поле оплаты она
+            // встанет сама, когда водитель уйдёт с «в долг».
+            if (_customPrice case final int customPrice)
+              _customPriceCard(context, customPrice,
+                  caption: context.l10n.completionPickupCustomPriceCaption),
             LabeledCard(
               label: context.l10n.completionPickedCoolers,
               child: QuantityStepper(
@@ -655,18 +677,22 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                     context.l10n.completionDebtHint,
                     style: AppTypography.secondary.copyWith(color: t.text2),
                   )
-                else if (_purpose == OrderPurpose.pickup)
-                  Text(context.l10n.completionPickupHint,
-                      style: AppTypography.secondary.copyWith(color: t.text2))
                 else if (_customPrice case final int customPrice)
                   // Подпись про договорную сумму вместо формулы по прайсу:
-                  // капсулы здесь деньги не двигают.
+                  // счётчики здесь деньги не двигают. У вывоза — то же
+                  // самое: сумма от админа, а не ноль.
                   _CustomPriceHint(
                     amount: customPrice,
                     onRestore: _amount == _calculatedAmount
                         ? null
                         : _restoreCalculatedAmount,
                   )
+                else if (_purpose == OrderPurpose.pickup)
+                  // Сюда попадают только с суммой больше нуля не в долг:
+                  // водитель взял деньги за вывоз, о котором админ цены не
+                  // задавал, — по договорённости на месте.
+                  Text(context.l10n.completionPickupHint,
+                      style: AppTypography.secondary.copyWith(color: t.text2))
                 else if (_purpose == OrderPurpose.delivery19l)
                   _AmountHint(
                     capsules: _capsules,

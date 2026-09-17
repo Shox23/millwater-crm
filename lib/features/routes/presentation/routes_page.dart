@@ -263,6 +263,7 @@ class _RoutesSliver extends StatelessWidget {
           final route = items[i];
           return RouteCard(
             route: route,
+            expectations: state.expectations[route.id],
             onTap: () async {
               await Navigator.of(context).push<void>(
                 OverlayPageRoute<void>(

@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../data/models/enums.dart';
 import '../../../../data/models/order.dart';
+import 'order_expectations.dart';
 
 /// Карточка заказа в списке: номер и дата, заказчик, цель, статус, деньги.
 class OrderCard extends StatelessWidget {
@@ -68,6 +69,17 @@ class OrderCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          // Задание к незакрытому заказу — как на карточке точки маршрута:
+          // сколько везти и за сколько. У закрытого его место занимает факт.
+          if (order.status.isOpen &&
+              OrderExpectations.hasAny(
+                capsules: order.bottleSellCount,
+                amount: order.customPrice,
+              ))
+            OrderExpectations(
+              capsules: order.bottleSellCount,
+              amount: order.customPrice,
             ),
           Wrap(
             spacing: AppSpacing.sm,

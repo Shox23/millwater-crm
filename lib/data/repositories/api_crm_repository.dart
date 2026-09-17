@@ -301,6 +301,7 @@ class ApiCrmRepository implements CrmRepository {
   Future<Customer> addCustomer({
     required String name,
     required String phone,
+    String? phoneSecondary,
     required String address,
     String? comment,
     int coolerCount = 0,
@@ -316,6 +317,7 @@ class ApiCrmRepository implements CrmRepository {
       data: {
         'full_name': name,
         'phone': phone,
+        'phone_secondary': ?phoneSecondary,
         'address': address,
         'comment': ?comment,
         'cooler_count': coolerCount,

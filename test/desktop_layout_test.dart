@@ -58,6 +58,7 @@ class _RecordingRepository extends MockCrmRepository {
   Future<Customer> addCustomer({
     required String name,
     required String phone,
+    String? phoneSecondary,
     required String address,
     String? comment,
     int coolerCount = 0,
@@ -72,6 +73,7 @@ class _RecordingRepository extends MockCrmRepository {
     return super.addCustomer(
       name: name,
       phone: phone,
+      phoneSecondary: phoneSecondary,
       address: address,
       comment: comment,
       coolerCount: coolerCount,

@@ -11,6 +11,7 @@ import '../../../../core/widgets/initials_avatar.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../data/models/enums.dart';
 import '../../../../data/models/route_models.dart';
+import '../../../orders/presentation/widgets/order_expectations.dart';
 
 /// Тон пилюли по статусу доставки (остановки).
 StatusTone deliveryTone(DeliveryStatus status) => switch (status) {
@@ -54,10 +55,20 @@ Color routeColor(BuildContext context, RouteStatus status) {
 
 /// Карточка маршрута в списке: дата, водитель, прогресс по точкам.
 class RouteCard extends StatelessWidget {
-  const RouteCard({super.key, required this.route, this.onTap});
+  const RouteCard({
+    super.key,
+    required this.route,
+    this.onTap,
+    this.expectations,
+  });
 
   final RouteListItem route;
   final VoidCallback? onTap;
+
+  /// Что ещё ожидается от маршрута — капсулы и деньги по открытым точкам.
+  /// `null` — не считали (детали ещё грузятся или экран их не запрашивал);
+  /// строки тогда нет, как и при пустом ожидании.
+  final RouteExpectations? expectations;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +146,10 @@ class RouteCard extends StatelessWidget {
               ),
             ],
           ),
+          // Сколько ещё везти и привезти — теми же строками, что на
+          // карточках заказов: админ сверяет план маршрута, не открывая его.
+          if (expectations case final e? when !e.isEmpty)
+            OrderExpectations(capsules: e.capsules, amount: e.amount),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.pill),
             child: LinearProgressIndicator(

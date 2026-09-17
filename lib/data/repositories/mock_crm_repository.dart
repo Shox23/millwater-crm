@@ -233,6 +233,7 @@ class MockCrmRepository implements CrmRepository {
   Future<Customer> addCustomer({
     required String name,
     required String phone,
+    String? phoneSecondary,
     required String address,
     String? comment,
     int coolerCount = 0,
@@ -258,6 +259,7 @@ class MockCrmRepository implements CrmRepository {
       id: store.nextId('c'),
       name: name,
       phone: phone,
+      phoneSecondary: phoneSecondary,
       address: address,
       comment: comment,
       coolerCount: coolerCount,
@@ -397,6 +399,9 @@ class MockCrmRepository implements CrmRepository {
         customerCoolerCount: c.coolerCount,
         bottleSellCount: order.bottleSellCount,
         customPrice: order.customPrice,
+        // Цена заказчика у открытого заказа — как её отдаёт сервер: своя
+        // или по прайсу. По ней считается, сколько маршрут должен привезти.
+        effectiveWaterPrice: c.customWaterPrice ?? _prices.first.capsulePrice,
       ));
     }
     final route = RouteDetail(
@@ -484,6 +489,8 @@ class MockCrmRepository implements CrmRepository {
           purpose: purpose,
           bottleSellCount: bottleSellCount,
           customPrice: customPrice,
+          effectiveWaterPrice:
+              customer.customWaterPrice ?? _prices.first.capsulePrice,
         ),
       ]);
     });

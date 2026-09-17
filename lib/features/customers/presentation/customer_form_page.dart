@@ -55,11 +55,13 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
 
   late final TextEditingController _name;
   late final TextEditingController _phone;
+  late final TextEditingController _phoneSecondary;
   late final TextEditingController _address;
   late final TextEditingController _comment;
 
   final _nameFocus = FocusNode();
   final _phoneFocus = FocusNode();
+  final _phoneSecondaryFocus = FocusNode();
   final _addressFocus = FocusNode();
   final _commentFocus = FocusNode();
   final _balanceFocus = FocusNode();
@@ -129,6 +131,11 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _phone = TextEditingController(
       text: customer == null ? UzPhone.prefix : UzPhone.format(customer.phone),
     );
+    // Без кода страны заранее: поле необязательное, и пустым оно должно
+    // выглядеть пустым — с подсказкой, а не с «+998 », которое просит номер.
+    _phoneSecondary = TextEditingController(
+      text: UzPhone.format(customer?.phoneSecondary ?? ''),
+    );
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
     _coolerCount = customer?.coolerCount ?? 0;
@@ -172,12 +179,14 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   void dispose() {
     _name.dispose();
     _phone.dispose();
+    _phoneSecondary.dispose();
     _address.dispose();
     _comment.dispose();
     _balance.dispose();
     _price.dispose();
     _nameFocus.dispose();
     _phoneFocus.dispose();
+    _phoneSecondaryFocus.dispose();
     _addressFocus.dispose();
     _commentFocus.dispose();
     _balanceFocus.dispose();
@@ -202,12 +211,21 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   String? get _commentOrNull =>
       _comment.text.trim().isEmpty ? null : _comment.text.trim();
 
+  /// Второй телефон в E.164; `null` — поле пустое. Пустую строку слать
+  /// нельзя: сервер требует от значения минимум пять символов.
+  String? get _phoneSecondaryOrNull {
+    final phone = UzPhone.normalize(_phoneSecondary.text);
+    return phone.isEmpty ? null : phone;
+  }
+
   /// Форму меняли — уход без сохранения нужно подтвердить.
   bool get _dirty {
     final customer = widget.customer;
     return _name.text.trim() != (customer?.name ?? '') ||
         UzPhone.normalize(_phone.text) !=
             UzPhone.normalize(customer?.phone ?? '') ||
+        UzPhone.normalize(_phoneSecondary.text) !=
+            UzPhone.normalize(customer?.phoneSecondary ?? '') ||
         _address.text.trim() != (customer?.address ?? '') ||
         _comment.text.trim() != (customer?.comment ?? '') ||
         _coolerCount != (customer?.coolerCount ?? 0) ||
@@ -287,6 +305,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
         (_addressFocus, _addressRule(_address.text)),
         (_nameFocus, _nameRule(_name.text)),
         (_phoneFocus, _v.phone(_phone.text)),
+        (_phoneSecondaryFocus, _v.phoneOptional(_phoneSecondary.text)),
         (_commentFocus, _commentRule(_comment.text)),
         (_balanceFocus, _balanceRule(_balance.text)),
         (_priceFocus, _priceRule(_price.text)),
@@ -333,6 +352,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
               widget.customer!.copyWith(
                 name: _name.text.trim(),
                 phone: phone,
+                phoneSecondary: _phoneSecondaryOrNull,
                 address: _address.text.trim(),
                 comment: _commentOrNull,
                 coolerCount: _coolerCount,
@@ -350,6 +370,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
           : repo.addCustomer(
               name: _name.text.trim(),
               phone: phone,
+              phoneSecondary: _phoneSecondaryOrNull,
               address: _address.text.trim(),
               comment: _commentOrNull,
               coolerCount: _coolerCount,
@@ -441,6 +462,20 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 keyboardType: TextInputType.phone,
                 inputFormatters: const [UzPhoneInputFormatter()],
                 autofillHints: const [AutofillHints.telephoneNumber],
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) => _phoneSecondaryFocus.requestFocus(),
+              ),
+              // Второй контакт — на случай, когда основной не отвечает.
+              // Необязательный, но начатый номер должен быть полным.
+              LabeledTextField(
+                label: context.l10n.customerFormPhoneSecondary,
+                hint: '+998 90 123 45 67',
+                helper: context.l10n.commonOptional,
+                controller: _phoneSecondary,
+                focusNode: _phoneSecondaryFocus,
+                validator: _v.phoneOptional,
+                keyboardType: TextInputType.phone,
+                inputFormatters: const [UzPhoneInputFormatter()],
                 textInputAction: TextInputAction.next,
                 onSubmitted: (_) => _commentFocus.requestFocus(),
               ),

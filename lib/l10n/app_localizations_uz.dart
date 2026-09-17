@@ -642,7 +642,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String stopBottleSell(int count) {
-    return '$count kapsula olib boramiz';
+    return 'Kutilayotgan kapsulalar soni: $count';
   }
 
   @override
@@ -967,6 +967,9 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get customerFormAddressEmpty => 'Yetkazib berish manzilini kiriting';
+
+  @override
+  String get customerFormPhoneSecondary => 'Qo‘shimcha telefon';
 
   @override
   String get customerFormComment => 'Izoh';
@@ -1502,6 +1505,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get desktopKpiPlannedStops => 'Rejadagi nuqtalar';
 
   @override
+  String get desktopExpectedWholeDay => 'Butun kun';
+
+  @override
   String get desktopKpiPlannedDrivers => 'Kunga haydovchilar';
 
   @override
@@ -1809,7 +1815,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get completionPickupHint =>
-      'Olib ketish to‘lovsiz: summani nol qoldiring';
+      'Olib ketish summasi — mijoz bilan kelishuv bo‘yicha';
 
   @override
   String get completionZeroNeedsDebt =>
@@ -1942,6 +1948,15 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get orderUnpaid => 'Olish qoldi';
+
+  @override
+  String get orderSectionExpected => 'KUTILMOQDA';
+
+  @override
+  String get orderExpectedCapsules => 'Kutilayotgan kapsulalar soni';
+
+  @override
+  String get orderExpectedAmount => 'Kutilayotgan summa';
 
   @override
   String get orderSectionComposition => 'TARKIBI';
@@ -2273,8 +2288,15 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeFormCustomPriceInvalid => 'Summa noldan katta bo‘lishi kerak';
 
   @override
+  String get routeFormPickupPriceHint => 'To‘lovsiz';
+
+  @override
+  String get routeFormPickupPriceHelper =>
+      'Kuler yoki kapsulalarni olib ketish uchun so‘m. Bo‘sh — olib ketish to‘lovsiz';
+
+  @override
   String stopCustomPrice(String amount) {
-    return 'Buyurtma narxi: $amount';
+    return 'Kutilayotgan summa: $amount';
   }
 
   @override
@@ -2286,6 +2308,10 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get completionCustomPriceCaption =>
       'Butun buyurtma uchun kelishilgan summa — kapsula, brak va qaytarish uni o‘zgartirmaydi';
+
+  @override
+  String get completionPickupCustomPriceCaption =>
+      'Olib ketish uchun kelishilgan summa — kulerlar, kapsulalar va brak uni o‘zgartirmaydi';
 
   @override
   String completionByCustomPrice(String amount) {

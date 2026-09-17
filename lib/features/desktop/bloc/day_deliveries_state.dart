@@ -179,6 +179,23 @@ class DayDeliveriesState extends Equatable {
   int get capsules =>
       rows.fold<int>(0, (sum, r) => sum + (r.stop.deliveredCapsules ?? 0));
 
+  /// Что ещё ожидается от каждого маршрута дня — только те, где есть что
+  /// ждать: у объеханного маршрута ожидание пустое, и плашка ему не нужна.
+  ///
+  /// Точки без цены заказчика считаются по прайсу — как и долг за день.
+  List<(RouteDetail, RouteExpectations)> get expectedByRoute => [
+        for (final route in _routes)
+          if (route.expected(fallbackPrice: capsulePrice) case final e
+              when !e.isEmpty)
+            (route, e),
+      ];
+
+  /// Ожидание за весь день — сумма по маршрутам.
+  RouteExpectations get expected => expectedByRoute.fold(
+        RouteExpectations.none,
+        (sum, entry) => sum + entry.$2,
+      );
+
   /// Сколько водителей задействовано в этом дне.
   int get driversInvolved =>
       rows.map((r) => r.route.driverId).whereType<String>().toSet().length;

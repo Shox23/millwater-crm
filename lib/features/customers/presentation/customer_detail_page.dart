@@ -170,6 +170,15 @@ class CustomerDetailPage extends StatelessWidget {
               isDebt: false,
             ),
           AppCard(child: PhoneContactRow(phone: customer.phone)),
+          // Второй номер — отдельной строкой со звонком и копированием: по
+          // нему звонят, когда основной молчит, и набирать его руками незачем.
+          if (customer.phoneSecondary case final String phoneSecondary)
+            AppCard(
+              child: PhoneContactRow(
+                phone: phoneSecondary,
+                label: context.l10n.customerFormPhoneSecondary,
+              ),
+            ),
         ],
       ),
       bottomBar: BottomActionBar(

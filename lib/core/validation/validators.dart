@@ -37,6 +37,14 @@ class Validators {
     return null;
   }
 
+  /// Необязательный телефон: пустое поле — не ошибка, а начатый номер
+  /// должен быть набран до конца. Один лишь префикс «+998 » тоже считается
+  /// пустым — маска оставляет его после стирания цифр.
+  String? phoneOptional(String? value) {
+    if (UzPhone.subscriberDigits(value ?? '').isEmpty) return null;
+    return phone(value);
+  }
+
   /// Электронная почта. Пустое значение допустимо — поле необязательное.
   String? email(String? value) {
     final v = value?.trim() ?? '';

@@ -84,7 +84,10 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
     return text.isEmpty || (_customPriceOf(customerId) ?? 0) > 0;
   }
 
-  bool get _customPricesValid => _customerIds.every(_customPriceValid);
+  /// Скрытое поле не держит форму: сумму, набранную у доставки, при смене
+  /// цели на опт не видно — и не отправят, значит и проверять её незачем.
+  bool get _customPricesValid => _customerIds
+      .every((id) => !_allowsCustomPrice(id) || _customPriceValid(id));
 
   /// Суммы точек, с которыми маршрут открыли, — менять их нечем, как и
   /// задание (см. [_initialBottleCounts]).
@@ -108,10 +111,19 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   bool _isNewStop(String customerId) =>
       !_initialCustomerIds.contains(customerId);
 
+  OrderPurpose _purposeOf(String customerId) =>
+      _stopPurposes[customerId] ?? OrderPurpose.delivery19l;
+
   /// Заданию место только у доставки: вывозу и опту везти нечего.
   bool _needsBottleCount(String customerId) =>
-      (_stopPurposes[customerId] ?? OrderPurpose.delivery19l) ==
-      OrderPurpose.delivery19l;
+      _purposeOf(customerId) == OrderPurpose.delivery19l;
+
+  /// Договорная сумма — у доставки и у вывоза. У доставки она заменяет
+  /// расчёт по прайсу, у вывоза — единственный источник денег: своей цены
+  /// у него нет, и без неё вывоз бесплатный. Опту сумма не нужна: там цена
+  /// договорная на бутыль и вводится водителем на месте.
+  bool _allowsCustomPrice(String customerId) =>
+      _purposeOf(customerId) != OrderPurpose.bulkWater;
 
   int _bottleCountOf(String customerId) => _bottleCounts[customerId] ?? 0;
 
@@ -282,9 +294,10 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
               // смысла не имеет, и сервер получит поле пустым.
               bottleSellCount:
                   _needsBottleCount(id) ? _bottleCountOf(id) : null,
-              // Договорная сумма — тоже только у доставки: у вывоза денег
-              // нет, у опта цена договорная на бутыль и вводится водителем.
-              customPrice: _needsBottleCount(id) ? _customPriceOf(id) : null,
+              // Договорная сумма — у доставки и вывоза; у опта цена
+              // договорная на бутыль и вводится водителем.
+              customPrice:
+                  _allowsCustomPrice(id) ? _customPriceOf(id) : null,
             ),
         ],
         idempotencyKey: _idempotencyKey,
@@ -331,7 +344,7 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
           bottleSellCount: _needsBottleCount(customerId)
               ? _bottleCountOf(customerId)
               : null,
-          customPrice: _needsBottleCount(customerId)
+          customPrice: _allowsCustomPrice(customerId)
               ? _customPriceOf(customerId)
               : null,
         );
@@ -531,11 +544,11 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                           onChanged: (value) => setState(
                                               () => _bottleCounts[c.id] = value),
                                         ),
-                                      // Договорная сумма за весь заказ — по
-                                      // тому же правилу: только у доставки и
-                                      // только у новой точки.
-                                      if (_needsBottleCount(c.id))
+                                      // Договорная сумма — у доставки и
+                                      // вывоза, и тоже только у новой точки.
+                                      if (_allowsCustomPrice(c.id))
                                         _CustomPriceField(
+                                          purpose: _purposeOf(c.id),
                                           controller:
                                               _customPriceController(c.id),
                                           editable: _isNewStop(c.id),
@@ -784,12 +797,14 @@ class _BottleSellField extends StatelessWidget {
 /// Не цена капсулы: сервер при закрытии запишет её в стоимость заказа как
 /// есть, сколько бы капсул ни привезли. Пустое поле — считать по прайсу;
 /// так у подавляющего большинства точек, поэтому поле не обязательное и
-/// не мешает собрать маршрут.
+/// не мешает собрать маршрут. У вывоза прайса нет, и пустое поле значит
+/// «без оплаты» — подсказки говорят об этом по-разному.
 ///
 /// У уже добавленной точки — только число, как и у задания: изменить его
 /// сервер не умеет.
 class _CustomPriceField extends StatelessWidget {
   const _CustomPriceField({
+    required this.purpose,
     required this.controller,
     required this.editable,
     required this.savedValue,
@@ -797,6 +812,7 @@ class _CustomPriceField extends StatelessWidget {
     required this.onChanged,
   });
 
+  final OrderPurpose purpose;
   final TextEditingController controller;
   final bool editable;
 
@@ -840,8 +856,12 @@ class _CustomPriceField extends StatelessWidget {
         children: [
           LabeledTextField(
             label: l10n.routeFormCustomPrice,
-            hint: l10n.routeFormCustomPriceHint,
-            helper: l10n.routeFormCustomPriceHelper,
+            hint: purpose == OrderPurpose.pickup
+                ? l10n.routeFormPickupPriceHint
+                : l10n.routeFormCustomPriceHint,
+            helper: purpose == OrderPurpose.pickup
+                ? l10n.routeFormPickupPriceHelper
+                : l10n.routeFormCustomPriceHelper,
             helperMaxLines: 2,
             controller: controller,
             keyboardType: TextInputType.number,

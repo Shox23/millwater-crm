@@ -9,6 +9,7 @@ class RoutesState extends Equatable {
     this.routes = const [],
     this.filter = RouteFilter.all,
     this.collected = 0,
+    this.expectations = const {},
   });
 
   /// Выбранный день: за него запрошены и [routes], и [collected].
@@ -20,6 +21,14 @@ class RoutesState extends Equatable {
 
   /// Собрано за выбранный день (из сводного отчёта).
   final int collected;
+
+  /// Что ещё ожидается от каждого маршрута дня, по его идентификатору.
+  ///
+  /// Приходит вторым шагом, после списка: в списочном ответе точек нет, и
+  /// итоги складываются из деталей каждого маршрута. Маршрута может не быть
+  /// в карте — детали ещё грузятся или не загрузились; карточка тогда
+  /// обходится без строки ожиданий.
+  final Map<String, RouteExpectations> expectations;
 
   /// Список с учётом активного фильтра.
   List<RouteListItem> get visible {
@@ -42,6 +51,7 @@ class RoutesState extends Equatable {
     List<RouteListItem>? routes,
     RouteFilter? filter,
     int? collected,
+    Map<String, RouteExpectations>? expectations,
   }) {
     return RoutesState(
       date: date ?? this.date,
@@ -49,9 +59,11 @@ class RoutesState extends Equatable {
       routes: routes ?? this.routes,
       filter: filter ?? this.filter,
       collected: collected ?? this.collected,
+      expectations: expectations ?? this.expectations,
     );
   }
 
   @override
-  List<Object?> get props => [date, status, routes, filter, collected];
+  List<Object?> get props =>
+      [date, status, routes, filter, collected, expectations];
 }

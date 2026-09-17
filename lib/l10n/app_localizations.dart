@@ -1217,7 +1217,7 @@ abstract class AppLocalizations {
   /// No description provided for @stopBottleSell.
   ///
   /// In ru, this message translates to:
-  /// **'Везём {count} капсул'**
+  /// **'Ожидаемое кол-во капсул: {count}'**
   String stopBottleSell(int count);
 
   /// No description provided for @completionBottleSell.
@@ -1777,6 +1777,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Введите адрес доставки'**
   String get customerFormAddressEmpty;
+
+  /// No description provided for @customerFormPhoneSecondary.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дополнительный телефон'**
+  String get customerFormPhoneSecondary;
 
   /// No description provided for @customerFormComment.
   ///
@@ -2696,6 +2702,12 @@ abstract class AppLocalizations {
   /// **'Точек в плане'**
   String get desktopKpiPlannedStops;
 
+  /// No description provided for @desktopExpectedWholeDay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Весь день'**
+  String get desktopExpectedWholeDay;
+
   /// No description provided for @desktopKpiPlannedDrivers.
   ///
   /// In ru, this message translates to:
@@ -3239,7 +3251,7 @@ abstract class AppLocalizations {
   /// No description provided for @completionPickupHint.
   ///
   /// In ru, this message translates to:
-  /// **'Вывоз без оплаты: оставьте сумму нулевой'**
+  /// **'Сумма за вывоз — по договорённости с заказчиком'**
   String get completionPickupHint;
 
   /// No description provided for @completionZeroNeedsDebt.
@@ -3462,6 +3474,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Осталось получить'**
   String get orderUnpaid;
+
+  /// No description provided for @orderSectionExpected.
+  ///
+  /// In ru, this message translates to:
+  /// **'ОЖИДАЕТСЯ'**
+  String get orderSectionExpected;
+
+  /// No description provided for @orderExpectedCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ожидаемое кол-во капсул'**
+  String get orderExpectedCapsules;
+
+  /// No description provided for @orderExpectedAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ожидаемая сумма'**
+  String get orderExpectedAmount;
 
   /// No description provided for @orderSectionComposition.
   ///
@@ -4055,10 +4085,22 @@ abstract class AppLocalizations {
   /// **'Сумма должна быть больше нуля'**
   String get routeFormCustomPriceInvalid;
 
+  /// No description provided for @routeFormPickupPriceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без оплаты'**
+  String get routeFormPickupPriceHint;
+
+  /// No description provided for @routeFormPickupPriceHelper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сум за вывоз кулера или капсул. Пусто — вывоз без оплаты'**
+  String get routeFormPickupPriceHelper;
+
   /// No description provided for @stopCustomPrice.
   ///
   /// In ru, this message translates to:
-  /// **'Цена заказа: {amount}'**
+  /// **'Ожидаемая сумма: {amount}'**
   String stopCustomPrice(String amount);
 
   /// No description provided for @orderCustomPrice.
@@ -4078,6 +4120,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Договорная сумма за весь заказ — капсулы, брак и возврат её не меняют'**
   String get completionCustomPriceCaption;
+
+  /// No description provided for @completionPickupCustomPriceCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'Договорная сумма за вывоз — кулеры, капсулы и брак её не меняют'**
+  String get completionPickupCustomPriceCaption;
 
   /// No description provided for @completionByCustomPrice.
   ///

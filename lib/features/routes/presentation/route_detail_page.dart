@@ -30,6 +30,7 @@ import '../../../data/models/route_expense.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../../orders/presentation/order_detail_page.dart';
+import '../../orders/presentation/widgets/order_expectations.dart';
 import 'route_form_page.dart';
 import 'stop_detail_page.dart';
 import 'widgets/route_card.dart';
@@ -357,6 +358,10 @@ class _RouteBody extends StatelessWidget {
                   ),
                 ],
               ),
+              // Сколько ещё везти и привезти по открытым точкам — как на
+              // карточке маршрута в списке; точки здесь уже загружены.
+              if (route.expected() case final e when !e.isEmpty)
+                OrderExpectations(capsules: e.capsules, amount: e.amount),
             ],
           ),
         ),

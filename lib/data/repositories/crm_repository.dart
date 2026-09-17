@@ -97,10 +97,13 @@ abstract class CrmRepository {
   /// [lastOrderDate] — когда заказчик брал воду в последний раз: переносится
   /// из старой базы, чтобы новый в списке не выглядел ни новичком, ни
   /// замолчавшим. `null` — не известно, поле не отправляется.
+  /// [phoneSecondary] — дополнительный телефон в E.164; `null` — нет, поле
+  /// не отправляется.
   /// [idempotencyKey] — см. [addDriver].
   Future<Customer> addCustomer({
     required String name,
     required String phone,
+    String? phoneSecondary,
     required String address,
     String? comment,
     int coolerCount = 0,

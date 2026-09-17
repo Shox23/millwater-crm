@@ -296,7 +296,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Везём 5 капсул'), findsOneWidget);
+      expect(find.text('Ожидаемое кол-во капсул: 5'), findsOneWidget);
     });
 
     testWidgets('на экране завершения, над счётчиками', (tester) async {
@@ -358,7 +358,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.textContaining('Везём'), findsNothing);
+      expect(find.textContaining('Ожидаемое кол-во капсул'), findsNothing);
     });
   });
 }

@@ -201,6 +201,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _phone;
+  late final TextEditingController _phoneSecondary;
   late final TextEditingController _address;
   late final TextEditingController _comment;
   late int _coolerCount;
@@ -290,6 +291,10 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     _phone = TextEditingController(
       text: customer == null ? UzPhone.prefix : UzPhone.format(customer.phone),
     );
+    // Необязательное поле стартует пустым, без «+998 » — см. форму на телефоне.
+    _phoneSecondary = TextEditingController(
+      text: UzPhone.format(customer?.phoneSecondary ?? ''),
+    );
     _address = TextEditingController(text: customer?.address ?? '');
     _comment = TextEditingController(text: customer?.comment ?? '');
     _coolerCount = customer?.coolerCount ?? 0;
@@ -319,6 +324,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     _name.removeListener(_onChanged);
     _name.dispose();
     _phone.dispose();
+    _phoneSecondary.dispose();
     _address.dispose();
     _comment.dispose();
     _balance.dispose();
@@ -336,6 +342,10 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     final repo = context.read<CrmRepository>();
     final l10n = context.l10n;
     final phone = UzPhone.normalize(_phone.text);
+    // Пустое поле — `null`: пустую строку сервер отвергнет (минимум пять
+    // символов), а `null` в PATCH стирает второй телефон.
+    final secondary = UzPhone.normalize(_phoneSecondary.text);
+    final phoneSecondary = secondary.isEmpty ? null : secondary;
     final comment = _comment.text.trim();
 
     final ok = await submit(
@@ -345,6 +355,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
             widget.customer!.copyWith(
               name: _name.text.trim(),
               phone: phone,
+              phoneSecondary: phoneSecondary,
               address: _address.text.trim(),
               comment: comment.isEmpty ? null : comment,
               coolerCount: _coolerCount,
@@ -362,6 +373,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
           await repo.addCustomer(
             name: _name.text.trim(),
             phone: phone,
+            phoneSecondary: phoneSecondary,
             address: _address.text.trim(),
             comment: comment.isEmpty ? null : comment,
             coolerCount: _coolerCount,
@@ -420,6 +432,15 @@ class _CustomerFormModalState extends State<CustomerFormModal>
               keyboardType: TextInputType.phone,
               inputFormatters: [UzPhoneInputFormatter()],
               validator: _v.phone,
+            ),
+            LabeledTextField(
+              label: l10n.customerFormPhoneSecondary,
+              hint: '+998 90 123 45 67',
+              helper: l10n.commonOptional,
+              controller: _phoneSecondary,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [UzPhoneInputFormatter()],
+              validator: _v.phoneOptional,
             ),
             // «Тип заказчика» из макета: в API его нет, зато есть кулер —
             // именно он и определяет, что водителю делать на точке.

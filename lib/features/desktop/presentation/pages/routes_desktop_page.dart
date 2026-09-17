@@ -8,6 +8,7 @@ import '../../../../app/theme/app_tokens.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/initials_avatar.dart';
 import '../../../../data/models/enums.dart';
+import '../../../../data/models/route_models.dart';
 import '../../bloc/day_deliveries_bloc.dart';
 import '../../theme/desktop_typography.dart';
 import '../../widgets/desktop_badge.dart';
@@ -42,6 +43,10 @@ class RoutesDesktopPage extends StatelessWidget {
                 onSelected: (day) => bloc.add(DayDeliveriesDateChanged(day)),
               ),
               _Summary(state: state),
+              // Пока есть что ждать. Объеханный день блок не показывает:
+              // нули под заголовком «Ожидается» читались бы как «ничего не
+              // запланировано».
+              if (!state.expected.isEmpty) _Expected(state: state),
               _Filters(state: state, bloc: bloc),
               _Table(state: state, onRowTap: onRowTap),
             ],
@@ -79,10 +84,20 @@ class _Summary extends StatelessWidget {
                   ? l10n.routesCountPlural(state.routesCount)
                   : '${state.done} / ${state.total}',
               progress: state.progress,
-              footnotes: [
-                (l10n.desktopKpiCapsules, '${state.capsules}'),
-                (l10n.desktopKpiDebt, MoneyFormatter.amount(state.debt)),
-              ],
+              // На будущий день выданных капсул и долга нет и быть не
+              // может — вместо нулей внизу то, что известно из плана.
+              footnotes: future
+                  ? [
+                      (l10n.orderExpectedCapsules, '${state.expected.capsules}'),
+                      (
+                        l10n.orderExpectedAmount,
+                        MoneyFormatter.amount(state.expected.amount),
+                      ),
+                    ]
+                  : [
+                      (l10n.desktopKpiCapsules, '${state.capsules}'),
+                      (l10n.desktopKpiDebt, MoneyFormatter.amount(state.debt)),
+                    ],
             ),
           ),
           // На будущий день денег ещё нет и быть не может: вместо выручки
@@ -170,6 +185,178 @@ class _Summary extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Что ещё ожидается от дня: капсулы к доставке и деньги — по маршрутам.
+///
+/// Карточки маршрута на десктопе нет, таблица ниже плоская, из точек; эти
+/// плашки и есть «карточка маршрута» оператора: водитель, точки и то, что
+/// он должен привезти. При нескольких маршрутах впереди итог за день.
+class _Expected extends StatelessWidget {
+  const _Expected({required this.state});
+
+  final DayDeliveriesState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+    final byRoute = state.expectedByRoute;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.sm,
+      children: [
+        Text(l10n.orderSectionExpected,
+            style: DesktopTypography.kpiLabel.copyWith(color: t.text2)),
+        Wrap(
+          spacing: AppSpacing.md,
+          runSpacing: AppSpacing.md,
+          children: [
+            if (byRoute.length > 1)
+              _ExpectedCard(
+                leading: Container(
+                  width: 30,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: t.softOf(t.primary),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.today_outlined, size: 16, color: t.primary),
+                ),
+                title: l10n.desktopExpectedWholeDay,
+                subtitle: l10n.routesCountPlural(byRoute.length),
+                expectations: state.expected,
+              ),
+            for (final (route, e) in byRoute)
+              _ExpectedCard(
+                leading: InitialsAvatar(
+                  name: route.driverFullName ?? '—',
+                  size: 30,
+                  radius: 10,
+                ),
+                title: route.driverFullName ?? l10n.routeNoDriver,
+                subtitle: l10n.routeStopsCount(route.totalCustomers),
+                expectations: e,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ExpectedCard extends StatelessWidget {
+  const _ExpectedCard({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.expectations,
+  });
+
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final RouteExpectations expectations;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+
+    return SizedBox(
+      width: 340,
+      child: DesktopCard(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppSpacing.md,
+          children: [
+            Row(
+              spacing: AppSpacing.sm,
+              children: [
+                leading,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 1,
+                    children: [
+                      Text(title,
+                          style: DesktopTypography.bodyStrong
+                              .copyWith(color: t.text),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      Text(subtitle,
+                          style: DesktopTypography.caption
+                              .copyWith(color: t.text3)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              spacing: AppSpacing.md,
+              children: [
+                Expanded(
+                  child: _ExpectedStat(
+                    icon: Icons.water_drop_outlined,
+                    label: l10n.orderExpectedCapsules,
+                    value: '${expectations.capsules}',
+                  ),
+                ),
+                Expanded(
+                  child: _ExpectedStat(
+                    icon: Icons.sell_outlined,
+                    label: l10n.orderExpectedAmount,
+                    value: MoneyFormatter.sum(l10n, expectations.amount),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpectedStat extends StatelessWidget {
+  const _ExpectedStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 2,
+      children: [
+        Text(label,
+            style: DesktopTypography.caption.copyWith(color: t.text3)),
+        Row(
+          spacing: 4,
+          children: [
+            Icon(icon, size: 16, color: t.primary),
+            Expanded(
+              child: Text(value,
+                  style: DesktopTypography.bodyStrong.copyWith(color: t.text),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

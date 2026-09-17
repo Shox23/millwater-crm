@@ -67,9 +67,35 @@ class RoutesBloc extends Bloc<RoutesEvent, RoutesState> {
         routes: routes,
         collected: rows.fold<int>(0, (sum, r) => sum + r.orderAmount),
       ));
+      await _loadExpectations(day, routes, emit);
     } catch (_) {
       if (state.date != day) return;
       emit(state.copyWith(status: RoutesStatus.error));
+    }
+  }
+
+  /// Ожидания маршрутов — вторым шагом, когда список уже на экране.
+  ///
+  /// В списочном ответе точек нет, и за ними приходится ходить в каждый
+  /// маршрут дня отдельно (как на десктопе). Список этого не ждёт, а
+  /// неудача здесь его не портит — просто строки ожиданий не будет: итоги
+  /// дополняют список, а не составляют его.
+  Future<void> _loadExpectations(
+    DateTime day,
+    List<RouteListItem> routes,
+    Emitter<RoutesState> emit,
+  ) async {
+    try {
+      final details = await Future.wait(
+        routes.map((r) => _repository.getRoute(r.id)),
+      );
+      if (state.date != day) return;
+      emit(state.copyWith(expectations: {
+        for (final route in details.whereType<RouteDetail>())
+          route.id: route.expected(),
+      }));
+    } catch (_) {
+      // Список уже показан — ошибку деталей не поднимаем.
     }
   }
 
@@ -95,6 +121,7 @@ class RoutesBloc extends Bloc<RoutesEvent, RoutesState> {
       date: day,
       routes: const [],
       collected: 0,
+      expectations: const {},
       status: RoutesStatus.loading,
     ));
     add(const RoutesRequested());

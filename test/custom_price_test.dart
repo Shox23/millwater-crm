@@ -58,7 +58,11 @@ class _RecordingAdapter implements HttpClientAdapter {
   }
 }
 
-RouteStop _stop({int? customPrice, DeliveryStatus status = DeliveryStatus.pending}) =>
+RouteStop _stop({
+  int? customPrice,
+  DeliveryStatus status = DeliveryStatus.pending,
+  OrderPurpose purpose = OrderPurpose.delivery19l,
+}) =>
     RouteStop(
       id: 's-1',
       customerId: 'c-1',
@@ -66,6 +70,7 @@ RouteStop _stop({int? customPrice, DeliveryStatus status = DeliveryStatus.pendin
       customerAddress: 'ул. Тестовая, 1',
       customerPhone: '+998900000002',
       status: status,
+      purpose: purpose,
       customPrice: customPrice,
       customerBottleBalance: 3,
       effectiveWaterPrice: 20000,
@@ -224,15 +229,54 @@ void main() {
       expect(find.text('Цена заказа'), findsOneWidget);
     });
 
-    testWidgets('у вывоза и опта цены заказа нет', (tester) async {
+    testWidgets('у вывоза поле есть и подсказка про «без оплаты», у опта нет',
+        (tester) async {
       await pumpForm(tester);
       await tapText(tester, repo.store.customers.first.name);
 
+      // У вывоза прайса нет: пустое поле — не «по прайсу», а «бесплатно».
       await tapText(tester, 'Вывоз');
-      expect(find.text('Цена заказа'), findsNothing);
+      expect(find.text('Цена заказа'), findsOneWidget);
+      expect(find.textContaining('вывоз без оплаты'), findsOneWidget);
+      expect(find.textContaining('по прайсу'), findsNothing);
 
+      // Опт: цена договорная на бутыль, её вводит водитель на месте.
       await tapText(tester, 'Опт 5/10 л');
       expect(find.text('Цена заказа'), findsNothing);
+    });
+
+    testWidgets('у вывоза сумма уходит вместе с новым маршрутом',
+        (tester) async {
+      await pumpForm(tester);
+      await tapText(tester, repo.store.customers.first.name);
+      await tapText(tester, 'Вывоз');
+      await enterPrice(tester, '50000');
+
+      await tapText(tester, 'Создать');
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final stop = repo.store.routes.last.stops.single;
+      expect(stop.purpose, OrderPurpose.pickup);
+      expect(stop.customPrice, 50000);
+      // Задания капсул у вывоза по-прежнему нет.
+      expect(stop.bottleSellCount, isNull);
+    });
+
+    testWidgets('сумма, набранная у доставки, не держит форму после смены '
+        'цели на опт', (tester) async {
+      await pumpForm(tester);
+      await tapText(tester, repo.store.customers.first.name);
+      await addBottles(tester, 2);
+      await enterPrice(tester, '0');
+      expect(submitEnabled(tester), isFalse);
+
+      // Поле скрылось вместе с ошибкой — и сумма на сервер не уйдёт.
+      await tapText(tester, 'Опт 5/10 л');
+      expect(submitEnabled(tester), isTrue);
+
+      await tapText(tester, 'Создать');
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(repo.store.routes.last.stops.single.customPrice, isNull);
     });
 
     testWidgets('пустое поле не мешает сохранить — считается по прайсу',
@@ -322,13 +366,13 @@ void main() {
 
     testWidgets('карточка точки — пока точка открыта', (tester) async {
       await pumpStopCard(tester, _stop(customPrice: 150000));
-      expect(find.text('Цена заказа: 150 000 сум'), findsOneWidget);
+      expect(find.text('Ожидаемая сумма: 150 000 сум'), findsOneWidget);
 
       await pumpStopCard(
         tester,
         _stop(customPrice: 150000, status: DeliveryStatus.delivered),
       );
-      expect(find.text('Цена заказа: 150 000 сум'), findsNothing);
+      expect(find.text('Ожидаемая сумма: 150 000 сум'), findsNothing);
     });
 
     testWidgets('карточка заказа — вместо цены капсулы', (tester) async {
@@ -459,6 +503,82 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(repo.lastAmount, 150000);
+    });
+
+    group('Вывоз', () {
+      testWidgets('сумму видно, но в долг стартует с нуля', (tester) async {
+        await pumpPage(
+          tester,
+          _stop(purpose: OrderPurpose.pickup, customPrice: 50000),
+        );
+
+        expect(find.text('ЦЕНА ЗАКАЗА'), findsOneWidget);
+        expect(find.textContaining('кулеры, капсулы и брак её не меняют'),
+            findsOneWidget);
+        // Способ по умолчанию «в долг», а с ним сервер принимает только
+        // ноль — сумма подставится, когда водитель уйдёт с долга.
+        expect(amountText(tester), '0');
+        expect(find.text('Уйдёт в долг'), findsOneWidget);
+        expect(find.text('50 000 сум'), findsWidgets);
+      });
+
+      testWidgets('переход на наличные подставляет договорную сумму',
+          (tester) async {
+        await pumpPage(
+          tester,
+          _stop(purpose: OrderPurpose.pickup, customPrice: 50000),
+        );
+
+        // Кулер забран — иначе первой стоит блокирующая подсказка «Укажите,
+        // что забрали», и до подсказки о сумме дело не доходит.
+        await tapVisible(tester, find.byIcon(Icons.add).first);
+        await tapVisible(tester, find.text('Наличные'));
+
+        expect(amountText(tester), '50000');
+        expect(find.text('По цене заказа: 50 000 сум'), findsOneWidget);
+        // Подсказка про договорённость на месте — не для вывоза с ценой.
+        expect(find.textContaining('по договорённости'), findsNothing);
+        expect(find.text('Вернуть расчёт'), findsNothing);
+
+        await tapVisible(tester, find.text('Завершить'));
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(repo.lastPurpose, OrderPurpose.pickup);
+        expect(repo.lastAmount, 50000);
+        expect(repo.lastMethod, PaymentMethod.cash);
+      });
+
+      testWidgets('счётчики кулеров, капсул и брака сумму не двигают',
+          (tester) async {
+        await pumpPage(
+          tester,
+          _stop(purpose: OrderPurpose.pickup, customPrice: 50000),
+        );
+        await tapVisible(tester, find.text('Наличные'));
+
+        await tapVisible(tester, find.byIcon(Icons.add).at(0));
+        await tapVisible(tester, find.byIcon(Icons.add).at(1));
+        await tapVisible(tester, find.byIcon(Icons.add).at(2));
+
+        expect(amountText(tester), '50000');
+      });
+
+      testWidgets('без цены водителю не велят оставлять ноль', (tester) async {
+        await pumpPage(tester, _stop(purpose: OrderPurpose.pickup));
+
+        expect(find.text('ЦЕНА ЗАКАЗА'), findsNothing);
+        expect(amountText(tester), '0');
+
+        // Взял деньги за вывоз по договорённости на месте — экран это не
+        // оспаривает.
+        await tapVisible(tester, find.byIcon(Icons.add).first);
+        await tapVisible(tester, find.text('Наличные'));
+        await tester.enterText(find.byType(TextField).first, '30000');
+        await tester.pump();
+
+        expect(find.textContaining('по договорённости'), findsOneWidget);
+        expect(find.textContaining('оставьте сумму нулевой'), findsNothing);
+      });
     });
   });
 }

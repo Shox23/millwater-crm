@@ -14,6 +14,7 @@ import '../../../core/widgets/phone_contact_row.dart';
 import '../../../core/widgets/stat_tile.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/route_models.dart';
+import '../../orders/presentation/widgets/order_expectations.dart';
 import 'widgets/route_card.dart';
 
 /// Точка маршрута глазами администратора — только просмотр.
@@ -69,6 +70,18 @@ class StopDetailPage extends StatelessWidget {
               ],
             ),
           ),
+          // Задание к незакрытой точке — как на её карточке в списке.
+          if (stop.status.isOpen &&
+              OrderExpectations.hasAny(
+                capsules: stop.bottleSellCount,
+                amount: stop.customPrice,
+              ))
+            AppCard(
+              child: OrderExpectations(
+                capsules: stop.bottleSellCount,
+                amount: stop.customPrice,
+              ),
+            ),
           Row(
             spacing: AppSpacing.md,
             children: [

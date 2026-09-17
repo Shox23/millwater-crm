@@ -22,6 +22,7 @@ import '../../../data/models/order.dart';
 import 'cancel_order_page.dart';
 import 'move_order_page.dart';
 import 'order_payment_page.dart';
+import 'widgets/order_expectations.dart';
 
 /// Карточка заказа: состав, расчёт и маршрут, которым его везли.
 ///
@@ -59,6 +60,12 @@ class OrderDetailPage extends StatelessWidget {
 
   /// Править оплату — наоборот, только у закрытого.
   bool get _canEditPayment => order.status == DeliveryStatus.delivered;
+
+  /// Админ что-то задал к заказу: капсулы к доставке или договорную сумму.
+  bool get _hasExpectations => OrderExpectations.hasAny(
+        capsules: order.bottleSellCount,
+        amount: order.customPrice,
+      );
 
   /// Что показывать в составе: свои показатели цели плюс всё ненулевое.
   ///
@@ -180,6 +187,30 @@ class OrderDetailPage extends StatelessWidget {
               ],
             ),
           ),
+          // Задание админа — отдельным разделом, пока заказ открыт: состав
+          // ниже ещё пустой, и «сколько везти» читать негде. После
+          // закрытия раздел уходит: сумма — в «Деньгах», капсулы — в составе.
+          if (order.status.isOpen && _hasExpectations)
+            SectionBlock(
+              label: l10n.orderSectionExpected,
+              child: AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppSpacing.md,
+                  children: [
+                    if ((order.bottleSellCount ?? 0) > 0)
+                      _Row(
+                        label: l10n.orderExpectedCapsules,
+                        value: order.bottleSellCount,
+                      ),
+                    _MoneyRow(
+                      label: l10n.orderExpectedAmount,
+                      amount: order.customPrice,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           SectionBlock(
             label: l10n.orderSectionComposition,
             child: AppCard(
@@ -209,13 +240,16 @@ class OrderDetailPage extends StatelessWidget {
                 children: [
                   // Договорная сумма за весь заказ — вместо цены капсулы:
                   // сервер кладёт её и в `water_price_applied`, и строка
-                  // «цена капсулы 150 000» вводила бы в заблуждение.
-                  if (order.customPrice case final int customPrice)
+                  // «цена капсулы 150 000» вводила бы в заблуждение. У
+                  // открытого заказа она уже стоит выше как ожидаемая —
+                  // второй раз не повторяем.
+                  if (order.customPrice case final int customPrice
+                      when !order.status.isOpen)
                     _MoneyRow(
                       label: l10n.orderCustomPrice,
                       amount: customPrice,
                     )
-                  else
+                  else if (order.customPrice == null)
                     // Снимок цены, а не сегодняшний прайс: заказ считали по
                     // той цене, которая действовала в день доставки.
                     _MoneyRow(

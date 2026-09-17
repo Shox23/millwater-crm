@@ -273,6 +273,28 @@ class RouteStop extends Equatable {
   /// долга не означает.
   bool get isDebt => paymentMethod == PaymentMethod.debt;
 
+  /// Сколько капсул ещё ждут с точки: задание админа, пока точка открыта.
+  /// У закрытой точки задание сменил факт — см. [deliveredCapsules].
+  int get expectedCapsules => status.isOpen ? (bottleSellCount ?? 0) : 0;
+
+  /// Сколько денег ждут с точки, пока она открыта, — «сколько должен
+  /// привезти маршрут», а не одни договорные суммы.
+  ///
+  /// Договорная сумма — как есть: сервер закроет заказ ровно ею. Доставка
+  /// по прайсу — задание × цена заказчика (`effective_water_price`, сервер
+  /// отдаёт её у открытых заказов; на стенде без неё — [fallbackPrice],
+  /// ноль означает «не считать»). Вывоз без договорной суммы бесплатный,
+  /// у опта цена появляется только при закрытии — обе дают ноль.
+  int expectedAmount({int fallbackPrice = 0}) {
+    if (!status.isOpen) return 0;
+    if (customPrice case final int price) return price;
+    return switch (purpose) {
+      OrderPurpose.delivery19l =>
+        (bottleSellCount ?? 0) * (effectiveWaterPrice ?? fallbackPrice),
+      OrderPurpose.pickup || OrderPurpose.bulkWater => 0,
+    };
+  }
+
   /// Точку можно отдать нативному приложению карт, а не веб-геокодеру.
   bool get hasCoordinates =>
       customerLatitude != null && customerLongitude != null;
@@ -493,6 +515,49 @@ class RouteStop extends Equatable {
       ];
 }
 
+/// Что ещё ожидается от открытых точек: капсулы к доставке и деньги.
+///
+/// Считается только по открытым точкам — у закрытых план сменился фактом,
+/// и по мере объезда ожидание убывает, а «собрано» растёт. Складывается
+/// по точкам маршрута и по маршрутам дня одинаково — см. [ofStops] и [+].
+class RouteExpectations extends Equatable {
+  const RouteExpectations({this.capsules = 0, this.amount = 0});
+
+  static const none = RouteExpectations();
+
+  /// Сумма заданий по капсулам (`bottle_sell_count`).
+  final int capsules;
+
+  /// Сумма денег по правилу [RouteStop.expectedAmount].
+  final int amount;
+
+  bool get isEmpty => capsules == 0 && amount == 0;
+
+  RouteExpectations operator +(RouteExpectations other) => RouteExpectations(
+        capsules: capsules + other.capsules,
+        amount: amount + other.amount,
+      );
+
+  /// [fallbackPrice] — цена капсулы для точек без `effective_water_price`;
+  /// ноль — такие точки в деньгах не считать.
+  static RouteExpectations ofStops(
+    Iterable<RouteStop> stops, {
+    int fallbackPrice = 0,
+  }) {
+    var result = none;
+    for (final stop in stops) {
+      result += RouteExpectations(
+        capsules: stop.expectedCapsules,
+        amount: stop.expectedAmount(fallbackPrice: fallbackPrice),
+      );
+    }
+    return result;
+  }
+
+  @override
+  List<Object?> get props => [capsules, amount];
+}
+
 /// Маршрут со списком остановок (AdminRouteResponse или водительский RouteResponse).
 class RouteDetail extends Equatable {
   const RouteDetail({
@@ -557,6 +622,11 @@ class RouteDetail extends Equatable {
     }
     return (cashCollected ?? 0) + (cashlessCollected ?? 0);
   }
+
+  /// Что ещё ожидается от маршрута — по открытым точкам, см.
+  /// [RouteExpectations.ofStops].
+  RouteExpectations expected({int fallbackPrice = 0}) =>
+      RouteExpectations.ofStops(stops, fallbackPrice: fallbackPrice);
 
   factory RouteDetail.fromJson(Map<String, dynamic> json) => RouteDetail(
         id: requireString(json['id'], 'id'),

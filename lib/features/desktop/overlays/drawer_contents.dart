@@ -144,7 +144,21 @@ class DeliveryDrawer extends StatelessWidget {
                 ? '—'
                 : MoneyFormatter.sum(l10n, stop.paymentAmount!),
           ),
-          if (stop.customPrice case final int customPrice)
+          // Задание к открытой точке — теми же словами, что и у водителя.
+          // После закрытия договорная сумма остаётся справкой о сделке, а
+          // капсулы уже видны фактом выше.
+          if (stop.status.isOpen) ...[
+            if ((stop.bottleSellCount ?? 0) > 0)
+              DrawerField(
+                label: l10n.orderExpectedCapsules,
+                value: '${stop.bottleSellCount}',
+              ),
+            if (stop.customPrice case final int customPrice)
+              DrawerField(
+                label: l10n.orderExpectedAmount,
+                value: MoneyFormatter.sum(l10n, customPrice),
+              ),
+          ] else if (stop.customPrice case final int customPrice)
             DrawerField(
               label: l10n.orderCustomPrice,
               value: MoneyFormatter.sum(l10n, customPrice),
@@ -351,6 +365,13 @@ class CustomerDrawer extends StatelessWidget {
             label: l10n.desktopFieldAddress,
             value: customer.address,
           ),
+          // Основной телефон — в подзаголовке панели, второй — полем: он
+          // есть не у всех, и пустую строку показывать незачем.
+          if (customer.phoneSecondary case final String phoneSecondary)
+            DrawerField(
+              label: l10n.customerFormPhoneSecondary,
+              value: UzPhone.format(phoneSecondary),
+            ),
           DrawerField(
             label: l10n.customerCapsulesBalance,
             value: '${customer.capsuleBalance}',

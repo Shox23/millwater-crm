@@ -84,6 +84,8 @@ abstract class SeedData {
           id: 'c2',
           name: 'Офис «Baraka»',
           phone: '+998 71 244 55 66',
+          // Офис: основной — ресепшен, второй — бухгалтер, который платит.
+          phoneSecondary: '+998901002030',
           address: 'Юнусабад, кв-л 4',
           comment: 'Юнусабад',
           capsuleBalance: 8,
@@ -154,6 +156,11 @@ abstract class SeedData {
         status: status,
         deliveredCapsules: capsules,
         paymentAmount: paid ? capsules * capsulePrice : null,
+        // У открытой точки то же число — ещё задание, а не факт; цена
+        // заказчика при нём — как её отдаёт сервер у открытых заказов.
+        bottleSellCount: status.isOpen ? capsules : null,
+        effectiveWaterPrice:
+            status.isOpen ? (c.customWaterPrice ?? capsulePrice) : null,
       );
     }
 
