@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/cancel_reason.dart';
 import '../../../l10n/l10n.dart';
 
 import '../../../app/theme/app_spacing.dart';
@@ -187,6 +188,19 @@ class OrderDetailPage extends StatelessWidget {
               ],
             ),
           ),
+          // Комментарий к точке — сразу под шапкой и у любого статуса:
+          // водителю его писали, а админу он объясняет, почему доставка
+          // прошла так. Правки у сервера нет, поэтому только показ.
+          if (order.comment case final String comment)
+            SectionBlock(
+              label: l10n.orderCommentTitle,
+              child: AppCard(
+                child: Text(
+                  comment,
+                  style: AppTypography.body.copyWith(color: t.text),
+                ),
+              ),
+            ),
           // Задание админа — отдельным разделом, пока заказ открыт: состав
           // ниже ещё пустой, и «сколько везти» читать негде. После
           // закрытия раздел уходит: сумма — в «Деньгах», капсулы — в составе.
@@ -586,7 +600,7 @@ class _CancellationCard extends StatelessWidget {
               value: DateFormat('dd.MM.yyyy HH:mm').format(at),
             ),
           Text(
-            reason ?? l10n.orderCancelReasonEmpty,
+            cancelReasonLabel(l10n, reason),
             style: reason == null
                 ? AppTypography.secondary.copyWith(color: t.text2)
                 : AppTypography.body.copyWith(color: t.text),

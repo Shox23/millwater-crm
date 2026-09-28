@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
@@ -24,6 +26,7 @@ import '../../../core/widgets/route_cash_card.dart';
 import '../../../core/widgets/section_block.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
+import '../../../data/network/api_envelope.dart';
 import '../../../data/models/notification_event.dart';
 import '../../../data/models/order.dart';
 import '../../../data/models/route_expense.dart';
@@ -55,6 +58,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   bool _loading = true;
   bool _loadFailed = false;
   StreamSubscription<NotificationEvent>? _notifications;
+
+  /// Ключ завершения маршрута — один на карточку: повтор после обрыва связи
+  /// уходит с тем же ключом и не упирается в 409 от уже прошедшего запроса.
+  final String _completionKey = newIdempotencyKey('route-complete');
 
   @override
   void initState() {
@@ -127,6 +134,53 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     );
     if (!ok || !mounted) return;
     showAppSnackBar(context, context.l10n.routeCancelled2);
+    await _load();
+  }
+
+  /// Завершение маршрута: точки, до которых водитель не доехал, сервер
+  /// отменит, поэтому диалог называет их число — админ должен видеть, что
+  /// именно он сейчас закрывает, а не только «маршрут».
+  Future<void> _completeRoute(RouteDetail route) async {
+    final open = route.stops.where((s) => s.status.isOpen).length;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: context.l10n.routeCompleteTitle,
+      message: open == 0
+          ? context.l10n.routeCompleteMessage
+          : context.l10n.routeCompleteMessageOpen(open),
+      confirmLabel: context.l10n.routeCompleteAction,
+      destructive: false,
+    );
+    if (!confirmed || !mounted) return;
+    final repo = context.read<CrmRepository>();
+    // Строки берём до запроса: после await контекст уже мог уйти.
+    final l10n = context.l10n;
+    try {
+      await repo.completeRoute(widget.routeId, idempotencyKey: _completionKey);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      // 409 у этой ручки один: маршрут уже не в работе — его закрыли с
+      // другого устройства. Общий разбор кода (`ORDER_ALREADY_COMPLETED`)
+      // сказал бы «заказ», поэтому подпись своя, а карточка перечитывается:
+      // на экране она всё ещё «В пути».
+      final conflict = e.response?.statusCode == 409;
+      showAppSnackBar(
+        context,
+        conflict
+            ? l10n.errorRouteCompleted
+            : apiErrorMessage(l10n, e, fallback: l10n.routeCompleteFailed),
+        isError: true,
+      );
+      if (conflict) await _load();
+      return;
+    } catch (_) {
+      if (mounted) {
+        showAppSnackBar(context, l10n.routeCompleteFailed, isError: true);
+      }
+      return;
+    }
+    if (!mounted) return;
+    showAppSnackBar(context, l10n.routeCompleted2);
     await _load();
   }
 
@@ -216,32 +270,60 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       // у завершённого и отменённого не осталось ни правок, ни отмены.
       bottomBar: _loadFailed ||
               route == null ||
-              !(route.status.canCancel || route.status.isEditable)
+              !(route.status.canCancel ||
+                  route.status.canComplete ||
+                  route.status.isEditable)
           ? null
           : BottomActionBar(
-              child: Row(
+              // «Изменить» — своей строкой на всю ширину, под ней в ряд
+              // «Отменить» и «Завершить»: три кнопки в одну строку на
+              // телефоне не помещаются, а правка — действие другого рода,
+              // чем два закрывающих маршрут.
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                // Кнопка сама ширину не задаёт — растягиваем её колонкой.
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: AppSpacing.md,
                 children: [
-                  if (route.status.canCancel)
-                    Expanded(
-                      child: AppButton(
-                        // Короткая подпись: на половине ширины «Отменить
-                        // маршрут» обрезалось до «Отменить ма…», а узбекское
-                        // «Marshrutni bekor qilish» и подавно. Слово
-                        // «маршрут» здесь и так из контекста экрана, а
-                        // полностью действие называет диалог подтверждения.
-                        label: context.l10n.routeCancelShort,
-                        variant: AppButtonVariant.secondary,
-                        onPressed: _cancelRoute,
-                      ),
+                  if (route.awaitsCompletion)
+                    Text(
+                      context.l10n.routeAwaitsCompletion,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.secondary.copyWith(color: t.text2),
                     ),
                   // Завершённый маршрут править нечего — кнопки нет вовсе.
                   if (route.status.isEditable)
-                    Expanded(
-                      child: AppButton(
-                        label: context.l10n.commonEdit,
-                        onPressed: () => _editRoute(route),
-                      ),
+                    AppButton(
+                      label: context.l10n.commonEdit,
+                      onPressed: () => _editRoute(route),
+                    ),
+                  if (route.status.canCancel || route.status.canComplete)
+                    Row(
+                      spacing: AppSpacing.md,
+                      children: [
+                        if (route.status.canCancel)
+                          Expanded(
+                            child: AppButton(
+                              // Короткая подпись: на половине ширины
+                              // «Отменить маршрут» обрезалось до «Отменить
+                              // ма…», а узбекское «Marshrutni bekor qilish»
+                              // и подавно. Слово «маршрут» здесь и так из
+                              // контекста экрана, а полностью действие
+                              // называет диалог подтверждения.
+                              label: context.l10n.routeCancelShort,
+                              variant: AppButtonVariant.secondary,
+                              onPressed: _cancelRoute,
+                            ),
+                          ),
+                        if (route.status.canComplete)
+                          Expanded(
+                            child: AppButton(
+                              label: context.l10n.routeCompleteShort,
+                              variant: AppButtonVariant.secondary,
+                              onPressed: () => _completeRoute(route),
+                            ),
+                          ),
+                      ],
                     ),
                 ],
               ),

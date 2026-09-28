@@ -204,6 +204,24 @@ void main() {
       expect(repo.lastMethod, PaymentMethod.debt);
     });
 
+    testWidgets('смена счётчика после выбора долга держит ноль', (tester) async {
+      // Поле в долг `readOnly`: переписанную расчётом сумму водителю было бы
+      // нечем вернуть, и каждая смена количества заканчивалась 422.
+      final repo = await pumpPage(tester);
+
+      await tapVisible(tester, find.text('В долг'));
+      await tester.pump();
+      await addCapsule(tester);
+
+      expect(amountText(tester), '0');
+      expect(find.text('Уйдёт в долг'), findsOneWidget);
+
+      await tapVisible(tester, find.text('Завершить'));
+      await tester.pumpAndSettle();
+      expect(repo.amount, 0);
+      expect(repo.lastMethod, PaymentMethod.debt);
+    });
+
     testWidgets('возврат к наличным восстанавливает расчёт', (tester) async {
       await pumpPage(tester);
       await addCapsule(tester);

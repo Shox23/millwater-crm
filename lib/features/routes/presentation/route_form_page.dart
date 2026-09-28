@@ -73,6 +73,20 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   TextEditingController _customPriceController(String customerId) =>
       _customPrices.putIfAbsent(customerId, TextEditingController.new);
 
+  /// Комментарий водителю к точке — та же история, что и с суммой: поле
+  /// живёт в списке, контроллер заводится при первом обращении. Пустое —
+  /// комментария нет.
+  final Map<String, TextEditingController> _comments = {};
+
+  TextEditingController _commentController(String customerId) =>
+      _comments.putIfAbsent(customerId, TextEditingController.new);
+
+  /// Введённый комментарий; `null` — поле пустое.
+  String? _commentOf(String customerId) {
+    final text = _comments[customerId]?.text.trim() ?? '';
+    return text.isEmpty ? null : text;
+  }
+
   /// Введённая сумма; `null` — поле пустое (по прайсу) или не число.
   int? _customPriceOf(String customerId) =>
       int.tryParse(_customPrices[customerId]?.text.trim() ?? '');
@@ -88,6 +102,13 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   /// цели на опт не видно — и не отправят, значит и проверять её незачем.
   bool get _customPricesValid => _customerIds
       .every((id) => !_allowsCustomPrice(id) || _customPriceValid(id));
+
+  /// Комментарии точек, с которыми маршрут открыли: показываем как есть,
+  /// менять их сервер не умеет.
+  late final Map<String, String?> _initialComments = {
+    for (final stop in widget.route?.stops ?? const <RouteStop>[])
+      stop.customerId: stop.comment,
+  };
 
   /// Суммы точек, с которыми маршрут открыли, — менять их нечем, как и
   /// задание (см. [_initialBottleCounts]).
@@ -179,12 +200,20 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
     _date = route?.date ?? _tomorrow();
     _driverId = route?.driverId;
     _customerIds.addAll(_initialCustomerIds);
+    // Цель точек, с которыми маршрут открыли: без этого вывоз в редакторе
+    // показывался доставкой. Менять её у такой точки нечем — см. ниже.
+    for (final stop in route?.stops ?? const <RouteStop>[]) {
+      _stopPurposes[stop.customerId] = stop.purpose;
+    }
     _load();
   }
 
   @override
   void dispose() {
     for (final controller in _customPrices.values) {
+      controller.dispose();
+    }
+    for (final controller in _comments.values) {
       controller.dispose();
     }
     super.dispose();
@@ -298,6 +327,7 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
               // договорная на бутыль и вводится водителем.
               customPrice:
                   _allowsCustomPrice(id) ? _customPriceOf(id) : null,
+              comment: _commentOf(id),
             ),
         ],
         idempotencyKey: _idempotencyKey,
@@ -347,6 +377,7 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
           customPrice: _allowsCustomPrice(customerId)
               ? _customPriceOf(customerId)
               : null,
+          comment: _commentOf(customerId),
         );
       }
     }
@@ -515,20 +546,34 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                         style: AppTypography.fieldLabel
                                             .copyWith(color: t.text3),
                                       ),
-                                      SegmentedToggle<OrderPurpose>(
-                                        options: [
-                                          for (final p in OrderPurpose.values)
-                                            SegmentOption(
-                                                value: p,
-                                                label: p.label(context.l10n)),
-                                        ],
-                                        value: _stopPurposes[c.id] ??
-                                            OrderPurpose.delivery19l,
-                                        columns: 3,
-                                        onChanged: (p) => setState(() {
-                                          _stopPurposes[c.id] = p;
-                                        }),
-                                      ),
+                                      // Цель точки, которая уже в маршруте,
+                                      // сервер менять не умеет (как и
+                                      // задание ниже): показываем как есть,
+                                      // а не переключателем, которому некуда
+                                      // отправить выбор.
+                                      if (_isNewStop(c.id))
+                                        SegmentedToggle<OrderPurpose>(
+                                          options: [
+                                            for (final p
+                                                in OrderPurpose.values)
+                                              SegmentOption(
+                                                  value: p,
+                                                  label:
+                                                      p.label(context.l10n)),
+                                          ],
+                                          value: _purposeOf(c.id),
+                                          columns: 3,
+                                          onChanged: (p) => setState(() {
+                                            _stopPurposes[c.id] = p;
+                                          }),
+                                        )
+                                      else
+                                        Text(
+                                          _purposeOf(c.id)
+                                              .label(context.l10n),
+                                          style: AppTypography.bodyStrong
+                                              .copyWith(color: t.text),
+                                        ),
                                       // Задание водителю — сколько капсул
                                       // везти. Только у доставки: вывозу и
                                       // опту везти нечего.
@@ -556,6 +601,14 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                           valid: _customPriceValid(c.id),
                                           onChanged: () => setState(() {}),
                                         ),
+                                      // Комментарий водителю — как и всё
+                                      // остальное, только у новой точки:
+                                      // правки комментария у сервера нет.
+                                      _CommentField(
+                                        controller: _commentController(c.id),
+                                        editable: _isNewStop(c.id),
+                                        savedValue: _initialComments[c.id],
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -787,6 +840,58 @@ class _BottleSellField extends StatelessWidget {
                       style: AppTypography.secondary.copyWith(color: t.text3)),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+/// Комментарий водителю к точке: «позвонить с парковки», «ключ у охраны».
+///
+/// Необязателен и ни на что не влияет, кроме того, что водитель его увидит.
+/// У точки, которая уже в маршруте, — только текст: менять комментарий
+/// сервер не умеет, как не умеет менять задание и договорную сумму.
+class _CommentField extends StatelessWidget {
+  const _CommentField({
+    required this.controller,
+    required this.editable,
+    required this.savedValue,
+  });
+
+  final TextEditingController controller;
+  final bool editable;
+
+  /// Комментарий, с которым точка пришла с сервера; `null` — его нет.
+  final String? savedValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+
+    if (!editable) {
+      // Точке без комментария строка не нужна: пустая плашка «Комментарий»
+      // ничего не сообщает.
+      if (savedValue == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: LabeledCard(
+          label: l10n.orderCommentTitle,
+          child: Text(savedValue!,
+              style: AppTypography.body.copyWith(color: t.text)),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: LabeledTextField(
+        label: l10n.orderComment,
+        hint: l10n.orderCommentHint,
+        helper: l10n.orderCommentHelper,
+        helperMaxLines: 2,
+        controller: controller,
+        // Колонка на сервере — 255 символов, и обрезать он не станет.
+        maxLength: 255,
       ),
     );
   }

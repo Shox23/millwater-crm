@@ -138,6 +138,7 @@ class Order extends Equatable {
     this.completedAt,
     this.cancelReason,
     this.cancelledAt,
+    this.comment,
     required this.createdAt,
     required this.customerId,
     required this.customerName,
@@ -231,6 +232,12 @@ class Order extends Equatable {
   /// Почему заказ отменили и когда. Причина необязательна — отменить можно и
   /// молча, тогда здесь `null` при статусе `cancelled`.
   final String? cancelReason;
+
+  /// Комментарий админа водителю к этому заказу (`comment`), до 255 символов.
+  ///
+  /// Пишется при добавлении точки в маршрут; править его сервер не умеет.
+  /// Пустая строка — это отсутствие комментария, а не пустой комментарий.
+  final String? comment;
   final DateTime? cancelledAt;
 
   final DateTime createdAt;
@@ -343,6 +350,7 @@ class Order extends Equatable {
       // Пустую строку причины считаем отсутствием: отмена «молча» не должна
       // рисовать в карточке пустую строку «Причина: ».
       cancelReason: _nonEmpty(json['cancel_reason']),
+      comment: _nonEmpty(json['comment']),
       cancelledAt: optionalDate(json['cancelled_at']),
       createdAt: dateOr(json['created_at'], epoch),
       customerId: stringOr(firstNonNull([
@@ -443,6 +451,7 @@ class Order extends Equatable {
         payments,
         completedAt,
         cancelReason,
+        comment,
         cancelledAt,
         createdAt,
         customerId,

@@ -399,6 +399,7 @@ class MockCrmRepository implements CrmRepository {
         customerCoolerCount: c.coolerCount,
         bottleSellCount: order.bottleSellCount,
         customPrice: order.customPrice,
+        comment: order.comment,
         // Цена заказчика у открытого заказа — как её отдаёт сервер: своя
         // или по прайсу. По ней считается, сколько маршрут должен привезти.
         effectiveWaterPrice: c.customWaterPrice ?? _prices.first.capsulePrice,
@@ -436,6 +437,12 @@ class MockCrmRepository implements CrmRepository {
   }
 
   @override
+  Future<void> completeRoute(String id, {String? idempotencyKey}) async {
+    await _tick();
+    store.completeRoute(id);
+  }
+
+  @override
   Future<RouteDetail> updateRouteDate({
     required String routeId,
     required DateTime date,
@@ -469,6 +476,7 @@ class MockCrmRepository implements CrmRepository {
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
     int? customPrice,
+    String? comment,
   }) async {
     await _tick();
     final customer = _customers.where((c) => c.id == customerId).firstOrNull;
@@ -489,6 +497,7 @@ class MockCrmRepository implements CrmRepository {
           purpose: purpose,
           bottleSellCount: bottleSellCount,
           customPrice: customPrice,
+          comment: comment,
           effectiveWaterPrice:
               customer.customWaterPrice ?? _prices.first.capsulePrice,
         ),

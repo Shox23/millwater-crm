@@ -14,6 +14,7 @@
 /// Убрать целиком, когда `/driver/routes` перестанет фильтровать по статусу.
 library;
 
+import '../../core/utils/visit_order.dart';
 import 'enums.dart';
 import 'order.dart';
 import 'route_expense.dart';
@@ -123,6 +124,7 @@ RouteStop stopFromOrder(Order order) => RouteStop(
       damagedCapsules: order.damagedCapsules,
       cancelReason: order.cancelReason,
       cancelledAt: order.cancelledAt,
+      comment: order.comment,
       customPrice: order.customPrice,
       pickedCoolers: order.pickedCoolers,
       pickedBottles: order.pickedBottles,
@@ -164,10 +166,10 @@ List<List<Order>> groupByRoute(List<Order> orders) {
       return dateB.compareTo(dateA);
     });
 
-  // Внутри маршрута — по порядку объезда, как отдал бы сервер.
-  for (final group in groups) {
-    group.sort((a, b) => (a.sequence ?? 0).compareTo(b.sequence ?? 0));
-  }
-
-  return groups;
+  // Внутри маршрута — по порядку объезда. Прежний `sequence ?? 0` ставил
+  // заказы без номера первыми; правило одно на всё приложение — см.
+  // [inVisitOrder].
+  return [
+    for (final group in groups) inVisitOrder(group, (order) => order.sequence),
+  ];
 }

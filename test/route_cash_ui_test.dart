@@ -70,11 +70,12 @@ RouteDetail _route({
   int? debt = 15000,
   int? expenses = 35000,
   int? balance = 60000,
+  RouteStatus status = RouteStatus.inProgress,
 }) =>
     RouteDetail(
       id: 'r-1',
       date: DateTime(2026, 9, 3),
-      status: RouteStatus.inProgress,
+      status: status,
       completedCount: 1,
       totalCustomers: 2,
       stops: const [],
@@ -166,6 +167,18 @@ void main() {
 
       expect(find.text('Топливо'), findsOneWidget);
       expect(find.text('АЗС на Чиланзаре'), findsOneWidget);
+    });
+
+    testWidgets('у закрытого маршрута расход не добавить', (tester) async {
+      // Сервер принимает расход только у маршрута в работе (409
+      // `ROUTE_NOT_IN_PROGRESS`); глухая кнопка честнее отказа после формы.
+      final repo = _CashRepository(route: _route(status: RouteStatus.completed));
+      await pumpWidgetWith(tester, repo, const RouteCashPage(routeId: 'r-1'));
+
+      final button = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Добавить расход'),
+      );
+      expect(button.onPressed, isNull);
     });
 
     testWidgets('пустой список объясняет себя, а не молчит', (tester) async {

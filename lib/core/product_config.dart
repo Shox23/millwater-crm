@@ -22,6 +22,16 @@ abstract class ProductConfig {
   static const int capsulePrice =
       int.fromEnvironment('CAPSULE_PRICE', defaultValue: 20000);
 
+  /// Сколько капсул увозит машина за раз — порог, после которого итоги
+  /// собираемого маршрута подсвечиваются предупреждением.
+  ///
+  /// Предупреждение, а не запрет: маршрут с перегрузом бывает осмысленным
+  /// (водитель возвращается на склад и доезжает остаток), и решает это
+  /// человек. В API параметра нет — машины в системе не заведены вовсе,
+  /// поэтому значение живёт в сборке: `--dart-define=VEHICLE_CAPSULE_CAPACITY=80`.
+  static const int vehicleCapsuleCapacity =
+      int.fromEnvironment('VEHICLE_CAPSULE_CAPACITY', defaultValue: 60);
+
   // Стартовый пароль водителя жил здесь константой, одной на всех. Теперь
   // он генерируется на каждую учётку — см. `DriverPassword.generate()`
   // в lib/core/utils/driver_password.dart.

@@ -108,6 +108,12 @@ extension RouteEditRules on RouteStatus {
   /// уже случившееся.
   bool get canCancel =>
       this == RouteStatus.created || this == RouteStatus.inProgress;
+
+  /// Завершаем только начатый маршрут. Сервер закрывает его исключительно
+  /// по явной команде (`POST /driver/routes/{id}/complete`), сам по последней
+  /// доставке — больше нет; незакрытые точки при этом отменяются. У `created`
+  /// завершать нечего — сервер ответит 409, и кнопку не показываем.
+  bool get canComplete => this == RouteStatus.inProgress;
 }
 
 /// Фильтр списка маршрутов (чипы на экране).

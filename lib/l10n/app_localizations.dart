@@ -1040,6 +1040,54 @@ abstract class AppLocalizations {
   /// **'Маршрут отменён'**
   String get routeCancelled2;
 
+  /// No description provided for @routeCompleteTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершить маршрут?'**
+  String get routeCompleteTitle;
+
+  /// No description provided for @routeCompleteMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут будет закрыт, открыть его заново нельзя.'**
+  String get routeCompleteMessage;
+
+  /// No description provided for @routeCompleteMessageOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} незакрытая точка будет отменена} few{{count} незакрытые точки будут отменены} other{{count} незакрытых точек будут отменены}}. Маршрут будет закрыт, открыть его заново нельзя.'**
+  String routeCompleteMessageOpen(int count);
+
+  /// No description provided for @routeCompleteAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершить маршрут'**
+  String get routeCompleteAction;
+
+  /// No description provided for @routeAwaitsCompletion.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все точки закрыты — завершите маршрут'**
+  String get routeAwaitsCompletion;
+
+  /// No description provided for @routeCompleteShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершить'**
+  String get routeCompleteShort;
+
+  /// No description provided for @routeCompleteFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось завершить маршрут.'**
+  String get routeCompleteFailed;
+
+  /// No description provided for @routeCompleted2.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут завершён'**
+  String get routeCompleted2;
+
   /// No description provided for @routeDriver.
   ///
   /// In ru, this message translates to:
@@ -4061,6 +4109,12 @@ abstract class AppLocalizations {
   /// **'Причина не указана'**
   String get orderCancelReasonEmpty;
 
+  /// No description provided for @orderCancelReasonRouteCompleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не выполнен до завершения маршрута'**
+  String get orderCancelReasonRouteCompleted;
+
   /// No description provided for @routeFormCustomPrice.
   ///
   /// In ru, this message translates to:
@@ -4132,6 +4186,294 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'По цене заказа: {amount}'**
   String completionByCustomPrice(String amount);
+
+  /// No description provided for @routeCreateSearchHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Улица, дом или название'**
+  String get routeCreateSearchHint;
+
+  /// No description provided for @routeCreateStopsLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'МАРШРУТ'**
+  String get routeCreateStopsLabel;
+
+  /// No description provided for @routeCreateFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'найдено {count}'**
+  String routeCreateFound(int count);
+
+  /// No description provided for @routeCreateBase.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count} всего'**
+  String routeCreateBase(int count);
+
+  /// No description provided for @routeCreateTomorrow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завтра'**
+  String get routeCreateTomorrow;
+
+  /// No description provided for @routeCreateDriverTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель'**
+  String get routeCreateDriverTitle;
+
+  /// No description provided for @routeCreateBadgeDue.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПОРА'**
+  String get routeCreateBadgeDue;
+
+  /// No description provided for @routeCreateBadgeDebt.
+  ///
+  /// In ru, this message translates to:
+  /// **'ДОЛГ'**
+  String get routeCreateBadgeDebt;
+
+  /// No description provided for @routeCreateBadgeDebtAmount.
+  ///
+  /// In ru, this message translates to:
+  /// **'ДОЛГ {amount}'**
+  String routeCreateBadgeDebtAmount(String amount);
+
+  /// No description provided for @routeCreateUsual.
+  ///
+  /// In ru, this message translates to:
+  /// **'обычно {count}'**
+  String routeCreateUsual(int count);
+
+  /// No description provided for @routeCreateLastDelivery.
+  ///
+  /// In ru, this message translates to:
+  /// **'последняя {count} дн. назад'**
+  String routeCreateLastDelivery(int count);
+
+  /// No description provided for @routeCreateNoDeliveries.
+  ///
+  /// In ru, this message translates to:
+  /// **'доставок ещё не было'**
+  String get routeCreateNoDeliveries;
+
+  /// No description provided for @routeCreateEmptyTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точек пока нет'**
+  String get routeCreateEmptyTitle;
+
+  /// No description provided for @routeCreateEmptyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите заказчика — точка добавится с обычным для него заказом, останется только проверить.'**
+  String get routeCreateEmptyHint;
+
+  /// No description provided for @routeCreateOrderHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'порядок объезда'**
+  String get routeCreateOrderHint;
+
+  /// No description provided for @routeCreateDragHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перетащите, чтобы изменить порядок'**
+  String get routeCreateDragHint;
+
+  /// No description provided for @routeCreateMoveUp.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выше'**
+  String get routeCreateMoveUp;
+
+  /// No description provided for @routeCreateMoveDown.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ниже'**
+  String get routeCreateMoveDown;
+
+  /// No description provided for @routeCreateRemoveStop.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать точку'**
+  String get routeCreateRemoveStop;
+
+  /// No description provided for @routeCreateQtyTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько капсул'**
+  String get routeCreateQtyTitle;
+
+  /// No description provided for @routeCreatePricePlaceholder.
+  ///
+  /// In ru, this message translates to:
+  /// **'по прайсу · {amount}'**
+  String routeCreatePricePlaceholder(String amount);
+
+  /// No description provided for @routeCreatePriceReset.
+  ///
+  /// In ru, this message translates to:
+  /// **'По прайсу'**
+  String get routeCreatePriceReset;
+
+  /// No description provided for @routeCreatePriceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пусто — считаем по прайсу {price} за капсулу'**
+  String routeCreatePriceHint(String price);
+
+  /// No description provided for @routeCreatePickupPriceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пусто — вывоз без оплаты, в итоги не попадёт'**
+  String get routeCreatePickupPriceHint;
+
+  /// No description provided for @routeCreateBulkPriceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пусто — цену опта водитель ставит на месте'**
+  String get routeCreateBulkPriceHint;
+
+  /// No description provided for @routeCreateNoPayment.
+  ///
+  /// In ru, this message translates to:
+  /// **'без оплаты'**
+  String get routeCreateNoPayment;
+
+  /// No description provided for @routeCreatePriceOnSite.
+  ///
+  /// In ru, this message translates to:
+  /// **'цена на месте'**
+  String get routeCreatePriceOnSite;
+
+  /// No description provided for @routeCreateOwnPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'своя цена'**
+  String get routeCreateOwnPrice;
+
+  /// No description provided for @routeCreateTotalStops.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точек'**
+  String get routeCreateTotalStops;
+
+  /// No description provided for @routeCreateTotalCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Капсул {liters} л'**
+  String routeCreateTotalCapsules(String liters);
+
+  /// No description provided for @routeCreateTotalMoney.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сумма'**
+  String get routeCreateTotalMoney;
+
+  /// No description provided for @routeCreateOverCapacity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Больше, чем везёт машина — {count}'**
+  String routeCreateOverCapacity(int count);
+
+  /// No description provided for @routeCreateSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создать маршрут · {count}'**
+  String routeCreateSubmit(int count);
+
+  /// No description provided for @routeCreateSubmitShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создать · {count}'**
+  String routeCreateSubmitShort(int count);
+
+  /// No description provided for @routeCreateSubmitEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавьте точку'**
+  String get routeCreateSubmitEmpty;
+
+  /// No description provided for @routeCreateSheetTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'{stops} в маршруте'**
+  String routeCreateSheetTitle(String stops);
+
+  /// No description provided for @routeCreateSheetEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут пуст'**
+  String get routeCreateSheetEmpty;
+
+  /// No description provided for @routeCreateSheetEmptyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите заказчика из списка'**
+  String get routeCreateSheetEmptyHint;
+
+  /// No description provided for @routeCreateSheetSummary.
+  ///
+  /// In ru, this message translates to:
+  /// **'{capsules} · {money}'**
+  String routeCreateSheetSummary(String capsules, String money);
+
+  /// No description provided for @routeCreateBackToList.
+  ///
+  /// In ru, this message translates to:
+  /// **'К списку'**
+  String get routeCreateBackToList;
+
+  /// No description provided for @routeCreateAdded.
+  ///
+  /// In ru, this message translates to:
+  /// **'{name} · {capsules}'**
+  String routeCreateAdded(String name, String capsules);
+
+  /// No description provided for @routeCreateRemoved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точка убрана'**
+  String get routeCreateRemoved;
+
+  /// No description provided for @orderComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий водителю'**
+  String get orderComment;
+
+  /// No description provided for @orderCommentHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Например: позвонить с парковки'**
+  String get orderCommentHint;
+
+  /// No description provided for @orderCommentHelper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Необязательно — водитель увидит его в точке'**
+  String get orderCommentHelper;
+
+  /// No description provided for @orderCommentTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий'**
+  String get orderCommentTitle;
+
+  /// No description provided for @orderCommentHasOne.
+  ///
+  /// In ru, this message translates to:
+  /// **'есть комментарий'**
+  String get orderCommentHasOne;
+
+  /// No description provided for @routeCreateCollapseToDrag.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сверните точку, чтобы менять порядок'**
+  String get routeCreateCollapseToDrag;
 }
 
 class _AppLocalizationsDelegate

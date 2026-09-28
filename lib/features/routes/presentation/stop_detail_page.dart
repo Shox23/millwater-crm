@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/cancel_reason.dart';
 import '../../../l10n/l10n.dart';
 
 import '../../../app/theme/app_spacing.dart';
@@ -8,6 +9,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/labeled_card.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/network_photo_card.dart';
 import '../../../core/widgets/phone_contact_row.dart';
@@ -70,6 +72,14 @@ class StopDetailPage extends StatelessWidget {
               ],
             ),
           ),
+          // Комментарий — тот же, что видит водитель, и при любом статусе:
+          // у закрытой точки он объясняет, почему доставка прошла так.
+          if (stop.comment case final String comment)
+            LabeledCard(
+              label: context.l10n.orderCommentTitle,
+              child: Text(comment,
+                  style: AppTypography.body.copyWith(color: t.text)),
+            ),
           // Задание к незакрытой точке — как на её карточке в списке.
           if (stop.status.isOpen &&
               OrderExpectations.hasAny(
@@ -144,7 +154,7 @@ class StopDetailPage extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    stop.cancelReason ?? context.l10n.orderCancelReasonEmpty,
+                    cancelReasonLabel(context.l10n, stop.cancelReason),
                     style: AppTypography.body.copyWith(color: t.text),
                   ),
                 ],

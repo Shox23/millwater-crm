@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/cancel_reason.dart';
 import '../../../l10n/l10n.dart';
 
 import '../../../app/theme/app_spacing.dart';
@@ -144,6 +145,9 @@ class DeliveryDrawer extends StatelessWidget {
                 ? '—'
                 : MoneyFormatter.sum(l10n, stop.paymentAmount!),
           ),
+          // Комментарий к точке — тем же полем, что видит водитель.
+          if (stop.comment case final String comment)
+            DrawerField(label: l10n.orderCommentTitle, value: comment),
           // Задание к открытой точке — теми же словами, что и у водителя.
           // После закрытия договорная сумма остаётся справкой о сделке, а
           // капсулы уже видны фактом выше.
@@ -177,7 +181,7 @@ class DeliveryDrawer extends StatelessWidget {
               ),
             DrawerField(
               label: l10n.orderCancelReason,
-              value: stop.cancelReason ?? l10n.orderCancelReasonEmpty,
+              value: cancelReasonLabel(l10n, stop.cancelReason),
             ),
           ],
         ],

@@ -148,6 +148,17 @@ class MockDriverRepository implements DriverRepository {
   }
 
   @override
+  Future<void> completeRoute(String routeId, {String? idempotencyKey}) async {
+    await _tick();
+    // Чужой маршрут — 403, как на сервере.
+    final route = _store.routes.where((r) => r.id == routeId).firstOrNull;
+    if (route != null && route.driverId != driverId) {
+      throw StateError('ACCESS_DENIED');
+    }
+    _store.completeRoute(routeId);
+  }
+
+  @override
   Future<void> completeDelivery({
     required String stopId,
     required OrderPurpose purpose,

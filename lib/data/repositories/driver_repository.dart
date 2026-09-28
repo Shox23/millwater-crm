@@ -52,6 +52,18 @@ abstract class DriverRepository {
   /// `ORDER_ALREADY_COMPLETED`.
   Future<void> cancelOrder({required String orderId, String? reason});
 
+  /// Завершает свой маршрут (`POST /driver/routes/{id}/complete`).
+  ///
+  /// Сервер не закрывает маршрут по последней доставке — только этой
+  /// командой. Незакрытые точки он отменяет сам («Заказ не выполнен до
+  /// завершения маршрута»), маршрут становится `completed` и пропадает из
+  /// `/driver/routes`; вернуть его в работу нельзя. Чужой маршрут — 403,
+  /// не `in_progress` — 409 `ORDER_ALREADY_COMPLETED`. Ответ 204 без тела.
+  ///
+  /// [idempotencyKey] один и тот же при повторном нажатии: связь у водителя
+  /// рвётся, и повтор не должен упереться в 409 из-за уже прошедшего запроса.
+  Future<void> completeRoute(String routeId, {String? idempotencyKey});
+
   /// Завершение доставки.
   ///
   /// [purpose] — цель заказа; от неё зависит, какие поля сервер вообще

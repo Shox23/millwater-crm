@@ -1,3 +1,4 @@
+import '../../core/utils/cancel_reason.dart' as cancel_reason;
 import '../models/customer.dart';
 import '../models/driver.dart';
 import '../models/enums.dart';
@@ -99,6 +100,7 @@ class MockStore {
           completedAt: stop.completedAt,
           cancelReason: stop.cancelReason,
           cancelledAt: stop.cancelledAt,
+          comment: stop.comment,
           createdAt: route.date,
           customerId: stop.customerId,
           customerName: stop.customerName,
@@ -176,16 +178,49 @@ class MockStore {
       if (si == -1) continue;
       final stops = route.stops.toList();
       stops[si] = update(stops[si]);
-      // Маршрут закрыт, когда закрыта каждая точка — в том числе отменённая:
-      // ехать к ней уже некуда, и держать маршрут «в работе» незачем.
-      final allDone = stops.every((s) => !s.status.isOpen);
+      // Первое действие по точке выводит маршрут в рейс. Обратно — нет:
+      // сервер с 2026-09-19 не закрывает маршрут по последней доставке,
+      // только явной командой, см. [completeRoute]. Иначе мок показывал бы
+      // «Завершён» там, где боевой сервер держит «В пути».
       routes[i] = copyRoute(
         route,
         stops: stops,
-        status: allDone ? RouteStatus.completed : RouteStatus.inProgress,
+        status: route.status == RouteStatus.created
+            ? RouteStatus.inProgress
+            : route.status,
       );
       return;
     }
+  }
+
+  /// Причина, которую сервер ставит точкам, отменённым при закрытии
+  /// маршрута, — его текст, как есть.
+  static const routeCompletionCancelReason = cancel_reason.routeCompletionCancelReason;
+
+  /// Завершает маршрут — как это сделает сервер по
+  /// `POST /driver/routes/{id}/complete`.
+  ///
+  /// Незакрытые точки отменяются с [routeCompletionCancelReason], маршрут
+  /// становится `completed`. Завершить можно только `in_progress`: у
+  /// остальных сервер отвечает 409 `ORDER_ALREADY_COMPLETED` (код у него
+  /// общий с заказом).
+  void completeRoute(String routeId) {
+    final i = routes.indexWhere((r) => r.id == routeId);
+    if (i == -1) throw StateError('ROUTE_NOT_FOUND');
+    final route = routes[i];
+    if (!route.status.canComplete) throw StateError('ORDER_ALREADY_COMPLETED');
+    final now = DateTime.now();
+    final stops = [
+      for (final s in route.stops)
+        s.status.isOpen
+            ? s.copyWith(
+                status: DeliveryStatus.cancelled,
+                cancelReason: routeCompletionCancelReason,
+                cancelledAt: now,
+              )
+            : s,
+    ];
+    routes[i] = copyRoute(route, stops: stops, status: RouteStatus.completed);
   }
 
   /// Отменяет точку с причиной — как это сделает сервер по

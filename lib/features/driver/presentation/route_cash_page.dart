@@ -20,6 +20,7 @@ import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/section_block.dart';
 import '../../../data/models/route_expense.dart';
+import '../../../data/models/enums.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/driver_repository.dart';
 import 'expense_form_page.dart';
@@ -75,6 +76,11 @@ class _RouteCashPageState extends State<RouteCashPage> {
       });
     }
   }
+
+  bool get _canAddExpense =>
+      !_loading &&
+      !_loadFailed &&
+      (_route == null || _route!.status == RouteStatus.inProgress);
 
   Future<void> _addExpense() async {
     final added = await Navigator.of(context).push<bool>(
@@ -150,11 +156,14 @@ class _RouteCashPageState extends State<RouteCashPage> {
                     ),
                   ],
                 ),
+      // Расход принимается только у маршрута в работе: на закрытый сервер
+      // отвечает 409 `ROUTE_NOT_IN_PROGRESS`. Пока маршрут не пришёл, кнопка
+      // остаётся — отказ переведён, а глухая кнопка без объяснения хуже.
       bottomBar: BottomActionBar(
         child: AppButton(
           label: l10n.cashAddExpense,
-          enabled: !_loading && !_loadFailed,
-          onPressed: (_loading || _loadFailed) ? null : _addExpense,
+          enabled: _canAddExpense,
+          onPressed: _canAddExpense ? _addExpense : null,
         ),
       ),
     );

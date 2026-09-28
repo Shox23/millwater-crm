@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/utils/cancel_reason.dart';
 import '../../../../l10n/l10n.dart';
 
 import '../../../../app/theme/app_spacing.dart';
@@ -124,6 +125,33 @@ class StopCard extends StatelessWidget {
               capsules: stop.bottleSellCount,
               amount: stop.customPrice,
             ),
+          // Комментарий админа — прямо в карточке: водитель читает его до
+          // того, как поедет, а админ видит, что написал. Показываем и у
+          // закрытой точки: он объясняет, почему доставка прошла так.
+          if (stop.comment case final String comment)
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: t.primarySoft,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Row(
+                spacing: AppSpacing.sm,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.sticky_note_2_outlined,
+                      size: 16, color: t.primary),
+                  Expanded(
+                    child: Text(
+                      comment,
+                      style: AppTypography.secondary.copyWith(color: t.text),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Причина отмены — прямо в списке: у водителя это напоминание,
           // почему сюда не едем, у админа — ответ без звонка.
           if (stop.isCancelled)
@@ -134,7 +162,7 @@ class StopCard extends StatelessWidget {
                 Icon(Icons.block_outlined, size: 16, color: t.danger),
                 Expanded(
                   child: Text(
-                    stop.cancelReason ?? context.l10n.orderCancelReasonEmpty,
+                    cancelReasonLabel(context.l10n, stop.cancelReason),
                     style: AppTypography.secondary.copyWith(color: t.text2),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

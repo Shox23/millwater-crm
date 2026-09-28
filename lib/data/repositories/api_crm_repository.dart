@@ -416,6 +416,9 @@ class ApiCrmRepository implements CrmRepository {
               // Договорная сумма за весь заказ; без неё считают по прайсу.
               if (order.customPrice != null)
                 'order_custom_price': MoneyParser.toApi(order.customPrice!),
+              // Комментарий водителю. Колонка на сервере — 255 символов,
+              // длину режет клиент (`RouteOrderInput.comment`).
+              'comment': ?order.comment,
             },
         ],
       },
@@ -429,6 +432,12 @@ class ApiCrmRepository implements CrmRepository {
 
   @override
   Future<void> cancelRoute(String id) => _dio.post('/admin/routes/$id/cancel');
+
+  @override
+  Future<void> completeRoute(String id, {String? idempotencyKey}) => _dio.post(
+        '/driver/routes/$id/complete',
+        options: _idempotent(idempotencyKey),
+      );
 
   @override
   Future<RouteDetail> updateRouteDate({
@@ -456,6 +465,7 @@ class ApiCrmRepository implements CrmRepository {
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
     int? customPrice,
+    String? comment,
   }) =>
       // Заказчик остаётся и в пути — ради старых сборок, — но сервер читает
       // его из тела вместе с целью заказа.
@@ -469,6 +479,7 @@ class ApiCrmRepository implements CrmRepository {
           'bottle_sell_count': ?bottleSellCount,
           if (customPrice != null)
             'order_custom_price': MoneyParser.toApi(customPrice),
+          'comment': ?comment,
         },
       );
 

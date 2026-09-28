@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -11,14 +12,19 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/navigation/overlay_route.dart';
+import '../../../core/utils/idempotency.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../../../core/pricing/capsule_price.dart';
 import '../../../core/widgets/action_feedback.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/bottom_action_bar.dart';
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/error_retry_view.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/enums.dart';
+import '../../../data/network/api_envelope.dart';
 import '../../../data/models/notification_event.dart';
 import '../../../data/models/route_models.dart';
 import '../../../data/repositories/driver_repository.dart';
@@ -44,6 +50,10 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
   bool _loading = true;
   bool _loadFailed = false;
   StreamSubscription<NotificationEvent>? _notifications;
+
+  /// Ключ завершения маршрута — один на карточку: повтор после обрыва связи
+  /// уходит с тем же ключом и не упирается в 409 от уже прошедшего запроса.
+  final String _completionKey = newIdempotencyKey('route-complete');
 
   @override
   void initState() {
@@ -138,6 +148,56 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
     await _load();
   }
 
+  /// Завершение дня. Сервер сам маршрут не закрывает — только по этой
+  /// кнопке, и точки, до которых водитель не доехал, при этом отменяются.
+  /// Диалог называет их число: закрыть маршрут с тремя незакрытыми адресами
+  /// и с нулём — разные решения, и водитель должен видеть, какое принимает.
+  Future<void> _completeRoute(RouteDetail route) async {
+    final open = route.stops.where((s) => s.status.isOpen).length;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: context.l10n.routeCompleteTitle,
+      message: open == 0
+          ? context.l10n.routeCompleteMessage
+          : context.l10n.routeCompleteMessageOpen(open),
+      confirmLabel: context.l10n.routeCompleteAction,
+      destructive: false,
+    );
+    if (!confirmed || !mounted) return;
+    final repo = context.read<DriverRepository>();
+    // Строки берём до запроса: после await контекст уже мог уйти.
+    final l10n = context.l10n;
+    try {
+      await repo.completeRoute(widget.routeId, idempotencyKey: _completionKey);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      // 409 у этой ручки один: маршрут уже не в работе — его закрыли с
+      // другого устройства. Общий разбор кода (`ORDER_ALREADY_COMPLETED`)
+      // сказал бы «заказ», поэтому подпись своя, а карточка перечитывается:
+      // на экране она всё ещё «В пути».
+      final conflict = e.response?.statusCode == 409;
+      showAppSnackBar(
+        context,
+        conflict
+            ? l10n.errorRouteCompleted
+            : apiErrorMessage(l10n, e, fallback: l10n.routeCompleteFailed),
+        isError: true,
+      );
+      if (conflict) await _load();
+      return;
+    } catch (_) {
+      if (mounted) {
+        showAppSnackBar(context, l10n.routeCompleteFailed, isError: true);
+      }
+      return;
+    }
+    if (!mounted) return;
+    showAppSnackBar(context, l10n.routeCompleted2);
+    // Завершённый маршрут из `/driver/routes` пропадает — карточка
+    // перечитается через восстановление по заказам (см. `getMyRoute`).
+    await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
@@ -145,6 +205,29 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
 
     return DetailScaffold(
       title: context.l10n.myRouteTitle,
+      // Кнопка есть только у начатого маршрута: закрытый и отменённый
+      // завершать нечего, а `created` водителю и не показывают.
+      bottomBar: _loadFailed || route == null || !route.status.canComplete
+          ? null
+          : BottomActionBar(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: AppSpacing.md,
+                children: [
+                  if (route.awaitsCompletion)
+                    Text(
+                      context.l10n.routeAwaitsCompletion,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.secondary.copyWith(color: t.text2),
+                    ),
+                  AppButton(
+                    label: context.l10n.routeCompleteAction,
+                    onPressed: () => _completeRoute(route),
+                  ),
+                ],
+              ),
+            ),
       body: _loading
           ? const Padding(
               padding: EdgeInsets.only(top: 80),

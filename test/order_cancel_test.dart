@@ -280,7 +280,7 @@ void main() {
       );
     });
 
-    test('маршрут закрывается, когда открытых точек не осталось', () async {
+    test('отмена последней открытой точки маршрут не закрывает', () async {
       final store = MockStore();
       final repo = MockCrmRepository(store: store);
       final route = store.routes.firstWhere((r) => r.id == 'r1');
@@ -289,9 +289,11 @@ void main() {
         await repo.cancelOrder(orderId: stop.id);
       }
 
+      // Сервер с 2026-09-19 маршрут по последней точке не закрывает —
+      // только явным завершением (см. `route_complete_test.dart`).
       expect(
         store.routes.firstWhere((r) => r.id == 'r1').status,
-        RouteStatus.completed,
+        RouteStatus.inProgress,
       );
     });
 

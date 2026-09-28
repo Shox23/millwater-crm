@@ -163,6 +163,19 @@ abstract class CrmRepository {
   Future<void> deleteRoute(String id);
   Future<void> cancelRoute(String id);
 
+  /// Завершает маршрут (`POST /driver/routes/{id}/complete`).
+  ///
+  /// Ручка водительская, но админа сервер к ней пускает — своей у админа
+  /// нет. Незакрытые точки (`pending`/`on_way`) сервер отменяет сам с
+  /// причиной «Заказ не выполнен до завершения маршрута», маршрут становится
+  /// `completed`; вернуть его в работу нельзя. Только у `in_progress` — у
+  /// остальных 409 `ORDER_ALREADY_COMPLETED`. Ответ 204 без тела — маршрут
+  /// надо перечитать.
+  ///
+  /// [idempotencyKey] один и тот же при повторном нажатии: повтор после
+  /// обрыва связи не должен упереться в 409 из-за уже прошедшего запроса.
+  Future<void> completeRoute(String id, {String? idempotencyKey});
+
   /// Переносит маршрут на другую дату (`PATCH /admin/routes/{id}`).
   ///
   /// Статус этим же эндпоинтом не меняем: отмена живёт в [cancelRoute], а
@@ -194,12 +207,15 @@ abstract class CrmRepository {
   /// удаление и правка порядка объезда, поэтому задание ставится в момент
   /// добавления. [customPrice] — договорная сумма за весь заказ, по той же
   /// причине задаётся только здесь (см. `RouteOrderInput.customPrice`).
+  /// [comment] — комментарий водителю к этой точке; и он тоже задаётся
+  /// только при добавлении.
   Future<void> addRouteCustomer({
     required String routeId,
     required String customerId,
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
     int? customPrice,
+    String? comment,
   });
 
   /// Убирает заказчика из маршрута

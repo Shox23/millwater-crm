@@ -542,6 +542,40 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeCancelled2 => 'Маршрут отменён';
 
   @override
+  String get routeCompleteTitle => 'Завершить маршрут?';
+
+  @override
+  String get routeCompleteMessage =>
+      'Маршрут будет закрыт, открыть его заново нельзя.';
+
+  @override
+  String routeCompleteMessageOpen(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count незакрытых точек будут отменены',
+      few: '$count незакрытые точки будут отменены',
+      one: '$count незакрытая точка будет отменена',
+    );
+    return '$_temp0. Маршрут будет закрыт, открыть его заново нельзя.';
+  }
+
+  @override
+  String get routeCompleteAction => 'Завершить маршрут';
+
+  @override
+  String get routeAwaitsCompletion => 'Все точки закрыты — завершите маршрут';
+
+  @override
+  String get routeCompleteShort => 'Завершить';
+
+  @override
+  String get routeCompleteFailed => 'Не удалось завершить маршрут.';
+
+  @override
+  String get routeCompleted2 => 'Маршрут завершён';
+
+  @override
   String get routeDriver => 'Водитель';
 
   @override
@@ -2296,6 +2330,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get orderCancelReasonEmpty => 'Причина не указана';
 
   @override
+  String get orderCancelReasonRouteCompleted =>
+      'Не выполнен до завершения маршрута';
+
+  @override
   String get routeFormCustomPrice => 'Цена заказа';
 
   @override
@@ -2338,4 +2376,181 @@ class AppLocalizationsRu extends AppLocalizations {
   String completionByCustomPrice(String amount) {
     return 'По цене заказа: $amount';
   }
+
+  @override
+  String get routeCreateSearchHint => 'Улица, дом или название';
+
+  @override
+  String get routeCreateStopsLabel => 'МАРШРУТ';
+
+  @override
+  String routeCreateFound(int count) {
+    return 'найдено $count';
+  }
+
+  @override
+  String routeCreateBase(int count) {
+    return '$count всего';
+  }
+
+  @override
+  String get routeCreateTomorrow => 'Завтра';
+
+  @override
+  String get routeCreateDriverTitle => 'Водитель';
+
+  @override
+  String get routeCreateBadgeDue => 'ПОРА';
+
+  @override
+  String get routeCreateBadgeDebt => 'ДОЛГ';
+
+  @override
+  String routeCreateBadgeDebtAmount(String amount) {
+    return 'ДОЛГ $amount';
+  }
+
+  @override
+  String routeCreateUsual(int count) {
+    return 'обычно $count';
+  }
+
+  @override
+  String routeCreateLastDelivery(int count) {
+    return 'последняя $count дн. назад';
+  }
+
+  @override
+  String get routeCreateNoDeliveries => 'доставок ещё не было';
+
+  @override
+  String get routeCreateEmptyTitle => 'Точек пока нет';
+
+  @override
+  String get routeCreateEmptyHint =>
+      'Выберите заказчика — точка добавится с обычным для него заказом, останется только проверить.';
+
+  @override
+  String get routeCreateOrderHint => 'порядок объезда';
+
+  @override
+  String get routeCreateDragHint => 'Перетащите, чтобы изменить порядок';
+
+  @override
+  String get routeCreateMoveUp => 'Выше';
+
+  @override
+  String get routeCreateMoveDown => 'Ниже';
+
+  @override
+  String get routeCreateRemoveStop => 'Убрать точку';
+
+  @override
+  String get routeCreateQtyTitle => 'Сколько капсул';
+
+  @override
+  String routeCreatePricePlaceholder(String amount) {
+    return 'по прайсу · $amount';
+  }
+
+  @override
+  String get routeCreatePriceReset => 'По прайсу';
+
+  @override
+  String routeCreatePriceHint(String price) {
+    return 'Пусто — считаем по прайсу $price за капсулу';
+  }
+
+  @override
+  String get routeCreatePickupPriceHint =>
+      'Пусто — вывоз без оплаты, в итоги не попадёт';
+
+  @override
+  String get routeCreateBulkPriceHint =>
+      'Пусто — цену опта водитель ставит на месте';
+
+  @override
+  String get routeCreateNoPayment => 'без оплаты';
+
+  @override
+  String get routeCreatePriceOnSite => 'цена на месте';
+
+  @override
+  String get routeCreateOwnPrice => 'своя цена';
+
+  @override
+  String get routeCreateTotalStops => 'Точек';
+
+  @override
+  String routeCreateTotalCapsules(String liters) {
+    return 'Капсул $liters л';
+  }
+
+  @override
+  String get routeCreateTotalMoney => 'Сумма';
+
+  @override
+  String routeCreateOverCapacity(int count) {
+    return 'Больше, чем везёт машина — $count';
+  }
+
+  @override
+  String routeCreateSubmit(int count) {
+    return 'Создать маршрут · $count';
+  }
+
+  @override
+  String routeCreateSubmitShort(int count) {
+    return 'Создать · $count';
+  }
+
+  @override
+  String get routeCreateSubmitEmpty => 'Добавьте точку';
+
+  @override
+  String routeCreateSheetTitle(String stops) {
+    return '$stops в маршруте';
+  }
+
+  @override
+  String get routeCreateSheetEmpty => 'Маршрут пуст';
+
+  @override
+  String get routeCreateSheetEmptyHint => 'Выберите заказчика из списка';
+
+  @override
+  String routeCreateSheetSummary(String capsules, String money) {
+    return '$capsules · $money';
+  }
+
+  @override
+  String get routeCreateBackToList => 'К списку';
+
+  @override
+  String routeCreateAdded(String name, String capsules) {
+    return '$name · $capsules';
+  }
+
+  @override
+  String get routeCreateRemoved => 'Точка убрана';
+
+  @override
+  String get orderComment => 'Комментарий водителю';
+
+  @override
+  String get orderCommentHint => 'Например: позвонить с парковки';
+
+  @override
+  String get orderCommentHelper =>
+      'Необязательно — водитель увидит его в точке';
+
+  @override
+  String get orderCommentTitle => 'Комментарий';
+
+  @override
+  String get orderCommentHasOne => 'есть комментарий';
+
+  @override
+  String get routeCreateCollapseToDrag =>
+      'Сверните точку, чтобы менять порядок';
 }

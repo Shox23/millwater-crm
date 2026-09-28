@@ -181,7 +181,7 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
     if (!mounted || price == _capsulePrice) return;
     setState(() {
       _capsulePrice = price;
-      if (!_amountLocked) _amountController.text = '$_calculatedAmount';
+      _recalculate();
     });
   }
 
@@ -265,8 +265,15 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
   }
 
   /// Пересчитывает сумму, пока водитель не назначил свою.
+  ///
+  /// В долг поле держится на нуле: сервер при `debt` принимает только ноль,
+  /// а поле в этом режиме `readOnly` — переписанную расчётом сумму водителю
+  /// нечем было бы вернуть, и каждая смена счётчика после выбора долга
+  /// заканчивалась 422. Сам расчёт при этом жив: его показывает подсказка
+  /// «уйдёт в долг» через [_debtAmount].
   void _recalculate() {
-    if (!_amountLocked) _amountController.text = '$_calculatedAmount';
+    if (_amountLocked) return;
+    _amountController.text = _isDebt ? '0' : '$_calculatedAmount';
   }
 
   void _onCapsulesChanged(int value) {
@@ -599,6 +606,10 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
                 onRetry: submitting ? null : _captureLocation,
               ),
             ),
+          // Комментарий админа — до счётчиков и общий для всех целей: его
+          // пишут ради того, чтобы водитель прочитал до доставки, а не после.
+          if (widget.stop.comment case final String comment)
+            _CommentCard(comment: comment),
           ..._purposeSections(context),
           LabeledCard(
             label: context.l10n.completionMethod,
@@ -1050,6 +1061,47 @@ class _BulkCard extends StatelessWidget {
 /// самое, что «привезено». Число из заказа, водитель его не правит — если
 /// повезёт другое количество, он отметит факт ниже, и сервер увидит
 /// расхождение.
+/// Комментарий админа к точке. Только показ: менять его водителю нечем — да
+/// и сервер правки комментария не умеет.
+class _CommentCard extends StatelessWidget {
+  const _CommentCard({required this.comment});
+
+  final String comment;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: t.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        spacing: AppSpacing.md,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.sticky_note_2_outlined, size: 20, color: t.primary),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(l10n.orderCommentTitle,
+                    style: AppTypography.fieldLabel.copyWith(color: t.primary)),
+                Text(comment,
+                    style: AppTypography.bodyStrong.copyWith(color: t.text)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BottleSellCard extends StatelessWidget {
   const _BottleSellCard({required this.count});
 

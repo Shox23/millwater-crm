@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/utils/money_parser.dart';
+import '../../core/utils/visit_order.dart';
 import 'json.dart';
 import 'enums.dart';
 
@@ -93,6 +94,7 @@ class RouteOrderInput extends Equatable {
     this.sequence,
     this.bottleSellCount,
     this.customPrice,
+    this.comment,
   });
 
   final String customerId;
@@ -115,9 +117,16 @@ class RouteOrderInput extends Equatable {
   /// добавляет. `null` — считается по прайсу.
   final int? customPrice;
 
+  /// Комментарий водителю к этой точке — «позвонить с парковки», «ключ у
+  /// охраны». Необязателен; `null` — комментария нет.
+  ///
+  /// Задаётся только при добавлении точки: правки комментария у сервера нет,
+  /// как нет её у задания в капсулах и договорной цены.
+  final String? comment;
+
   @override
   List<Object?> get props =>
-      [customerId, purpose, sequence, bottleSellCount, customPrice];
+      [customerId, purpose, sequence, bottleSellCount, customPrice, comment];
 }
 
 /// Остановка маршрута — доставка конкретному заказчику (RouteCustomerResponse).
@@ -145,6 +154,7 @@ class RouteStop extends Equatable {
     this.damagedCapsules,
     this.cancelReason,
     this.cancelledAt,
+    this.comment,
     this.pickedCoolers,
     this.pickedBottles,
     this.bulk5lCount,
@@ -216,6 +226,13 @@ class RouteStop extends Equatable {
   /// Причина и время отмены — у точки со статусом `cancelled`.
   final String? cancelReason;
   final DateTime? cancelledAt;
+
+  /// Комментарий админа водителю (`comment` у заказа), до 255 символов.
+  ///
+  /// Пишется при добавлении точки в маршрут и дальше только показывается:
+  /// менять его сервер не умеет. Пустую строку считаем отсутствием — иначе
+  /// карточка показывала бы пустую плашку «Комментарий».
+  final String? comment;
 
   /// Что увезли при цели «вывоз» и что продали при цели «опт».
   ///
@@ -340,6 +357,8 @@ class RouteStop extends Equatable {
       damagedCapsules: damagedCapsules ?? this.damagedCapsules,
       cancelReason: cancelReason ?? this.cancelReason,
       cancelledAt: cancelledAt ?? this.cancelledAt,
+      // Меняться ему нечем — но и потеряться при копии он не должен.
+      comment: comment,
       pickedCoolers: pickedCoolers ?? this.pickedCoolers,
       pickedBottles: pickedBottles ?? this.pickedBottles,
       bulk5lCount: bulk5lCount ?? this.bulk5lCount,
@@ -437,6 +456,7 @@ class RouteStop extends Equatable {
         damagedCapsules: optionalInt(json['damaged_bottles']),
         cancelReason: optionalString(json['cancel_reason'])?.trim(),
         cancelledAt: optionalDate(json['cancelled_at']),
+        comment: _comment(json['comment']),
         pickedCoolers: optionalInt(json['picked_coolers']),
         pickedBottles: optionalInt(json['picked_bottles']),
         bulk5lCount: optionalInt(json['bulk_5l_count']),
@@ -449,6 +469,12 @@ class RouteStop extends Equatable {
         bottleSellCount: optionalInt(json['bottle_sell_count']),
         customPrice: _money(json['custom_price']),
       );
+  }
+
+  /// Комментарий: пробелы по краям срезаем, пустую строку считаем за `null`.
+  static String? _comment(Object? value) {
+    final text = optionalString(value)?.trim();
+    return (text == null || text.isEmpty) ? null : text;
   }
 
   /// Деньги: `null` отличается от нуля — у незакрытой точки суммы нет вовсе.
@@ -501,6 +527,7 @@ class RouteStop extends Equatable {
         damagedCapsules,
         cancelReason,
         cancelledAt,
+        comment,
         pickedCoolers,
         pickedBottles,
         bulk5lCount,
@@ -599,6 +626,15 @@ class RouteDetail extends Equatable {
   /// Сколько наличных должно остаться у водителя: собранное минус расходы.
   final int? cashBalance;
 
+  /// Точки кончились, а маршрут ещё в работе: сервер сам его не закрывает
+  /// (с 2026-09-19 — только по явной команде), и без подсказки день висел
+  /// бы «В пути» до следующего утра. Пустой маршрут сюда не попадает —
+  /// в нём закрывать нечего.
+  bool get awaitsCompletion =>
+      status.canComplete &&
+      stops.isNotEmpty &&
+      stops.every((s) => !s.status.isOpen);
+
   /// Наличные, собранные за маршрут, — то, что водитель везёт в руках.
   ///
   /// Серверный подсчёт точнее — он видит все платежи, включая правки админа,
@@ -643,9 +679,17 @@ class RouteDetail extends Equatable {
         // переименования точек в заказы. Читать только новый нельзя —
         // приложение с этим кодом обязано работать и со старым стендом; и
         // ровно на этом расхождении маршрут однажды открылся пустым.
-        stops: parseList(
-          json['orders'] ?? json['route_customers'],
-          RouteStop.fromJson,
+        //
+        // Точки ставятся в порядок объезда здесь, на разборе: сервер отдаёт их
+        // в порядке создания, а `sequence` не сортирует вовсе (см.
+        // [inVisitOrder]). Раньше каждый экран видел порядок ответа, то есть
+        // заданный админом объезд до водителя не доходил.
+        stops: inVisitOrder(
+          parseList(
+            json['orders'] ?? json['route_customers'],
+            RouteStop.fromJson,
+          ),
+          (stop) => stop.sequence,
         ),
         cashCollected: _money(json['cash_collected']),
         cashlessCollected: _money(json['cashless_collected']),

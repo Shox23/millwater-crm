@@ -153,6 +153,13 @@ class ApiDriverRepository implements DriverRepository {
       );
 
   @override
+  Future<void> completeRoute(String routeId, {String? idempotencyKey}) =>
+      _dio.post(
+        '/driver/routes/$routeId/complete',
+        options: Options(headers: {'Idempotency-Key': ?idempotencyKey}),
+      );
+
+  @override
   Future<void> completeDelivery({
     required String stopId,
     required OrderPurpose purpose,

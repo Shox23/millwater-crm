@@ -29,6 +29,7 @@ import 'package:crm_millwater/features/desktop/presentation/pages/prices_desktop
 import 'package:crm_millwater/features/desktop/widgets/desktop_table.dart';
 import 'package:crm_millwater/features/orders/presentation/cancel_order_page.dart';
 import 'package:crm_millwater/features/reports/presentation/report_export_page.dart';
+import 'package:crm_millwater/features/routes/presentation/route_create_page.dart';
 import 'package:crm_millwater/features/routes/presentation/route_form_page.dart';
 import 'package:crm_millwater/features/settings/presentation/settings_page.dart';
 import 'package:crm_millwater/features/auth/presentation/login_page.dart';
@@ -828,7 +829,9 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
       }
 
-      expect(find.byType(RouteFormPage), findsOneWidget);
+      // Создание живёт в своей странице, правка — в общей с телефоном
+      // `RouteFormPage` (см. соседний тест).
+      expect(find.byType(RouteCreatePage), findsOneWidget);
     });
 
     testWidgets('из карточки доставки открывается правка её маршрута',

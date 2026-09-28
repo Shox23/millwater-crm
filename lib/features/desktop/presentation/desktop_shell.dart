@@ -35,6 +35,7 @@ import 'pages/drivers_desktop_page.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../../../data/models/order.dart';
 import '../../orders/bloc/orders_bloc.dart';
+import '../../routes/presentation/route_create_page.dart';
 import '../../routes/presentation/route_form_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../../orders/bloc/orders_source.dart';
@@ -266,13 +267,14 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
 
   /// Создание маршрута.
   ///
-  /// Открывает ту же форму, что и телефон, в десктопной шторке: в ней уже
-  /// есть и цель маршрута, и «назначить позже», и своя цель у точки —
-  /// вторая её копия под десктоп разошлась бы с первой на первой же правке.
+  /// Открывает ту же страницу, что и телефон: раскладку она выбирает по
+  /// ширине сама — здесь панель разворачивается на всё окно, и умещаются две
+  /// колонки, заказчики и маршрут. Вторая её копия под десктоп разошлась бы
+  /// с первой на первой же правке.
   Future<void> _createRoute() async {
     final saved = await showDesktopDrawer<bool>(
       context,
-      builder: (_) => const RouteFormPage(),
+      builder: (_) => const RouteCreatePage(),
     );
     if (saved != true || !mounted) return;
     context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());

@@ -1,4 +1,5 @@
 import '../../data/models/route_models.dart';
+import '../utils/visit_order.dart';
 import 'address_geocoder.dart';
 import 'geo_link.dart';
 import 'geo_link_resolver.dart';
@@ -69,28 +70,10 @@ class RoutePlanner {
   /// через адреса, где он уже был, — это лишние километры и потерянное время.
   /// Порядок задаёт `sequence`; точки без него встают в конец, сохраняя
   /// исходный порядок ответа — сервер сортировки не делает вовсе.
-  static List<RouteStop> pendingStops(List<RouteStop> stops) {
-    final pending = <(int, RouteStop)>[];
-    for (final (index, stop) in stops.indexed) {
-      if (stop.status.isOpen) {
-        pending.add((index, stop));
-      }
-    }
-
-    pending.sort((a, b) {
-      final left = a.$2.sequence;
-      final right = b.$2.sequence;
-      if (left != null && right != null && left != right) {
-        return left.compareTo(right);
-      }
-      // Без номера — в конец; при равных номерах порядок ответа сохраняется.
-      if (left == null && right != null) return 1;
-      if (left != null && right == null) return -1;
-      return a.$1.compareTo(b.$1);
-    });
-
-    return [for (final entry in pending) entry.$2];
-  }
+  static List<RouteStop> pendingStops(List<RouteStop> stops) => inVisitOrder(
+        [for (final stop in stops) if (stop.status.isOpen) stop],
+        (stop) => stop.sequence,
+      );
 
   /// Строит план: координаты остановок, порядок и стартовую точку.
   ///

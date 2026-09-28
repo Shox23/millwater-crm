@@ -2,5 +2,6 @@
   "SENTRY_DSN": "",
   "API_BASE_URL": "https://crm.millwater.uz",
   "CAPSULE_PRICE": "20000",
+  "VEHICLE_CAPSULE_CAPACITY": "60",
   "YANDEX_GEOCODER_KEY": ""
 }

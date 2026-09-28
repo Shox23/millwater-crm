@@ -19,8 +19,8 @@ import '../../../data/models/enums.dart';
 import '../../../data/repositories/crm_repository.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../bloc/routes_bloc.dart';
+import 'route_create_page.dart';
 import 'route_detail_page.dart';
-import 'route_form_page.dart';
 import 'widgets/hero_progress_card.dart';
 import 'widgets/route_card.dart';
 
@@ -175,10 +175,15 @@ class _RoutesView extends StatelessWidget {
     return bloc.stream.firstWhere((s) => s.status != RoutesStatus.loading);
   }
 
+  /// Сборка нового маршрута.
+  ///
+  /// Открывает [RouteCreatePage], а не общую с правкой `RouteFormPage`:
+  /// у создания свой UX (список заказчиков и зона маршрута врозь), у правки —
+  /// свои ограничения по статусу. Откат — вернуть сюда `RouteFormPage`.
   Future<void> _openForm(BuildContext context, RoutesBloc bloc) async {
     final created = await Navigator.of(
       context,
-    ).push<bool>(OverlayPageRoute(builder: (_) => const RouteFormPage()));
+    ).push<bool>(OverlayPageRoute(builder: (_) => const RouteCreatePage()));
     if (created == true) {
       bloc.add(const RoutesRequested());
       if (context.mounted) showAppSnackBar(context, context.l10n.routesCreated);

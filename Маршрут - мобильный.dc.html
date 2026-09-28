@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Manrope,system-ui,sans-serif;background:#050a12;color:#e9eff8;-webkit-font-smoothing:antialiased}
+  input{font-family:inherit}
+  input::placeholder{color:#5f748d}
+  .sc::-webkit-scrollbar{width:0}
+  a{color:#4b8ef5}a:hover{color:#78acf8}
+</style>
+</helmet>
+<div style="width:390px;height:844px;margin:0 auto;position:relative;overflow:hidden;background:#080e18;border-radius:38px;border:1px solid #1d2b3f;touch-action:none;user-select:none">
+
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+    <div style="flex:none;padding:16px 16px 10px;display:flex;flex-direction:column;gap:11px;background:#080e18;border-bottom:1px solid #14202f">
+      <div style="display:flex;align-items:center;gap:11px">
+        <button style="width:36px;height:36px;flex:none;border-radius:11px;background:#111d2e;border:1px solid #22334a;color:#9fb3ca;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div style="font-size:18px;font-weight:800;letter-spacing:-.3px">Новый маршрут</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onClick="{{ cycleDate }}" style="flex:1;min-width:0;height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:13px;background:#111d2e;border:1px solid #22334a;color:#e9eff8;font-size:13.5px;font-weight:700">
+          <svg width="16" height="16" style="flex:none;color:#4b8ef5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ dateLabel }}</span>
+        </button>
+        <button onClick="{{ cycleDriver }}" style="flex:1;min-width:0;height:44px;display:flex;align-items:center;gap:8px;padding:0 12px 0 8px;border-radius:13px;background:#111d2e;border:1px solid #22334a;color:#e9eff8;font-size:13.5px;font-weight:700">
+          <span style="width:28px;height:28px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ driverBg }};color:{{ driverFg }};font-size:11px;font-weight:800">{{ driverInit }}</span>
+          <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ driverName }}</span>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;height:46px;padding:0 13px;border-radius:13px;background:#0a121f;border:1px solid {{ searchBorder }}">
+        <svg width="17" height="17" style="flex:none;color:#6d829b" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input value="{{ query }}" onChange="{{ setQuery }}" placeholder="Улица, дом или название" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#e9eff8;font-size:15px;font-weight:600" />
+        <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ clearQuery }}" style="flex:none;width:26px;height:26px;border-radius:8px;border:0;background:#1a2942;color:#9fb3ca;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </sc-if>
+      </div>
+    </div>
+
+    <div class="sc" style="flex:1;overflow-y:auto;padding:10px 16px {{ listPad }};display:flex;flex-direction:column;gap:8px;touch-action:pan-y">
+      <sc-for list="{{ clients }}" as="c" hint-placeholder-count="8">
+        <button onClick="{{ c.toggle }}" style="{{ c.rowStyle }}">
+          <div style="flex:1;min-width:0;text-align:left">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:15px;font-weight:700;color:{{ c.nameColor }}">{{ c.name }}</span>
+              <sc-if value="{{ c.due }}" hint-placeholder-val="{{ false }}">
+                <span style="flex:none;font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;background:rgba(47,111,224,.16);color:#6ba0f7">ПОРА</span>
+              </sc-if>
+              <sc-if value="{{ c.debt }}" hint-placeholder-val="{{ false }}">
+                <span style="flex:none;font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;background:rgba(214,71,71,.16);color:#f07f7f">ДОЛГ</span>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12.5px;font-weight:600;color:#7f93ab">
+              <svg width="13" height="13" style="flex:none;color:#5f748d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.address }}</span>
+            </div>
+            <div style="margin-top:3px;font-size:12.5px;font-weight:600;color:#93a8c0">{{ c.habit }}</div>
+          </div>
+          <span style="{{ c.markStyle }}">{{ c.mark }}</span>
+        </button>
+      </sc-for>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:40px 16px;text-align:center;color:#6d829b;font-size:13.5px;font-weight:600">Ничего не нашли по «{{ query }}»</div>
+      </sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ collapse }}" style="position:absolute;inset:0;background:rgba(4,8,14,.6);z-index:5"></div>
+  </sc-if>
+
+  <div style="{{ sheetStyle }}">
+    <div onClick="{{ toggleSheet }}" style="flex:none;padding:8px 16px 0;cursor:pointer">
+      <div style="width:44px;height:4px;border-radius:99px;background:#2a3c56;margin:0 auto 10px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15.5px;font-weight:800">{{ sheetTitle }}</div>
+          <div style="margin-top:3px;font-size:12.5px;font-weight:700;color:{{ sheetSubColor }}">{{ sheetSub }}</div>
+        </div>
+        <span style="flex:none;color:#6d829b;transform:{{ chevRot }};transition:transform .18s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></span>
+      </div>
+    </div>
+
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+      <div class="sc" style="flex:1;min-height:0;overflow-y:auto;padding:2px 16px 14px;display:flex;flex-direction:column;gap:9px;touch-action:pan-y">
+        <sc-for list="{{ points }}" as="p" hint-placeholder-count="0">
+          <div style="{{ p.cardStyle }}">
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 10px 10px 4px">
+              <div onPointerDown="{{ p.grab }}" onPointerMove="{{ p.grabMove }}" onPointerUp="{{ p.grabEnd }}" onPointerCancel="{{ p.grabEnd }}" style="{{ p.gripStyle }}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>
+              </div>
+              <span style="width:24px;height:24px;flex:none;border-radius:8px;background:#1a2942;color:#9fb3ca;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ p.num }}</span>
+              <button onClick="{{ p.expand }}" style="flex:1;min-width:0;background:transparent;border:0;padding:0;text-align:left">
+                <div style="font-size:14.5px;font-weight:700;color:#e9eff8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                <div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;font-weight:700;line-height:1.35">
+                  <span style="color:{{ p.goalColor }}">{{ p.goalLabel }}</span>
+                  <span style="color:#3f5470">·</span>
+                  <span style="color:#9fb3ca">{{ p.qtyLabel }}</span>
+                  <span style="color:{{ p.priceColor }};white-space:nowrap">{{ p.priceLabel }}</span>
+                </div>
+              </button>
+              <button onClick="{{ p.remove }}" style="width:38px;height:38px;flex:none;border-radius:11px;background:transparent;border:1px solid #22334a;color:#7f93ab;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+
+            <sc-if value="{{ p.open }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:12px 12px 14px;display:flex;flex-direction:column;gap:13px;border-top:1px solid #16233a">
+                <div style="display:flex;gap:7px">
+                  <sc-for list="{{ p.goals }}" as="g" hint-placeholder-count="3">
+                    <button onClick="{{ g.pick }}" style="{{ g.style }}">{{ g.label }}</button>
+                  </sc-for>
+                </div>
+                <div>
+                  <div style="font-size:12px;font-weight:700;color:#7f93ab;margin-bottom:8px">{{ p.qtyTitle }}</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="display:flex;align-items:center;gap:2px;background:#111d2e;border:1px solid #22334a;border-radius:13px;padding:3px;flex:none">
+                      <button onClick="{{ p.dec }}" style="width:44px;height:44px;border-radius:10px;border:0;background:transparent;color:#9fb3ca;font-size:22px;font-weight:700">−</button>
+                      <input value="{{ p.qtyVal }}" onChange="{{ p.setQty }}" style="width:48px;height:44px;background:transparent;border:0;outline:0;text-align:center;color:#e9eff8;font-size:17px;font-weight:800" />
+                      <button onClick="{{ p.inc }}" style="width:44px;height:44px;border-radius:10px;border:0;background:transparent;color:#9fb3ca;font-size:22px;font-weight:700">+</button>
+                    </div>
+                    <div class="sc" style="flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;touch-action:pan-x">
+                      <sc-for list="{{ p.presets }}" as="pr" hint-placeholder-count="4">
+                        <button onClick="{{ pr.pick }}" style="{{ pr.style }}">{{ pr.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:12px;font-weight:700;color:#7f93ab;margin-bottom:7px">Цена заказа</div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <input value="{{ p.priceVal }}" onChange="{{ p.setPrice }}" placeholder="{{ p.pricePh }}" style="flex:1;min-width:0;height:46px;padding:0 13px;border-radius:12px;background:#111d2e;border:1px solid #22334a;outline:0;color:#e9eff8;font-size:15px;font-weight:700" />
+                    <sc-if value="{{ p.custom }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ p.resetPrice }}" style="height:46px;padding:0 14px;border-radius:12px;background:transparent;border:1px solid #22334a;color:#9fb3ca;font-size:13px;font-weight:700;white-space:nowrap">По прайсу</button>
+                    </sc-if>
+                  </div>
+                  <div style="margin-top:6px;font-size:11.5px;font-weight:600;color:#5f748d">{{ p.priceHint }}</div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noPoints }}" hint-placeholder-val="{{ true }}">
+          <div style="border:1px dashed #263852;border-radius:14px;padding:26px 18px;text-align:center">
+            <div style="font-size:14px;font-weight:700;color:#9fb3ca">Точек пока нет</div>
+            <div style="font-size:12.5px;font-weight:600;color:#6d829b;margin-top:5px;line-height:1.45">Выберите заказчика в списке — точка добавится с обычным для него заказом.</div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <div style="flex:none;padding:0 16px 18px;display:flex;gap:10px;background:#0c1726">
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ collapse }}" style="flex:none;height:52px;padding:0 18px;border-radius:15px;background:transparent;border:1px solid #22334a;color:#9fb3ca;font-size:14.5px;font-weight:700">К списку</button>
+      </sc-if>
+      <button onClick="{{ create }}" style="{{ createStyle }}">{{ createLabel }}</button>
+    </div>
+  </div>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:16px;right:16px;bottom:{{ toastBottom }};z-index:20;background:#16243a;border:1px solid #2f6fe0;color:#e9eff8;font-size:13.5px;font-weight:700;padding:12px 16px;border-radius:13px;text-align:center;box-shadow:0 14px 34px rgba(0,0,0,.5)">{{ toast }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  state = {
+    query:'', dateIdx:1, driverIdx:0, points:[], openId:null, toast:'',
+    sheet:false, dragId:null, dragY:0, baseY:0,
+    clients:[
+      {id:1,  name:'М Горький',            address:'Антракт, ул. Шахрисабз 12', avg:6, debt:0,      days:7},
+      {id:2,  name:'Олмазор Нодира 58',    address:'Олмазор, Нодира 58',        avg:4, debt:0,      days:3},
+      {id:3,  name:'М Улугбек Мойлисой',   address:'Мирзо Улугбек, Мойлисой 57',avg:8, debt:120000, days:9},
+      {id:4,  name:'Тошкент т Газ куча',   address:'Тошкент, Газ куча 3-тор 4а',avg:3, debt:0,      days:2},
+      {id:5,  name:'Нурафшон 119-мактаб',  address:'Нурафшон, 119-мактаб 4в',   avg:12,debt:0,      days:6},
+      {id:6,  name:'Кибрай Универ 1а/12',  address:'Кибрай, Университет 1а/12', avg:5, debt:0,      days:11},
+      {id:7,  name:'Маданият 26-мактаб',   address:'Маданият, 26-мактаб',       avg:9, debt:0,      days:4},
+      {id:8,  name:'Чилонзор 9-квартал',   address:'Чилонзор, 9-квартал д.34',  avg:6, debt:45000,  days:8},
+      {id:9,  name:'Юнусобод Амир Темур',  address:'Юнусобод, Амир Темур 108',  avg:10,debt:0,      days:1},
+      {id:10, name:'Сергели Янги хаёт',    address:'Сергели, Янги хаёт 7',      avg:4, debt:0,      days:5},
+      {id:11, name:'Мирабад Ойбек 24',     address:'Мирабад, Ойбек 24',         avg:7, debt:0,      days:10},
+      {id:12, name:'Шайхонтохур Зарбог',   address:'Шайхонтохур, Зарбог 15',    avg:5, debt:0,      days:2},
+      {id:13, name:'Яккасарой Кушбеги',    address:'Яккасарой, Кушбеги 41',     avg:3, debt:0,      days:6},
+      {id:14, name:'Алмазар Фаробий 2',    address:'Алмазар, Фаробий 2',        avg:8, debt:0,      days:12},
+      {id:15, name:'Бектемир Завод куча',  address:'Бектемир, Завод куча 6',    avg:6, debt:0,      days:3},
+      {id:16, name:'Учтепа Кичик халка',   address:'Учтепа, Кичик халка 88',    avg:11,debt:0,      days:7},
+      {id:17, name:'Зангиота Навои 3',     address:'Зангиота, Навои 3',         avg:5, debt:0,      days:9},
+      {id:18, name:'Паркент Бустон 14',    address:'Паркент, Бустон 14',        avg:6, debt:0,      days:8},
+      {id:19, name:'Куйичирчик Дустлик',   address:'Куйичирчик, Дустлик 21',    avg:7, debt:0,      days:4},
+      {id:20, name:'Бука Гулистон 5',      address:'Бука, Гулистон 5',          avg:5, debt:0,      days:3}
+    ]
+  };
+  PRICE = 22000;
+  ROW = 74;
+  PEEK = 160;
+  FULL = 640;
+  GOALS = [
+    {key:'delivery', label:'Доставка 19 л', color:'#4bd2c5', unit:'капсул'},
+    {key:'pickup',   label:'Вывоз',         color:'#9c8cff', unit:'капсул забрать'},
+    {key:'bulk',     label:'Опт 5/10 л',    color:'#e0a355', unit:'бутылей'}
+  ];
+  DRIVERS = [
+    {name:'Назначить позже', init:'?',  bg:'#1a2942', fg:'#8296ae'},
+    {name:'Ахмад',           init:'АХ', bg:'#2f6fe0', fg:'#fff'},
+    {name:'Бекзод',          init:'БЕ', bg:'#1f9d6b', fg:'#fff'}
+  ];
+  DATES = ['Сегодня','Завтра','Через 2 дня'];
+
+  fmt(n){ return String(n||0).replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
+  plural(n,a,b,c){ const m=n%100, d=n%10; return n+' '+(m>10&&m<20?c:d===1?a:d>1&&d<5?b:c); }
+  flash(t){ this.setState({toast:t}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2000); }
+
+  toggle(c){
+    const has=this.state.points.some(p=>p.id===c.id);
+    if(has){ this.setState(s=>({points:s.points.filter(p=>p.id!==c.id)})); this.flash('Точка убрана'); return; }
+    this.setState(s=>({points:[...s.points,{id:c.id, goal:'delivery', qty:c.avg, price:null}]}));
+    this.flash(c.name+' · '+this.plural(c.avg,'капсула','капсулы','капсул'));
+  }
+  patch(id,patch){ this.setState(s=>({points:s.points.map(p=>p.id===id?{...p,...patch}:p)})); }
+
+  grab(id,e){
+    e.preventDefault();
+    try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){}
+    this.setState({dragId:id, baseY:e.clientY, dragY:0, openId:null});
+  }
+  grabMove(id,e){
+    if(this.state.dragId!==id) return;
+    const dy=e.clientY-this.state.baseY;
+    if(Math.abs(dy)<this.ROW*0.6){ this.setState({dragY:dy}); return; }
+    const dir=dy>0?1:-1;
+    this.setState(s=>{
+      const a=[...s.points], i=a.findIndex(p=>p.id===id), j=i+dir;
+      if(i<0||j<0||j>=a.length) return {dragY:dy};
+      [a[i],a[j]]=[a[j],a[i]];
+      return {points:a, baseY:s.baseY+dir*this.ROW, dragY:dy-dir*this.ROW};
+    });
+  }
+  grabEnd(){ if(this.state.dragId!=null) this.setState({dragId:null, dragY:0}); }
+
+  renderVals(){
+    const S=this.state, q=S.query.trim().toLowerCase();
+    const matched=S.clients.filter(c=> !q || (c.address+' '+c.name).toLowerCase().includes(q));
+    const clients=matched.map(c=>{
+      const on=S.points.some(p=>p.id===c.id);
+      return {...c,
+        due:c.days>=7, debt:c.debt>0,
+        habit:'обычно '+c.avg+' · последняя '+c.days+' дн. назад',
+        nameColor:on?'#6ba0f7':'#e9eff8',
+        rowStyle:'display:flex;align-items:center;gap:10px;width:100%;padding:12px;border-radius:14px;text-align:left;background:'+(on?'rgba(47,111,224,.1)':'#0e1828')+';border:1px solid '+(on?'#2f6fe0':'#1a2740'),
+        markStyle:'flex:none;width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;background:'+(on?'#2f6fe0':'transparent')+';border:1px solid '+(on?'#2f6fe0':'#2a3c56')+';color:'+(on?'#fff':'#6d829b'),
+        mark:on?'✓':'+',
+        toggle:()=>this.toggle(c)};
+    });
+
+    const points=S.points.map((p,i)=>{
+      const c=S.clients.find(x=>x.id===p.id), g=this.GOALS.find(x=>x.key===p.goal);
+      const money=p.goal==='pickup'?0:(p.price!=null?p.price:p.qty*this.PRICE);
+      const open=S.openId===p.id, dragging=S.dragId===p.id;
+      return {
+        num:i+1, name:c.name, open, money,
+        cardStyle:'border-radius:14px;background:#0a121f;overflow:hidden;position:relative;border:1px solid '+(dragging?'#2f6fe0':(open?'#2f6fe0':'#1a2740'))
+          +(dragging?';z-index:4;transform:translateY('+S.dragY+'px) scale(1.02);box-shadow:0 16px 34px -10px rgba(0,0,0,.7)':';transition:transform .14s'),
+        gripStyle:'width:30px;height:46px;flex:none;display:flex;align-items:center;justify-content:center;color:'+(dragging?'#6ba0f7':'#4a5f7c')+';touch-action:none',
+        grab:e=>this.grab(p.id,e), grabMove:e=>this.grabMove(p.id,e), grabEnd:()=>this.grabEnd(),
+        goalLabel:g.label, goalColor:g.color,
+        qtyLabel:p.qty+' '+g.unit, qtyTitle:'Сколько '+g.unit,
+        qtyVal:String(p.qty), priceVal:p.price!=null?String(p.price):'', pricePh:'по прайсу · '+this.fmt(p.qty*this.PRICE),
+        priceLabel:p.goal==='pickup'?'без оплаты':(this.fmt(money)+' сум'+(p.price!=null?' · своя цена':'')),
+        priceColor:p.price!=null?'#e0a355':'#7f93ab',
+        priceHint:p.goal==='pickup'?'Вывоз без оплаты — сумма не учитывается':'Пусто — считаем по прайсу '+this.fmt(this.PRICE)+' сум за капсулу',
+        custom:p.price!=null,
+        goals:this.GOALS.map(gg=>({label:gg.label, pick:()=>this.patch(p.id,{goal:gg.key}),
+          style:'flex:1;min-width:0;height:44px;border-radius:12px;font-size:12.5px;font-weight:700;padding:0 6px;line-height:1.2;background:'+(gg.key===p.goal?'rgba(47,111,224,.14)':'#111d2e')+';border:1px solid '+(gg.key===p.goal?'#2f6fe0':'#22334a')+';color:'+(gg.key===p.goal?'#6ba0f7':'#9fb3ca')})),
+        presets:[c.avg,5,10,20].filter((v,i2,a)=>a.indexOf(v)===i2).map(v=>({label:v===c.avg?'обычно '+v:String(v), pick:()=>this.patch(p.id,{qty:v}),
+          style:'flex:none;height:44px;padding:0 14px;border-radius:12px;font-size:13px;font-weight:700;background:'+(v===p.qty?'rgba(47,111,224,.14)':'#111d2e')+';border:1px solid '+(v===p.qty?'#2f6fe0':'#22334a')+';color:'+(v===p.qty?'#6ba0f7':'#9fb3ca')})),
+        inc:()=>this.patch(p.id,{qty:p.qty+1}),
+        dec:()=>this.patch(p.id,{qty:Math.max(1,p.qty-1)}),
+        setQty:e=>this.patch(p.id,{qty:Math.max(1,parseInt(e.target.value.replace(/\D/g,''),10)||1)}),
+        setPrice:e=>{const v=e.target.value.replace(/\D/g,''); this.patch(p.id,{price:v?parseInt(v,10):null});},
+        resetPrice:()=>this.patch(p.id,{price:null}),
+        expand:()=>this.setState(s=>({openId:s.openId===p.id?null:p.id})),
+        remove:()=>this.setState(s=>({points:s.points.filter(x=>x.id!==p.id), openId:null}))
+      };
+    });
+
+    const caps=S.points.reduce((a,p)=>a+(p.goal==='delivery'?p.qty:0),0);
+    const money=points.reduce((a,p)=>a+p.money,0);
+    const n=S.points.length, ok=n>0, d=this.DRIVERS[S.driverIdx], full=S.sheet;
+
+    return {
+      query:S.query, hasQuery:!!S.query, setQuery:e=>this.setState({query:e.target.value}),
+      clearQuery:()=>this.setState({query:''}), searchBorder:S.query?'#2f6fe0':'#1a2740',
+      empty:matched.length===0, clients, points, noPoints:n===0,
+      listPad:full?'16px':(this.PEEK+16)+'px',
+      dateLabel:this.DATES[S.dateIdx], cycleDate:()=>this.setState(s=>({dateIdx:(s.dateIdx+1)%3})),
+      driverName:d.name, driverInit:d.init, driverBg:d.bg, driverFg:d.fg,
+      cycleDriver:()=>this.setState(s=>({driverIdx:(s.driverIdx+1)%3})),
+      sheetStyle:'position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;flex-direction:column;background:#0c1726;border-top:1px solid #22334a;border-radius:22px 22px 0 0;box-shadow:0 -18px 40px rgba(0,0,0,.45);height:'+(full?this.FULL:this.PEEK)+'px',
+      sheetOpen:full,
+      sheetTitle:ok?(this.plural(n,'точка','точки','точек')+' в маршруте'):'Маршрут пуст',
+      sheetSub:ok?(caps+' капсул · '+this.fmt(money)+' сум'):'Выберите заказчика из списка',
+      sheetSubColor:caps>60?'#e0a355':'#7f93ab',
+      chevRot:full?'rotate(180deg)':'none',
+      toggleSheet:()=>this.setState(s=>({sheet:!s.sheet, openId:null})),
+      collapse:()=>this.setState({sheet:false, openId:null}),
+      toastBottom:(full?this.FULL:this.PEEK)+20+'px',
+      createLabel:ok?(full?'Создать маршрут':'Создать · '+n):'Добавьте точку',
+      createStyle:'flex:1;height:52px;border-radius:15px;border:0;font-size:15px;font-weight:800;background:'+(ok?'#2f6fe0':'#16243a')+';color:'+(ok?'#fff':'#5f748d')+';box-shadow:'+(ok?'0 12px 26px -12px rgba(47,111,224,.9)':'none'),
+      create:()=>{ if(!ok) return this.flash('Выберите хотя бы одного заказчика'); if(!full) return this.setState({sheet:true}); this.flash('Маршрут на '+this.plural(n,'точку','точки','точек')+' создан'); },
+      toast:S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

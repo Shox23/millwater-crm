@@ -535,6 +535,39 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeCancelled2 => 'Marshrut bekor qilindi';
 
   @override
+  String get routeCompleteTitle => 'Marshrut yakunlansinmi?';
+
+  @override
+  String get routeCompleteMessage =>
+      'Marshrut yopiladi, uni qayta ochib bo‘lmaydi.';
+
+  @override
+  String routeCompleteMessageOpen(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ta yopilmagan nuqta bekor qilinadi',
+    );
+    return '$_temp0. Marshrut yopiladi, uni qayta ochib bo‘lmaydi.';
+  }
+
+  @override
+  String get routeCompleteAction => 'Marshrutni yakunlash';
+
+  @override
+  String get routeAwaitsCompletion =>
+      'Barcha nuqtalar yopildi — marshrutni yakunlang';
+
+  @override
+  String get routeCompleteShort => 'Yakunlash';
+
+  @override
+  String get routeCompleteFailed => 'Marshrutni yakunlab bo‘lmadi.';
+
+  @override
+  String get routeCompleted2 => 'Marshrut yakunlandi';
+
+  @override
   String get routeDriver => 'Haydovchi';
 
   @override
@@ -2275,6 +2308,10 @@ class AppLocalizationsUz extends AppLocalizations {
   String get orderCancelReasonEmpty => 'Sabab ko‘rsatilmagan';
 
   @override
+  String get orderCancelReasonRouteCompleted =>
+      'Marshrut yakunlangunga qadar bajarilmadi';
+
+  @override
   String get routeFormCustomPrice => 'Buyurtma narxi';
 
   @override
@@ -2317,4 +2354,181 @@ class AppLocalizationsUz extends AppLocalizations {
   String completionByCustomPrice(String amount) {
     return 'Buyurtma narxi bo‘yicha: $amount';
   }
+
+  @override
+  String get routeCreateSearchHint => 'Ko‘cha, uy yoki nom';
+
+  @override
+  String get routeCreateStopsLabel => 'MARSHRUT';
+
+  @override
+  String routeCreateFound(int count) {
+    return 'topildi: $count';
+  }
+
+  @override
+  String routeCreateBase(int count) {
+    return 'jami $count';
+  }
+
+  @override
+  String get routeCreateTomorrow => 'Ertaga';
+
+  @override
+  String get routeCreateDriverTitle => 'Haydovchi';
+
+  @override
+  String get routeCreateBadgeDue => 'VAQTI';
+
+  @override
+  String get routeCreateBadgeDebt => 'QARZ';
+
+  @override
+  String routeCreateBadgeDebtAmount(String amount) {
+    return 'QARZ $amount';
+  }
+
+  @override
+  String routeCreateUsual(int count) {
+    return 'odatda $count';
+  }
+
+  @override
+  String routeCreateLastDelivery(int count) {
+    return 'oxirgisi $count kun oldin';
+  }
+
+  @override
+  String get routeCreateNoDeliveries => 'hali yetkazish bo‘lmagan';
+
+  @override
+  String get routeCreateEmptyTitle => 'Hozircha nuqta yo‘q';
+
+  @override
+  String get routeCreateEmptyHint =>
+      'Mijozni tanlang — nuqta uning odatdagi buyurtmasi bilan qo‘shiladi, faqat tekshirish qoladi.';
+
+  @override
+  String get routeCreateOrderHint => 'aylanib chiqish tartibi';
+
+  @override
+  String get routeCreateDragHint => 'Tartibni o‘zgartirish uchun torting';
+
+  @override
+  String get routeCreateMoveUp => 'Yuqoriga';
+
+  @override
+  String get routeCreateMoveDown => 'Pastga';
+
+  @override
+  String get routeCreateRemoveStop => 'Nuqtani olib tashlash';
+
+  @override
+  String get routeCreateQtyTitle => 'Qancha kapsula';
+
+  @override
+  String routeCreatePricePlaceholder(String amount) {
+    return 'narxlar bo‘yicha · $amount';
+  }
+
+  @override
+  String get routeCreatePriceReset => 'Narxlar bo‘yicha';
+
+  @override
+  String routeCreatePriceHint(String price) {
+    return 'Bo‘sh — kapsula uchun $price narx bo‘yicha hisoblanadi';
+  }
+
+  @override
+  String get routeCreatePickupPriceHint =>
+      'Bo‘sh — olib ketish to‘lovsiz, yakunga kirmaydi';
+
+  @override
+  String get routeCreateBulkPriceHint =>
+      'Bo‘sh — ulgurji narxini haydovchi joyida belgilaydi';
+
+  @override
+  String get routeCreateNoPayment => 'to‘lovsiz';
+
+  @override
+  String get routeCreatePriceOnSite => 'narx joyida';
+
+  @override
+  String get routeCreateOwnPrice => 'o‘z narxi';
+
+  @override
+  String get routeCreateTotalStops => 'Nuqta';
+
+  @override
+  String routeCreateTotalCapsules(String liters) {
+    return '$liters l kapsula';
+  }
+
+  @override
+  String get routeCreateTotalMoney => 'Summa';
+
+  @override
+  String routeCreateOverCapacity(int count) {
+    return 'Mashina ko‘taradiganidan ko‘p — $count';
+  }
+
+  @override
+  String routeCreateSubmit(int count) {
+    return 'Marshrut yaratish · $count';
+  }
+
+  @override
+  String routeCreateSubmitShort(int count) {
+    return 'Yaratish · $count';
+  }
+
+  @override
+  String get routeCreateSubmitEmpty => 'Nuqta qo‘shing';
+
+  @override
+  String routeCreateSheetTitle(String stops) {
+    return 'marshrutda $stops';
+  }
+
+  @override
+  String get routeCreateSheetEmpty => 'Marshrut bo‘sh';
+
+  @override
+  String get routeCreateSheetEmptyHint => 'Ro‘yxatdan mijozni tanlang';
+
+  @override
+  String routeCreateSheetSummary(String capsules, String money) {
+    return '$capsules · $money';
+  }
+
+  @override
+  String get routeCreateBackToList => 'Ro‘yxatga';
+
+  @override
+  String routeCreateAdded(String name, String capsules) {
+    return '$name · $capsules';
+  }
+
+  @override
+  String get routeCreateRemoved => 'Nuqta olib tashlandi';
+
+  @override
+  String get orderComment => 'Haydovchiga izoh';
+
+  @override
+  String get orderCommentHint => 'Masalan: to‘xtash joyidan qo‘ng‘iroq qiling';
+
+  @override
+  String get orderCommentHelper =>
+      'Majburiy emas — haydovchi uni nuqtada ko‘radi';
+
+  @override
+  String get orderCommentTitle => 'Izoh';
+
+  @override
+  String get orderCommentHasOne => 'izoh bor';
+
+  @override
+  String get routeCreateCollapseToDrag =>
+      'Tartibni o‘zgartirish uchun nuqtani yig‘ing';
 }

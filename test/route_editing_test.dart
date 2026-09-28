@@ -1,5 +1,6 @@
 import 'package:crm_millwater/app/theme/app_theme.dart';
 import 'package:crm_millwater/core/widgets/app_button.dart';
+import 'package:crm_millwater/core/widgets/segmented_toggle.dart';
 import 'package:crm_millwater/data/models/enums.dart';
 import 'package:crm_millwater/data/models/route_models.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
@@ -40,6 +41,7 @@ class _RecordingRepository extends MockCrmRepository {
     OrderPurpose purpose = OrderPurpose.delivery19l,
     int? bottleSellCount,
     int? customPrice,
+    String? comment,
   }) {
     // Задание к доставке пишем в след вызова: экран обязан отправить его
     // вместе с точкой — изменить это число потом сервер не даст.
@@ -50,6 +52,7 @@ class _RecordingRepository extends MockCrmRepository {
       customerId: customerId,
       purpose: purpose,
       bottleSellCount: bottleSellCount,
+      comment: comment,
     );
   }
 
@@ -275,6 +278,35 @@ void main() {
       final updated = current(repo, route.id);
       expect(updated.stops.any((s) => s.customerId == removed.id), isFalse);
       expect(updated.stops.any((s) => s.customerId == added.id), isTrue);
+    });
+
+    testWidgets('цель существующей точки показана как есть и не переключается',
+        (tester) async {
+      // До этого `_stopPurposes` не заполнялся из маршрута: вывоз в
+      // редакторе показывался доставкой, а переключатель у существующей
+      // точки менял то, что сервер менять не умеет.
+      final repo = _RecordingRepository();
+      final route = routeWith(repo, RouteStatus.created);
+      final first = route.stops.first;
+      final pickup = RouteStop(
+        id: first.id,
+        customerId: first.customerId,
+        customerName: first.customerName,
+        customerAddress: first.customerAddress,
+        customerPhone: first.customerPhone,
+        status: first.status,
+        purpose: OrderPurpose.pickup,
+      );
+      final withPickup = repo.store.copyRoute(
+        route,
+        stops: [pickup, ...route.stops.skip(1)],
+      );
+
+      await pumpForm(tester, repo, withPickup);
+
+      // Подпись «Вывоз» есть, а переключателя целей у этой точки нет.
+      expect(find.text('Вывоз'), findsOneWidget);
+      expect(find.byType(SegmentedToggle<OrderPurpose>), findsNothing);
     });
 
     testWidgets('в начатом маршруте точку снять нельзя, добавить можно',
