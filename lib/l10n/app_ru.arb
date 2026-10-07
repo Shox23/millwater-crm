@@ -354,6 +354,9 @@
   "routeFormBottleSellHint": "Сколько везти этому заказчику",
   "routeFormBottleSellRequired": "Укажите, сколько капсул везти",
   "routeFormBottleSellLocked": "Задано при добавлении точки — сервер менять его не умеет",
+  "routeFormPickupCount": "КАПСУЛ К ВЫВОЗУ",
+  "routeFormPickupCountHint": "Сколько забрать у этого заказчика",
+  "routeFormPickupCountRequired": "Укажите, сколько капсул забрать",
   "stopBottleSell": "Ожидаемое кол-во капсул: {count}",
   "@stopBottleSell": {
     "placeholders": {
@@ -468,6 +471,13 @@
     }
   },
   "driverDeleteFailed": "Не удалось удалить водителя.",
+  "driversFilterActive": "Активные",
+  "driverInactive": "Неактивен",
+  "driverActivate": "Вернуть в работу",
+  "driverActivated": "Водитель снова в работе",
+  "driverActivateFailed": "Не удалось вернуть водителя в работу.",
+  "driversInactiveEmptyTitle": "Неактивных водителей нет",
+  "driversInactiveEmptyHint": "Сюда попадают удалённые водители — их можно вернуть в работу",
   "driverTitle": "Водитель",
   "driverOnRoute": "Сегодня на маршруте",
   "driverNoTrips": "Сегодня без поездок",
@@ -1237,7 +1247,7 @@
   "routeCreateMoveUp": "Выше",
   "routeCreateMoveDown": "Ниже",
   "routeCreateRemoveStop": "Убрать точку",
-  "routeCreateQtyTitle": "Сколько капсул",
+  "routeCreateQtyTitle": "Сколько капсул везти",
   "routeCreatePricePlaceholder": "по прайсу · {amount}",
   "@routeCreatePricePlaceholder": {"placeholders": {"amount": {"type": "String"}}},
   "routeCreatePriceReset": "По прайсу",
@@ -1274,5 +1284,13 @@
   "orderCommentHelper": "Необязательно — водитель увидит его в точке",
   "orderCommentTitle": "Комментарий",
   "orderCommentHasOne": "есть комментарий",
-  "routeCreateCollapseToDrag": "Сверните точку, чтобы менять порядок"
+  "routeCreateCollapseToDrag": "Сверните точку, чтобы менять порядок",
+  "routeCreateQtyTitlePickup": "Сколько капсул забрать",
+  "stopBottleSellPickup": "Ожидаемое кол-во к вывозу: {count}",
+  "@stopBottleSellPickup": {"placeholders": {"count": {"type": "int"}}},
+  "orderExpectedPickupCapsules": "Ожидается забрать",
+  "completionPickupExpected": "НАЗНАЧЕНО К ВЫВОЗУ",
+  "completionPickupExpectedHint": "Столько ожидает админ. Ниже отметьте, сколько забрали на самом деле",
+  "routeCreatePickupTake": "забрать {capsules}",
+  "@routeCreatePickupTake": {"placeholders": {"capsules": {"type": "String"}}}
 }

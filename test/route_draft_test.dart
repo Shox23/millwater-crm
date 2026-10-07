@@ -173,7 +173,7 @@ void main() {
       expect(orders.map((o) => o.sequence), [1, 2]);
     });
 
-    test('задание в капсулах — только у доставки', () {
+    test('задание в капсулах — у доставки и вывоза, у опта нет', () {
       final draft = draftOf(const [
         RouteDraftStop(customerId: 'c1', qty: 6),
         RouteDraftStop(
@@ -190,10 +190,11 @@ void main() {
 
       final orders = draft.toOrders();
 
-      // `bottle_sell_count` — задание «сколько везти»; у вывоза и опта везти
-      // нечего, и отправлять туда их количество значило бы врать серверу.
+      // Поле на сервере одно и ни в один расчёт не входит: у доставки оно
+      // значит «сколько везти», у вывоза — «сколько забрать». У опта
+      // передавать нечего: бутыли 5/10 л считает водитель на месте.
       expect(orders[0].bottleSellCount, 6);
-      expect(orders[1].bottleSellCount, isNull);
+      expect(orders[1].bottleSellCount, 4);
       expect(orders[2].bottleSellCount, isNull);
     });
 

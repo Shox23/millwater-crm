@@ -61,8 +61,9 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   /// Маршрут бывает смешанным: по дороге и капсулы завезли, и кулер забрали.
   final Map<String, OrderPurpose> _stopPurposes = {};
 
-  /// Задание водителю: сколько капсул везти каждому заказчику.
-  /// Ноль — задания ещё не поставили, и форма такую точку не отпустит.
+  /// Задание водителю: сколько капсул везти каждому заказчику — а у вывоза
+  /// сколько забрать. Ноль — задания ещё не поставили, и форма такую точку
+  /// не отпустит.
   final Map<String, int> _bottleCounts = {};
 
   /// Договорная сумма за весь заказ по каждой точке — поле ввода живёт в
@@ -135,9 +136,11 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   OrderPurpose _purposeOf(String customerId) =>
       _stopPurposes[customerId] ?? OrderPurpose.delivery19l;
 
-  /// Заданию место только у доставки: вывозу и опту везти нечего.
+  /// Задание — у доставки (сколько везти) и у вывоза (сколько забрать), как
+  /// на экране создания: поле на сервере одно, `bottle_sell_count`. У опта
+  /// бутыли 5/10 л считает водитель на месте, передать их нечем.
   bool _needsBottleCount(String customerId) =>
-      _purposeOf(customerId) == OrderPurpose.delivery19l;
+      _purposeOf(customerId) != OrderPurpose.bulkWater;
 
   /// Договорная сумма — у доставки и у вывоза. У доставки она заменяет
   /// расчёт по прайсу, у вывоза — единственный источник денег: своей цены
@@ -148,9 +151,10 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
 
   int _bottleCountOf(String customerId) => _bottleCounts[customerId] ?? 0;
 
-  /// Доставка без задания уйти не должна: водитель не узнает, сколько везти.
-  /// У точек, которые уже в маршруте, задание не спрашиваем — изменить его
-  /// всё равно нечем.
+  /// Доставка и вывоз без задания уйти не должны: водитель не узнает, сколько
+  /// везти или забрать. На экране создания количество тоже не бывает меньше
+  /// единицы. У точек, которые уже в маршруте, задание не спрашиваем —
+  /// изменить его всё равно нечем.
   bool get _bottleCountsFilled => _customerIds.every((id) =>
       !_isNewStop(id) || !_needsBottleCount(id) || _bottleCountOf(id) > 0);
 
@@ -575,10 +579,11 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                               .copyWith(color: t.text),
                                         ),
                                       // Задание водителю — сколько капсул
-                                      // везти. Только у доставки: вывозу и
-                                      // опту везти нечего.
+                                      // везти, а у вывоза сколько забрать.
+                                      // У опта передать его нечем.
                                       if (_needsBottleCount(c.id))
                                         _BottleSellField(
+                                          purpose: _purposeOf(c.id),
                                           count: _bottleCountOf(c.id),
                                           // Изменить задание у точки, которая
                                           // уже в маршруте, сервер не умеет —
@@ -786,11 +791,16 @@ class _SelectableRow extends StatelessWidget {
 /// отправить, обещал бы правку, которой нет.
 class _BottleSellField extends StatelessWidget {
   const _BottleSellField({
+    required this.purpose,
     required this.count,
     required this.editable,
     required this.savedValue,
     required this.onChanged,
   });
+
+  /// У доставки число значит «сколько везти», у вывоза — «сколько забрать»:
+  /// поле одно, подписи разные.
+  final OrderPurpose purpose;
 
   final int count;
 
@@ -806,11 +816,12 @@ class _BottleSellField extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final l10n = context.l10n;
+    final pickup = purpose == OrderPurpose.pickup;
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: LabeledCard(
-        label: l10n.routeFormBottleSell,
+        label: pickup ? l10n.routeFormPickupCount : l10n.routeFormBottleSell,
         child: editable
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -819,12 +830,17 @@ class _BottleSellField extends StatelessWidget {
                   QuantityStepper(
                     value: count,
                     onChanged: onChanged,
-                    caption: l10n.routeFormBottleSellHint,
+                    caption: pickup
+                        ? l10n.routeFormPickupCountHint
+                        : l10n.routeFormBottleSellHint,
                   ),
                   // Ноль — это не «везти ноль капсул», а незаполненное
                   // задание: форма такую точку не отпускает.
                   if (count == 0)
-                    Text(l10n.routeFormBottleSellRequired,
+                    Text(
+                        pickup
+                            ? l10n.routeFormPickupCountRequired
+                            : l10n.routeFormBottleSellRequired,
                         style:
                             AppTypography.secondary.copyWith(color: t.danger)),
                 ],

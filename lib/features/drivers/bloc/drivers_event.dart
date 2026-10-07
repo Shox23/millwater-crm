@@ -19,6 +19,15 @@ class DriversSearchChanged extends DriversEvent {
   List<Object?> get props => [query];
 }
 
+/// Переключить список между работающими и удалёнными водителями.
+class DriversActivityChanged extends DriversEvent {
+  const DriversActivityChanged({required this.active});
+  final bool active;
+
+  @override
+  List<Object?> get props => [active];
+}
+
 /// Дочитать следующую страницу в конец списка.
 ///
 /// Приходит из обработчика прокрутки, когда список подошёл к концу.

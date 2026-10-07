@@ -71,6 +71,10 @@ class DesktopShell extends StatelessWidget {
             create: (_) =>
                 DriversBloc(repository)..add(const DriversRequested()),
           ),
+          // Неактивные — отдельным блоком: общий список водителей читают
+          // сайдбар и касса. Создаётся при первом заходе во вкладку, запрос
+          // шлёт переключатель — см. `_setDriversInactive`.
+          BlocProvider(create: (_) => InactiveDriversBloc(repository)),
           BlocProvider(
             create: (_) =>
                 CustomersBloc(repository)..add(const CustomersRequested()),
@@ -133,6 +137,15 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
   /// С сервера пришло событие, а пользователь его ещё не забрал.
   bool _freshEvents = false;
 
+  /// В разделе «Водители» открыта вкладка неактивных.
+  bool _inactiveDrivers = false;
+
+  /// Список водителей, который сейчас на экране: поиск и обновление из
+  /// шапки идут в него, а не в оба сразу.
+  DriversBloc get _visibleDrivers => _inactiveDrivers
+      ? context.read<InactiveDriversBloc>()
+      : context.read<DriversBloc>();
+
   @override
   void initState() {
     super.initState();
@@ -158,14 +171,35 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
       // Поиск принадлежит разделу: запрос по водителям, оставшийся в поле
       // при переходе к заказчикам, показывал бы пустой список без причины.
       _searchController.clear();
+      // В раздел водителей возвращаемся к работающим: вкладка неактивных —
+      // разовое дело, а не состояние раздела.
+      _inactiveDrivers = false;
     });
     _applySearch('');
+  }
+
+  /// Переключает раздел «Водители» между работающими и неактивными.
+  ///
+  /// Поиск из шапки переносится в открытую вкладку — иначе под тем же
+  /// запросом в поле стоял бы полный список. Список перечитывается при
+  /// каждом переключении: водителя могли удалить или вернуть, пока смотрели
+  /// другую вкладку.
+  void _setDriversInactive(bool inactive) {
+    if (inactive == _inactiveDrivers) return;
+    setState(() => _inactiveDrivers = inactive);
+    final bloc = _visibleDrivers;
+    final query = _searchController.text;
+    bloc.add(
+      bloc.state.query == query
+          ? const DriversRequested()
+          : DriversSearchChanged(query),
+    );
   }
 
   void _applySearch(String query) {
     switch (_section) {
       case DesktopSection.drivers:
-        context.read<DriversBloc>().add(DriversSearchChanged(query));
+        _visibleDrivers.add(DriversSearchChanged(query));
       case DesktopSection.customers:
         context.read<CustomersBloc>().add(CustomersSearchChanged(query));
       case DesktopSection.routes:
@@ -193,9 +227,9 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
           Navigator.of(drawerContext).pop();
           _editRoute(row.route);
         },
-        onDeleteRoute: () {
+        onCancelRoute: () {
           Navigator.of(drawerContext).pop();
-          _deleteRoute(row.route);
+          _cancelRoute(row.route);
         },
         onCancelOrder: () {
           Navigator.of(drawerContext).pop();
@@ -222,29 +256,32 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
     showDesktopToast(context, context.l10n.orderCancelled);
   }
 
-  /// Безвозвратное удаление маршрута — см. пояснение у [DeliveryDrawer].
-  Future<void> _deleteRoute(RouteDetail route) async {
+  /// Отмена маршрута целиком — см. пояснение у [DeliveryDrawer].
+  Future<void> _cancelRoute(RouteDetail route) async {
     final l10n = context.l10n;
     final repo = context.read<CrmRepository>();
 
     final confirmed = await showDesktopConfirm(
       context,
-      title: l10n.routeDeleteTitle,
-      message: l10n.routeDeleteMessage,
-      confirmLabel: l10n.commonDelete,
+      title: l10n.routeCancelTitle,
+      message: l10n.routeCancelMessage,
+      confirmLabel: l10n.routeCancelAction,
+      // Как на телефоне: «Отмена», а не «Отменить» — иначе рядом с
+      // «Отменить маршрут» обе кнопки звучат как одно действие.
+      cancelLabel: l10n.commonCancelShort,
     );
     if (!confirmed || !mounted) return;
 
     try {
-      await repo.deleteRoute(route.id);
+      await repo.cancelRoute(route.id);
     } catch (_) {
-      if (mounted) showDesktopToast(context, l10n.routeDeleteFailed);
+      if (mounted) showDesktopToast(context, l10n.routeCancelFailed);
       return;
     }
     if (!mounted) return;
     context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
     context.read<OrdersBloc>().add(const OrdersRequested());
-    showDesktopToast(context, l10n.routeDeleted);
+    showDesktopToast(context, l10n.routeCancelled2);
   }
 
   /// Правка маршрута: дата, водитель, состав точек.
@@ -300,22 +337,52 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
     context.read<DayDeliveriesBloc>().add(const DayDeliveriesRequested());
   }
 
-  /// Карточка водителя: из неё же открываются правка и удаление.
+  /// Карточка водителя: из неё же открываются правка и удаление, а у
+  /// неактивного — возврат в работу.
   Future<void> _openDriver(Driver driver) async {
+    final inactive = _inactiveDrivers;
     await showDesktopDrawer<void>(
       context,
-      builder: (drawerContext) => DriverDrawer(
-        driver: driver,
-        onEdit: () {
-          Navigator.of(drawerContext).pop();
-          _editDriver(driver);
-        },
-        onDelete: () {
-          Navigator.of(drawerContext).pop();
-          _deleteDriver(driver);
-        },
-      ),
+      builder: (drawerContext) => inactive
+          ? DriverDrawer(
+              driver: driver,
+              onActivate: () {
+                Navigator.of(drawerContext).pop();
+                _activateDriver(driver);
+              },
+            )
+          : DriverDrawer(
+              driver: driver,
+              onEdit: () {
+                Navigator.of(drawerContext).pop();
+                _editDriver(driver);
+              },
+              onDelete: () {
+                Navigator.of(drawerContext).pop();
+                _deleteDriver(driver);
+              },
+            ),
     );
+  }
+
+  /// Возвращает удалённого водителя в работу. Перечитываем оба списка:
+  /// водитель уходит из неактивных и появляется в работающих — а с ними в
+  /// сайдбаре и фильтре кассы.
+  Future<void> _activateDriver(Driver driver) async {
+    final l10n = context.l10n;
+    final repo = context.read<CrmRepository>();
+    final inactive = context.read<InactiveDriversBloc>();
+    final active = context.read<DriversBloc>();
+
+    try {
+      await repo.activateDriver(driver.id);
+    } catch (_) {
+      if (mounted) showDesktopToast(context, l10n.driverActivateFailed);
+      return;
+    }
+    inactive.add(const DriversRequested());
+    active.add(const DriversRequested());
+    if (mounted) showDesktopToast(context, l10n.driverActivated);
   }
 
   Future<void> _editDriver(Driver? driver) async {
@@ -449,7 +516,7 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
     setState(() => _freshEvents = false);
     switch (_section) {
       case DesktopSection.drivers:
-        context.read<DriversBloc>().add(const DriversRequested());
+        _visibleDrivers.add(const DriversRequested());
       case DesktopSection.customers:
         context.read<CustomersBloc>().add(const CustomersRequested());
       case DesktopSection.routes:
@@ -474,7 +541,12 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
         context.watch<OrdersBloc>().state.total,
       ),
       DesktopSection.drivers => l10n.driversCount(
-        context.watch<DriversBloc>().state.drivers.length,
+        (_inactiveDrivers
+                ? context.watch<InactiveDriversBloc>()
+                : context.watch<DriversBloc>())
+            .state
+            .drivers
+            .length,
       ),
       DesktopSection.customers => l10n.customersCount(
         context.watch<CustomersBloc>().state.customers.length,
@@ -569,9 +641,12 @@ class _DesktopShellViewState extends State<_DesktopShellView> {
                           onOpen: _openOrder,
                         ),
                         DesktopSection.drivers => DriversDesktopPage(
+                          inactive: _inactiveDrivers,
+                          onInactiveChanged: _setDriversInactive,
                           onOpen: _openDriver,
                           onEdit: _editDriver,
                           onDelete: _deleteDriver,
+                          onActivate: _activateDriver,
                         ),
                         DesktopSection.customers => CustomersDesktopPage(
                           onOpen: _openCustomer,

@@ -10,6 +10,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
+import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/load_more_notifier.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/search_field.dart';
@@ -94,6 +95,18 @@ class _DriversView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                // Удаление водителя на сервере мягкое: учётка становится
+                // неактивной, и отсюда её можно вернуть в работу.
+                FilterChips(
+                  labels: [
+                    context.l10n.driversFilterActive,
+                    context.l10n.filterInactive,
+                  ],
+                  selectedIndex: state.active ? 0 : 1,
+                  onSelected: (i) =>
+                      bloc.add(DriversActivityChanged(active: i == 0)),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 // Список больше не стирается на время запроса, поэтому нужен
                 // отдельный признак «запрос в пути». Высота зарезервирована
                 // всегда — иначе список дёргается на каждую букву в поиске.
@@ -163,18 +176,26 @@ class _DriversList extends StatelessWidget {
     }
     final items = state.visible;
     if (items.isEmpty) {
-      return state.isEmptySearch
-          ? EmptyStateView.noSearchResults(
-              l10n: context.l10n,
-              query: state.query.trim(),
-              onClear: () => bloc.add(const DriversSearchChanged('')),
-            )
-          : EmptyStateView(
+      if (state.isEmptySearch) {
+        return EmptyStateView.noSearchResults(
+          l10n: context.l10n,
+          query: state.query.trim(),
+          onClear: () => bloc.add(const DriversSearchChanged('')),
+        );
+      }
+      // Пусто среди неактивных — это не повод заводить водителя.
+      return state.active
+          ? EmptyStateView(
               icon: Icons.local_shipping_outlined,
               title: context.l10n.driversEmptyTitle,
               hint: context.l10n.driversEmptyHint,
               actionLabel: context.l10n.driversEmptyAction,
               onAction: onAdd,
+            )
+          : EmptyStateView(
+              icon: Icons.person_off_outlined,
+              title: context.l10n.driversInactiveEmptyTitle,
+              hint: context.l10n.driversInactiveEmptyHint,
             );
     }
     return RefreshIndicator(
@@ -197,16 +218,39 @@ class _DriversList extends StatelessWidget {
               return LoadMoreFooter(loading: state.loadingMore);
             }
             final driver = items[i];
+            Future<void> onTap() async {
+              final changed = await Navigator.of(context).push<bool>(
+                OverlayPageRoute(
+                  builder: (_) => DriverDetailPage(
+                    driver: driver,
+                    inactive: !state.active,
+                  ),
+                ),
+              );
+              if (changed == true) bloc.add(const DriversRequested());
+            }
+            if (!state.active) {
+              return DriverCard(
+                driver: driver,
+                onTap: onTap,
+                onActivate: () async {
+                  final repo = context.read<CrmRepository>();
+                  final ok = await runGuarded(
+                    context,
+                    () => repo.activateDriver(driver.id),
+                    fallback: context.l10n.driverActivateFailed,
+                  );
+                  if (!ok) return;
+                  bloc.add(const DriversRequested());
+                  if (context.mounted) {
+                    showAppSnackBar(context, context.l10n.driverActivated);
+                  }
+                },
+              );
+            }
             return DriverCard(
               driver: driver,
-              onTap: () async {
-                final changed = await Navigator.of(context).push<bool>(
-                  OverlayPageRoute(
-                    builder: (_) => DriverDetailPage(driver: driver),
-                  ),
-                );
-                if (changed == true) bloc.add(const DriversRequested());
-              },
+              onTap: onTap,
               onEdit: () async {
                 final saved = await Navigator.of(context).push<bool>(
                   OverlayPageRoute(

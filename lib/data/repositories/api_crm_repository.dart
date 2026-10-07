@@ -186,7 +186,11 @@ class ApiCrmRepository implements CrmRepository {
       );
 
   @override
-  Future<ResultPage<Driver>> getDriversPage({int page = 1, String? search}) =>
+  Future<ResultPage<Driver>> getDriversPage({
+    int page = 1,
+    String? search,
+    bool active = true,
+  }) =>
       _pageOf(
         '/admin/drivers',
         Driver.fromJson,
@@ -194,6 +198,9 @@ class ApiCrmRepository implements CrmRepository {
         query: {
           if (search != null && search.trim().isNotEmpty)
             'search': search.trim(),
+          // Без параметра сервер отдаёт активных — шлём его только за
+          // удалёнными, чтобы обычный список не зависел от новой ручки.
+          if (!active) 'is_active': false,
         },
       );
 
@@ -236,6 +243,10 @@ class ApiCrmRepository implements CrmRepository {
 
   @override
   Future<void> deleteDriver(String id) => _dio.delete('/admin/drivers/$id');
+
+  @override
+  Future<void> activateDriver(String id) =>
+      _dio.post('/admin/drivers/$id/activate');
 
   // ---- Заказчики ----
   @override

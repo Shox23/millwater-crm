@@ -67,7 +67,7 @@ class DeliveryDrawer extends StatelessWidget {
     super.key,
     required this.row,
     required this.onEditRoute,
-    required this.onDeleteRoute,
+    required this.onCancelRoute,
     required this.onCancelOrder,
   });
 
@@ -85,13 +85,14 @@ class DeliveryDrawer extends StatelessWidget {
   /// другого входа в маршрут отсюда нет.
   final VoidCallback onEditRoute;
 
-  /// Безвозвратное удаление маршрута целиком.
+  /// Отмена маршрута целиком — та же, что у админа на телефоне: маршрут
+  /// помечается отменённым и остаётся в истории вместе с доставками и
+  /// оплатами.
   ///
-  /// На телефоне такого действия нет вовсе — только отмена, которая метит
-  /// маршрут отменённым и оставляет запись в истории. Здесь это отдельная,
-  /// более резкая возможность для оператора за компьютером: убрать
-  /// заведённый по ошибке маршрут так, чтобы он не путался в списке.
-  final VoidCallback onDeleteRoute;
+  /// Безвозвратного удаления здесь нет намеренно. Оно стирало маршрут вместе
+  /// с закрытыми доставками и принятыми деньгами, а кнопка в карточке одной
+  /// доставки читалась как «убрать эту точку».
+  final VoidCallback onCancelRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +155,9 @@ class DeliveryDrawer extends StatelessWidget {
           if (stop.status.isOpen) ...[
             if ((stop.bottleSellCount ?? 0) > 0)
               DrawerField(
-                label: l10n.orderExpectedCapsules,
+                label: stop.purpose == OrderPurpose.pickup
+                    ? l10n.orderExpectedPickupCapsules
+                    : l10n.orderExpectedCapsules,
                 value: '${stop.bottleSellCount}',
               ),
             if (stop.customPrice case final int customPrice)
@@ -190,7 +193,7 @@ class DeliveryDrawer extends StatelessWidget {
         row: row,
         onCancelOrder: onCancelOrder,
         onEditRoute: onEditRoute,
-        onDeleteRoute: onDeleteRoute,
+        onCancelRoute: onCancelRoute,
       ),
     );
   }
@@ -201,13 +204,13 @@ class _DeliveryActions extends StatelessWidget {
   const _DeliveryActions({
     required this.row,
     required this.onEditRoute,
-    required this.onDeleteRoute,
+    required this.onCancelRoute,
     required this.onCancelOrder,
   });
 
   final DeliveryRow row;
   final VoidCallback onEditRoute;
-  final VoidCallback onDeleteRoute;
+  final VoidCallback onCancelRoute;
   final VoidCallback onCancelOrder;
 
   @override
@@ -256,40 +259,51 @@ class _DeliveryActions extends StatelessWidget {
             expand: true,
             onPressed: onEditRoute,
           ),
-        // Удаление — не перенос отмены с телефона, а отдельная, более резкая
-        // возможность: снимает маршрут целиком, а не метит отменённым, и не
-        // ограничена статусом.
-        DesktopButton(
-          label: l10n.desktopDeleteRoute,
-          icon: Icons.delete_outline_rounded,
-          variant: DesktopButtonVariant.danger,
-          height: 46,
-          expand: true,
-          onPressed: onDeleteRoute,
-        ),
+        // Отмена маршрута — по тому же правилу, что на телефоне: завершённый
+        // сервер отменять отказывается (409), у отменённого отменять нечего.
+        // Подпись полная: рядом стоит «Отменить заказ», и короткое «Отменить»
+        // не говорило бы, что снимается весь маршрут, а не эта точка.
+        if (row.route.status.canCancel)
+          DesktopButton(
+            label: l10n.routeCancelAction,
+            icon: Icons.cancel_outlined,
+            variant: DesktopButtonVariant.danger,
+            height: 46,
+            expand: true,
+            onPressed: onCancelRoute,
+          ),
       ],
     );
   }
 }
 
 /// Панель водителя.
+///
+/// Работающему — правка и удаление. Неактивному (передан [onActivate]) —
+/// только возврат в работу: править и удалять его сервер не даёт (404 и 409).
 class DriverDrawer extends StatelessWidget {
   const DriverDrawer({
     super.key,
     required this.driver,
-    required this.onEdit,
-    required this.onDelete,
-  });
+    this.onEdit,
+    this.onDelete,
+    this.onActivate,
+  }) : assert(
+          onActivate != null || (onEdit != null && onDelete != null),
+          'работающему водителю нужны правка и удаление',
+        );
 
   final Driver driver;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onActivate;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final l10n = context.l10n;
-    final onLine = driver.todayTripCount > 0;
+    final inactive = onActivate != null;
+    final onLine = !inactive && driver.todayTripCount > 0;
 
     return DesktopDrawerPanel(
       title: driver.fullName,
@@ -302,8 +316,16 @@ class DriverDrawer extends StatelessWidget {
             children: [
               InitialsAvatar(name: driver.fullName, size: 54, radius: 17),
               DesktopBadge(
-                text: onLine ? l10n.desktopOnLine : l10n.desktopFree,
-                color: onLine ? t.success : t.text2,
+                text: inactive
+                    ? l10n.driverInactive
+                    : onLine
+                        ? l10n.desktopOnLine
+                        : l10n.desktopFree,
+                color: inactive
+                    ? t.danger
+                    : onLine
+                        ? t.success
+                        : t.text2,
                 large: true,
                 showDot: true,
               ),
@@ -325,7 +347,15 @@ class DriverDrawer extends StatelessWidget {
           ),
         ],
       ),
-      footer: _EntityActions(onEdit: onEdit, onDelete: onDelete),
+      footer: inactive
+          ? DesktopButton(
+              label: l10n.driverActivate,
+              icon: Icons.restore_rounded,
+              height: 52,
+              expand: true,
+              onPressed: onActivate,
+            )
+          : _EntityActions(onEdit: onEdit!, onDelete: onDelete!),
     );
   }
 }

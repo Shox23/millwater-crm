@@ -27,9 +27,11 @@ class RouteDraftStop extends Equatable {
   final String customerId;
   final OrderPurpose purpose;
 
-  /// Сколько капсул везти. На сервер уходит только у доставки
-  /// (`bottle_sell_count`), но хранится при любой цели: смена цели и возврат
-  /// обратно не должны терять набранное число.
+  /// Сколько капсул везти — а у вывоза сколько забрать.
+  ///
+  /// На сервер уходит у доставки и вывоза (`bottle_sell_count`), у опта
+  /// отправлять нечего. Хранится при любой цели: смена цели и возврат обратно
+  /// не должны терять набранное число.
   final int qty;
 
   /// Договорная сумма за **весь** заказ, сум; `null` — считать по прайсу.
@@ -48,8 +50,13 @@ class RouteDraftStop extends Equatable {
   /// Цену задали руками — значит рядом с полем появляется «По прайсу».
   bool get hasCustomPrice => price != null;
 
-  /// Капсулы 19 л в итогах считает только доставка: вывозу и опту везти
-  /// нечего, а бутыли 5/10 л — не капсулы.
+  /// Количество у точки вообще спрашивают: у доставки — сколько везти, у
+  /// вывоза — сколько забрать. У опта бутыли 5/10 л считает водитель на
+  /// месте, и передать их при создании нечем.
+  bool get hasQty => purpose != OrderPurpose.bulkWater;
+
+  /// Капсулы 19 л в итогах считает только доставка: вывоз машину не занимает
+  /// (наоборот, освобождает), а бутыли 5/10 л — не капсулы.
   bool get countsCapsules => purpose == OrderPurpose.delivery19l;
 
   /// Сумма по прайсу: капсулы × цена капсулы. У вывоза и опта — ноль:
@@ -223,8 +230,10 @@ class RouteDraft extends Equatable {
   ///
   /// `sequence` ставим сами, хотя сервер и проставил бы его сам следующим
   /// номером: порядок объезда — решение оператора, и отдавать его на
-  /// усмотрение сервера нельзя. Задание в капсулах уходит только у доставки
-  /// (`RouteOrderInput.bottleSellCount`), договорная сумма — при любой цели:
+  /// усмотрение сервера нельзя. Задание в капсулах уходит у доставки и
+  /// вывоза — поле `bottle_sell_count` на сервере одно на обе цели и ни в
+  /// один расчёт не входит, это справка водителю. Договорная сумма уходит
+  /// при любой цели:
   /// валидаторов по цели у `order_custom_price` нет, а при закрытии сервер
   /// берёт `custom_price or order_cost` для всех целей одинаково.
   List<RouteOrderInput> toOrders() => [
@@ -233,7 +242,7 @@ class RouteDraft extends Equatable {
             customerId: stops[i].customerId,
             purpose: stops[i].purpose,
             sequence: i + 1,
-            bottleSellCount: stops[i].countsCapsules ? stops[i].qty : null,
+            bottleSellCount: stops[i].hasQty ? stops[i].qty : null,
             customPrice: stops[i].price,
             comment: stops[i].comment,
           ),

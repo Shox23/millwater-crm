@@ -32,10 +32,16 @@ class DriverDetailPage extends StatelessWidget {
   const DriverDetailPage({
     super.key,
     required this.driver,
+    this.inactive = false,
     this.fileSharer = const PlatformFileSharer(),
   });
 
   final Driver driver;
+
+  /// Водитель из списка неактивных. Признака в ответе сервера нет — экран
+  /// знает об этом по тому, откуда его открыли. Править и удалять такого
+  /// водителя сервер не даёт, поэтому внизу одно действие — вернуть в работу.
+  final bool inactive;
 
   /// Подменяется в тестах — как на экране отчётов: настоящий «Поделиться»
   /// в виджет-тесте не открыть.
@@ -55,6 +61,18 @@ class DriverDetailPage extends StatelessWidget {
       fallback: context.l10n.driverDeleteFailed,
     );
     if (ok && context.mounted) Navigator.of(context).pop(true);
+  }
+
+  Future<void> _activate(BuildContext context) async {
+    final repo = context.read<CrmRepository>();
+    final ok = await runGuarded(
+      context,
+      () => repo.activateDriver(driver.id),
+      fallback: context.l10n.driverActivateFailed,
+    );
+    if (!ok || !context.mounted) return;
+    showAppSnackBar(context, context.l10n.driverActivated);
+    Navigator.of(context).pop(true);
   }
 
   /// Открывает выгрузку с уже выбранным разрезом и этим водителем.
@@ -102,11 +120,21 @@ class DriverDetailPage extends StatelessWidget {
                   style: AppTypography.screenTitle
                       .copyWith(fontSize: 22, color: t.text)),
               // Признака «на линии» в API нет — показываем активность за сегодня.
-              StatusBadge(
-                text: onRoute ? context.l10n.driverOnRoute : context.l10n.driverNoTrips,
-                tone: onRoute ? StatusTone.success : StatusTone.neutral,
-                showDot: true,
-              ),
+              // У неактивного её быть не может: он не входит в приложение.
+              if (inactive)
+                StatusBadge(
+                  text: context.l10n.driverInactive,
+                  tone: StatusTone.danger,
+                  showDot: true,
+                )
+              else
+                StatusBadge(
+                  text: onRoute
+                      ? context.l10n.driverOnRoute
+                      : context.l10n.driverNoTrips,
+                  tone: onRoute ? StatusTone.success : StatusTone.neutral,
+                  showDot: true,
+                ),
             ],
           ),
           Row(
@@ -184,21 +212,27 @@ class DriverDetailPage extends StatelessWidget {
         ],
       ),
       bottomBar: BottomActionBar(
-        child: Row(
-          spacing: AppSpacing.md,
-          children: [
-            IconActionButton.delete(
-              size: 52,
-              onPressed: () => _delete(context),
-            ),
-            Expanded(
-              child: AppButton(
-                label: context.l10n.commonEdit,
-                onPressed: () => _edit(context),
+        child: inactive
+            ? AppButton(
+                label: context.l10n.driverActivate,
+                icon: Icons.restore_rounded,
+                onPressed: () => _activate(context),
+              )
+            : Row(
+                spacing: AppSpacing.md,
+                children: [
+                  IconActionButton.delete(
+                    size: 52,
+                    onPressed: () => _delete(context),
+                  ),
+                  Expanded(
+                    child: AppButton(
+                      label: context.l10n.commonEdit,
+                      onPressed: () => _edit(context),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

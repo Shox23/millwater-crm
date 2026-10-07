@@ -19,12 +19,18 @@ class DriverCard extends StatelessWidget {
     this.onTap,
     this.onEdit,
     this.onDelete,
+    this.onActivate,
   });
 
   final Driver driver;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+
+  /// Вернуть удалённого водителя в работу. Задан — значит карточка из списка
+  /// неактивных: править и удалять такого водителя сервер не даёт (404 и
+  /// 409), поэтому вместо этих кнопок одна — возврат.
+  final VoidCallback? onActivate;
 
   @override
   Widget build(BuildContext context) {
@@ -81,17 +87,25 @@ class DriverCard extends StatelessWidget {
               ],
             ),
           ),
-          Row(
-            spacing: AppSpacing.sm,
-            children: [
-              IconActionButton(
-                icon: Icons.edit_outlined,
-                tooltip: context.l10n.commonEdit,
-                onPressed: onEdit,
-              ),
-              IconActionButton.delete(onPressed: onDelete),
-            ],
-          ),
+          if (onActivate != null)
+            IconActionButton(
+              icon: Icons.restore_rounded,
+              tooltip: context.l10n.driverActivate,
+              tone: IconActionTone.primary,
+              onPressed: onActivate,
+            )
+          else
+            Row(
+              spacing: AppSpacing.sm,
+              children: [
+                IconActionButton(
+                  icon: Icons.edit_outlined,
+                  tooltip: context.l10n.commonEdit,
+                  onPressed: onEdit,
+                ),
+                IconActionButton.delete(onPressed: onDelete),
+              ],
+            ),
         ],
       ),
     );

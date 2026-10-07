@@ -674,6 +674,17 @@ class AppLocalizationsUz extends AppLocalizations {
       'Nuqta qo‘shilganda belgilangan — server uni o‘zgartira olmaydi';
 
   @override
+  String get routeFormPickupCount => 'OLIB KETILADIGAN KAPSULALAR';
+
+  @override
+  String get routeFormPickupCountHint =>
+      'Bu buyurtmachidan qancha olib ketiladi';
+
+  @override
+  String get routeFormPickupCountRequired =>
+      'Qancha kapsula olib ketishni kiriting';
+
+  @override
   String stopBottleSell(int count) {
     return 'Kutilayotgan kapsulalar soni: $count';
   }
@@ -851,6 +862,28 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get driverDeleteFailed => 'Haydovchini o‘chirib bo‘lmadi.';
+
+  @override
+  String get driversFilterActive => 'Faol';
+
+  @override
+  String get driverInactive => 'Nofaol';
+
+  @override
+  String get driverActivate => 'Ishga qaytarish';
+
+  @override
+  String get driverActivated => 'Haydovchi yana ishda';
+
+  @override
+  String get driverActivateFailed => 'Haydovchini ishga qaytarib bo‘lmadi.';
+
+  @override
+  String get driversInactiveEmptyTitle => 'Nofaol haydovchilar yo‘q';
+
+  @override
+  String get driversInactiveEmptyHint =>
+      'Bu yerga o‘chirilgan haydovchilar tushadi — ularni ishga qaytarish mumkin';
 
   @override
   String get driverTitle => 'Haydovchi';
@@ -2424,7 +2457,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get routeCreateRemoveStop => 'Nuqtani olib tashlash';
 
   @override
-  String get routeCreateQtyTitle => 'Qancha kapsula';
+  String get routeCreateQtyTitle => 'Nechta kapsula olib boriladi';
 
   @override
   String routeCreatePricePlaceholder(String amount) {
@@ -2531,4 +2564,27 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get routeCreateCollapseToDrag =>
       'Tartibni o‘zgartirish uchun nuqtani yig‘ing';
+
+  @override
+  String get routeCreateQtyTitlePickup => 'Nechta kapsula olib ketiladi';
+
+  @override
+  String stopBottleSellPickup(int count) {
+    return 'Olib ketish rejasi: $count';
+  }
+
+  @override
+  String get orderExpectedPickupCapsules => 'Olib ketish kutilmoqda';
+
+  @override
+  String get completionPickupExpected => 'OLIB KETISH TOPSHIRIG‘I';
+
+  @override
+  String get completionPickupExpectedHint =>
+      'Admin shuncha kutmoqda. Quyida haqiqatda nechtasini olganingizni belgilang';
+
+  @override
+  String routeCreatePickupTake(String capsules) {
+    return '$capsules olib ketish';
+  }
 }

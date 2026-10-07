@@ -11,11 +11,15 @@ class DriversState extends Equatable {
     this.hasMore = false,
     this.total = 0,
     this.loadingMore = false,
+    this.active = true,
   });
 
   final DriversStatus status;
   final List<Driver> drivers;
   final String query;
+
+  /// Список работающих водителей; `false` — удалённых, которых можно вернуть.
+  final bool active;
 
   /// Номер последней загруженной страницы.
   final int page;
@@ -50,6 +54,7 @@ class DriversState extends Equatable {
     bool? hasMore,
     int? total,
     bool? loadingMore,
+    bool? active,
   }) {
     return DriversState(
       status: status ?? this.status,
@@ -59,10 +64,11 @@ class DriversState extends Equatable {
       hasMore: hasMore ?? this.hasMore,
       total: total ?? this.total,
       loadingMore: loadingMore ?? this.loadingMore,
+      active: active ?? this.active,
     );
   }
 
   @override
   List<Object?> get props =>
-      [status, drivers, query, page, hasMore, total, loadingMore];
+      [status, drivers, query, page, hasMore, total, loadingMore, active];
 }

@@ -6,6 +6,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/money_formatter.dart';
+import '../../../../data/models/enums.dart';
 
 /// Что ожидается: сколько капсул везти и сколько денег привезти.
 ///
@@ -23,10 +24,17 @@ class OrderExpectations extends StatelessWidget {
     super.key,
     required this.capsules,
     required this.amount,
+    this.purpose = OrderPurpose.delivery19l,
   });
 
   final int? capsules;
   final int? amount;
+
+  /// Зачем едем. У вывоза то же число значит обратное — «забрать», а не
+  /// «везти»: поле на сервере одно (`bottle_sell_count`), и без цели строка
+  /// читается неверно. У маршрута целиком цели нет — там доставка по
+  /// умолчанию, и капсулы в сводке действительно про погрузку.
+  final OrderPurpose purpose;
 
   /// Есть что показать: капсулы или деньги больше нуля. Ноль — это «не
   /// задавали», как и `null`: договорная сумма нулём не бывает, а у
@@ -50,7 +58,9 @@ class OrderExpectations extends StatelessWidget {
               Icon(Icons.water_drop_outlined, size: 16, color: t.primary),
               Expanded(
                 child: Text(
-                  l10n.stopBottleSell(capsules!),
+                  purpose == OrderPurpose.pickup
+                      ? l10n.stopBottleSellPickup(capsules!)
+                      : l10n.stopBottleSell(capsules!),
                   style: AppTypography.secondary.copyWith(color: t.primary),
                 ),
               ),

@@ -250,6 +250,8 @@ void main() {
       await pumpForm(tester);
       await tapText(tester, repo.store.customers.first.name);
       await tapText(tester, 'Вывоз');
+      // Без количества вывоз не уходит — как на экране создания.
+      await addBottles(tester, 1);
       await enterPrice(tester, '50000');
 
       await tapText(tester, 'Создать');
@@ -258,8 +260,8 @@ void main() {
       final stop = repo.store.routes.last.stops.single;
       expect(stop.purpose, OrderPurpose.pickup);
       expect(stop.customPrice, 50000);
-      // Задания капсул у вывоза по-прежнему нет.
-      expect(stop.bottleSellCount, isNull);
+      // У вывоза задание значит «сколько забрать» и уходит вместе с суммой.
+      expect(stop.bottleSellCount, 1);
     });
 
     testWidgets('сумма, набранная у доставки, не держит форму после смены '

@@ -214,7 +214,10 @@ class OrderDetailPage extends StatelessWidget {
                   children: [
                     if ((order.bottleSellCount ?? 0) > 0)
                       _Row(
-                        label: l10n.orderExpectedCapsules,
+                        // У вывоза это число про то, сколько забрать.
+                        label: order.purpose == OrderPurpose.pickup
+                            ? l10n.orderExpectedPickupCapsules
+                            : l10n.orderExpectedCapsules,
                         value: order.bottleSellCount,
                       ),
                     _MoneyRow(

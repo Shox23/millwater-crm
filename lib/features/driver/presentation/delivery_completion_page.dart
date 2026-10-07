@@ -507,6 +507,14 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
             ),
           ],
         OrderPurpose.pickup => [
+            // Сколько капсул ожидает забрать админ — то же поле
+            // (`bottle_sell_count`), что у доставки, но смысл обратный.
+            // Факт водитель отмечает ниже, счётчиком «капсул увозим».
+            if ((widget.stop.bottleSellCount ?? 0) > 0)
+              _BottleSellCard(
+                count: widget.stop.bottleSellCount!,
+                purpose: OrderPurpose.pickup,
+              ),
             // У вывоза своей цены нет, и сумма от админа — единственный
             // источник денег. Показ, как у доставки: в поле оплаты она
             // встанет сама, когда водитель уйдёт с «в долг».
@@ -1103,9 +1111,15 @@ class _CommentCard extends StatelessWidget {
 }
 
 class _BottleSellCard extends StatelessWidget {
-  const _BottleSellCard({required this.count});
+  const _BottleSellCard({
+    required this.count,
+    this.purpose = OrderPurpose.delivery19l,
+  });
 
   final int count;
+
+  /// У доставки это «сколько привезти», у вывоза — «сколько забрать».
+  final OrderPurpose purpose;
 
   @override
   Widget build(BuildContext context) {
@@ -1127,11 +1141,17 @@ class _BottleSellCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 2,
               children: [
-                Text(l10n.completionBottleSell,
+                Text(
+                    purpose == OrderPurpose.pickup
+                        ? l10n.completionPickupExpected
+                        : l10n.completionBottleSell,
                     style: AppTypography.fieldLabel.copyWith(color: t.primary)),
                 Text(l10n.completionBottleSellValue(count),
                     style: AppTypography.bodyStrong.copyWith(color: t.text)),
-                Text(l10n.completionBottleSellHint,
+                Text(
+                    purpose == OrderPurpose.pickup
+                        ? l10n.completionPickupExpectedHint
+                        : l10n.completionBottleSellHint,
                     style: AppTypography.secondary.copyWith(color: t.text2)),
               ],
             ),

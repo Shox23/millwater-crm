@@ -318,8 +318,9 @@ void main() {
       await create(tester, 'Создать маршрут · 1');
       expect(repo.sent.single.purpose, OrderPurpose.pickup);
       expect(repo.sent.single.customPrice, 50000);
-      // Задание в капсулах вывозу не отправляем — везти нечего.
-      expect(repo.sent.single.bottleSellCount, isNull);
+      // Количество у вывоза значит «сколько забрать» и уходит тем же полем,
+      // что задание доставки: на сервере оно одно и ни во что не считается.
+      expect(repo.sent.single.bottleSellCount, 3);
     });
   });
 

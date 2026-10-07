@@ -204,7 +204,10 @@ void main() {
 
     /// Прибавляет задание нажатиями «+» — счётчик тот же, что у водителя.
     Future<void> addBottles(WidgetTester tester, int count) async {
-      final plus = find.byIcon(Icons.add);
+      final plus = find.descendant(
+        of: find.byType(QuantityStepper),
+        matching: find.byIcon(Icons.add),
+      );
       for (var i = 0; i < count; i++) {
         await tester.ensureVisible(plus);
         await tester.pump();
@@ -241,14 +244,59 @@ void main() {
       expect(submitEnabled(tester), isTrue);
     });
 
-    testWidgets('у вывоза задания не спрашивают', (tester) async {
+    testWidgets('у вывоза спрашивают, сколько забрать', (tester) async {
       await pumpForm(tester);
       await tapText(tester, repo.store.customers.first.name);
       await tapText(tester, 'Вывоз');
 
-      // Вывозу везти нечего: счётчик исчезает, и форма отпускает без него.
+      // Поле то же, что у доставки, но подписи свои: число значит «забрать».
+      // И, как на экране создания, без него точка не уходит.
+      expect(find.text('КАПСУЛ К ВЫВОЗУ'), findsOneWidget);
+      expect(find.byType(QuantityStepper), findsOneWidget);
+      expect(find.text('Укажите, сколько капсул забрать'), findsOneWidget);
+      expect(submitEnabled(tester), isFalse);
+
+      await addBottles(tester, 2);
+
+      expect(submitEnabled(tester), isTrue);
+    });
+
+    testWidgets('у опта задания не спрашивают', (tester) async {
+      await pumpForm(tester);
+      await tapText(tester, repo.store.customers.first.name);
+      await tapText(tester, 'Опт 5/10 л');
+
+      // Бутыли 5/10 л считает водитель на месте — передать их нечем.
       expect(find.byType(QuantityStepper), findsNothing);
       expect(submitEnabled(tester), isTrue);
+    });
+
+    testWidgets('вывоз, добавленный в маршрут, уходит со своим количеством',
+        (tester) async {
+      final route = repo.store.routes.firstWhere(
+        (r) => r.status.canAddCustomers,
+      );
+      final customer = repo.store.customers.firstWhere(
+        (c) => !route.stops.any((s) => s.customerId == c.id),
+      );
+      await pumpForm(tester, route: route);
+
+      await tapText(tester, customer.name);
+      await tapText(tester, 'Вывоз');
+      await addBottles(tester, 2);
+      await tapText(tester, 'Сохранить');
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      // Раньше форма правки отправляла количество только у доставки, и вывоз,
+      // досыпанный в готовый маршрут, приходил к водителю без задания.
+      final added = repo.store.routes
+          .firstWhere((r) => r.id == route.id)
+          .stops
+          .singleWhere((s) => s.customerId == customer.id);
+      expect(added.purpose, OrderPurpose.pickup);
+      expect(added.bottleSellCount, 2);
     });
 
     testWidgets('задание уходит вместе с новым маршрутом', (tester) async {

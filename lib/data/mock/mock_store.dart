@@ -16,6 +16,10 @@ class MockStore {
   MockStore();
 
   final List<Driver> drivers = SeedData.drivers();
+
+  /// Удалённые водители. Удаление на сервере мягкое — снимает `is_active`, —
+  /// и в демо водитель так же уходит сюда, откуда его можно вернуть.
+  final List<Driver> inactiveDrivers = [];
   final List<Customer> customers = SeedData.customers();
   final List<RouteDetail> routes = SeedData.routes();
 

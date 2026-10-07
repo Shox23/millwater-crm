@@ -124,6 +124,7 @@ class StopCard extends StatelessWidget {
             OrderExpectations(
               capsules: stop.bottleSellCount,
               amount: stop.customPrice,
+              purpose: stop.purpose,
             ),
           // Комментарий админа — прямо в карточке: водитель читает его до
           // того, как поедет, а админ видит, что написал. Показываем и у

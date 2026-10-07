@@ -684,6 +684,15 @@ class AppLocalizationsRu extends AppLocalizations {
       'Задано при добавлении точки — сервер менять его не умеет';
 
   @override
+  String get routeFormPickupCount => 'КАПСУЛ К ВЫВОЗУ';
+
+  @override
+  String get routeFormPickupCountHint => 'Сколько забрать у этого заказчика';
+
+  @override
+  String get routeFormPickupCountRequired => 'Укажите, сколько капсул забрать';
+
+  @override
   String stopBottleSell(int count) {
     return 'Ожидаемое кол-во капсул: $count';
   }
@@ -864,6 +873,28 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get driverDeleteFailed => 'Не удалось удалить водителя.';
+
+  @override
+  String get driversFilterActive => 'Активные';
+
+  @override
+  String get driverInactive => 'Неактивен';
+
+  @override
+  String get driverActivate => 'Вернуть в работу';
+
+  @override
+  String get driverActivated => 'Водитель снова в работе';
+
+  @override
+  String get driverActivateFailed => 'Не удалось вернуть водителя в работу.';
+
+  @override
+  String get driversInactiveEmptyTitle => 'Неактивных водителей нет';
+
+  @override
+  String get driversInactiveEmptyHint =>
+      'Сюда попадают удалённые водители — их можно вернуть в работу';
 
   @override
   String get driverTitle => 'Водитель';
@@ -2446,7 +2477,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeCreateRemoveStop => 'Убрать точку';
 
   @override
-  String get routeCreateQtyTitle => 'Сколько капсул';
+  String get routeCreateQtyTitle => 'Сколько капсул везти';
 
   @override
   String routeCreatePricePlaceholder(String amount) {
@@ -2553,4 +2584,27 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get routeCreateCollapseToDrag =>
       'Сверните точку, чтобы менять порядок';
+
+  @override
+  String get routeCreateQtyTitlePickup => 'Сколько капсул забрать';
+
+  @override
+  String stopBottleSellPickup(int count) {
+    return 'Ожидаемое кол-во к вывозу: $count';
+  }
+
+  @override
+  String get orderExpectedPickupCapsules => 'Ожидается забрать';
+
+  @override
+  String get completionPickupExpected => 'НАЗНАЧЕНО К ВЫВОЗУ';
+
+  @override
+  String get completionPickupExpectedHint =>
+      'Столько ожидает админ. Ниже отметьте, сколько забрали на самом деле';
+
+  @override
+  String routeCreatePickupTake(String capsules) {
+    return 'забрать $capsules';
+  }
 }

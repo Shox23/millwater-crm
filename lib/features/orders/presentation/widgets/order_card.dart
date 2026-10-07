@@ -80,6 +80,7 @@ class OrderCard extends StatelessWidget {
             OrderExpectations(
               capsules: order.bottleSellCount,
               amount: order.customPrice,
+              purpose: order.purpose,
             ),
           Wrap(
             spacing: AppSpacing.sm,

@@ -18,7 +18,9 @@ import 'package:crm_millwater/core/pricing/capsule_price.dart';
 import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
+import 'package:crm_millwater/features/desktop/bloc/day_deliveries_bloc.dart';
 import 'package:crm_millwater/features/desktop/overlays/drawer_contents.dart';
+import 'package:crm_millwater/features/desktop/theme/desktop_theme.dart';
 import 'package:crm_millwater/features/desktop/overlays/entity_form_modal.dart';
 import 'package:crm_millwater/features/desktop/presentation/desktop_header.dart';
 import 'package:crm_millwater/features/desktop/presentation/desktop_section.dart';
@@ -47,12 +49,12 @@ import 'package:intl/intl.dart';
 class _RecordingRepository extends MockCrmRepository {
   int? addedCoolerCount;
   Customer? updatedCustomer;
-  String? deletedRouteId;
+  String? cancelledRouteId;
 
   @override
-  Future<void> deleteRoute(String id) {
-    deletedRouteId = id;
-    return super.deleteRoute(id);
+  Future<void> cancelRoute(String id) {
+    cancelledRouteId = id;
+    return super.cancelRoute(id);
   }
 
   @override
@@ -399,32 +401,45 @@ void main() {
       }
 
       expect(find.byType(DeliveryDrawer), findsOneWidget);
-      // Удаление маршрута доступно всегда — в отличие от завершения доставки,
-      // которое остаётся за водителем и на этом экране не показывается кнопкой.
+      // Маршрут этой точки в работе — его можно отменить. Удалить нельзя:
+      // удаление стирало маршрут вместе с закрытыми доставками и деньгами.
       expect(
-        find.widgetWithText(DesktopButton, 'Удалить маршрут'),
+        find.widgetWithText(DesktopButton, 'Отменить маршрут'),
         findsOneWidget,
       );
+      expect(find.text('Удалить маршрут'), findsNothing);
     });
 
-    testWidgets('удаление маршрута спрашивает подтверждение и чистит день',
+    testWidgets('отмена маршрута спрашивает подтверждение и оставляет доставки',
         (tester) async {
       await pumpShell(tester);
       final before = visibleRows();
+      final today = dayOnly(DateTime.now());
+      final route = repo.store.routes.firstWhere(
+        (r) => dayOnly(r.date) == today,
+      );
+      expect(route.status.canCancel, isTrue);
 
-      final name = todayStops().first.customerName;
-      await tester.tap(find.text(name).first);
+      await tester.tap(find.text(route.stops.first.customerName).first);
       await tester.pump();
       for (var i = 0; i < 3; i++) {
         await tester.pump(const Duration(milliseconds: 150));
       }
 
-      await tester.tap(find.widgetWithText(DesktopButton, 'Удалить маршрут'));
-      await tester.pump();
+      await tester.tap(find.widgetWithText(DesktopButton, 'Отменить маршрут'));
+      // Шторка уезжает, окно выезжает — по 260 мс. Дальше кнопка с этой
+      // подписью должна остаться одна: подтверждение в окне.
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 150));
+      }
 
-      // Подтверждение — без него уйти можно, отменив диалог.
-      expect(find.text('Удалить маршрут?'), findsOneWidget);
-      await tester.tap(find.widgetWithText(DesktopButton, 'Удалить'));
+      expect(find.text('Отменить маршрут?'), findsOneWidget);
+      // «Не делать» подписано «Отмена», как на телефоне: «Отменить» рядом с
+      // «Отменить маршрут» читалось бы как то же действие.
+      expect(find.widgetWithText(DesktopButton, 'Отмена'), findsOneWidget);
+      final confirm = find.widgetWithText(DesktopButton, 'Отменить маршрут');
+      expect(confirm, findsOneWidget);
+      await tester.tap(confirm);
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 200));
       }
@@ -432,9 +447,14 @@ void main() {
       // догнать, иначе тест падает на «A Timer is still pending».
       await tester.pump(const Duration(seconds: 3));
 
-      expect(repo.deletedRouteId, isNotNull);
+      expect(repo.cancelledRouteId, route.id);
+      expect(
+        repo.store.routes.firstWhere((r) => r.id == route.id).status,
+        RouteStatus.cancelled,
+      );
       expect(find.byType(DeliveryDrawer), findsNothing);
-      expect(visibleRows(), lessThan(before));
+      // Отмена — не удаление: доставки маршрута остаются в таблице дня.
+      expect(visibleRows(), before);
     });
 
     testWidgets('отмена доставки из карточки — с причиной, точка гаснет',
@@ -854,6 +874,71 @@ void main() {
       // Форма та же, что на создании, но с маршрутом — то есть в режиме правки.
       final form = tester.widget<RouteFormPage>(find.byType(RouteFormPage));
       expect(form.isEdit, isTrue);
+    });
+  });
+
+  group('Карточка доставки: отмена маршрута', () {
+    /// Карточка сама по себе, без оболочки: статус маршрута задаём прямо.
+    Future<void> pumpDrawer(WidgetTester tester, RouteStatus status) async {
+      useDesktopSurface(tester);
+      const stop = RouteStop(
+        id: 's-1',
+        customerId: 'c-1',
+        customerName: 'Кафе Тест',
+        customerAddress: 'ул. Тестовая, 1',
+        customerPhone: '+998900000002',
+        status: DeliveryStatus.delivered,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocales.supported,
+          locale: AppLocales.ru,
+          home: DesktopTheme(
+            child: Scaffold(
+              body: SizedBox(
+                width: 420,
+                child: DeliveryDrawer(
+                  row: DeliveryRow(
+                    route: RouteDetail(
+                      id: 'r-1',
+                      date: DateTime(2026, 9, 30),
+                      status: status,
+                      completedCount: 1,
+                      totalCustomers: 1,
+                      driverFullName: 'Азиз Каримов',
+                      stops: const [stop],
+                    ),
+                    stop: stop,
+                  ),
+                  onEditRoute: () {},
+                  onCancelRoute: () {},
+                  onCancelOrder: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('кнопка есть, пока маршрут создан или в работе',
+        (tester) async {
+      for (final status in RouteStatus.values) {
+        await pumpDrawer(tester, status);
+
+        // Завершённый сервер отменять отказывается (409), у отменённого
+        // отменять нечего — правило то же, что у кнопки на телефоне.
+        expect(
+          find.widgetWithText(DesktopButton, 'Отменить маршрут'),
+          status.canCancel ? findsOneWidget : findsNothing,
+          reason: status.name,
+        );
+        // Удаления нет ни в каком статусе.
+        expect(find.text('Удалить маршрут'), findsNothing, reason: status.name);
+      }
     });
   });
 

@@ -90,6 +90,7 @@ class StopDetailPage extends StatelessWidget {
               child: OrderExpectations(
                 capsules: stop.bottleSellCount,
                 amount: stop.customPrice,
+                purpose: stop.purpose,
               ),
             ),
           Row(

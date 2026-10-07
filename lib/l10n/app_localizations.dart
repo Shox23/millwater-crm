@@ -1262,6 +1262,24 @@ abstract class AppLocalizations {
   /// **'Задано при добавлении точки — сервер менять его не умеет'**
   String get routeFormBottleSellLocked;
 
+  /// No description provided for @routeFormPickupCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'КАПСУЛ К ВЫВОЗУ'**
+  String get routeFormPickupCount;
+
+  /// No description provided for @routeFormPickupCountHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько забрать у этого заказчика'**
+  String get routeFormPickupCountHint;
+
+  /// No description provided for @routeFormPickupCountRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите, сколько капсул забрать'**
+  String get routeFormPickupCountRequired;
+
   /// No description provided for @stopBottleSell.
   ///
   /// In ru, this message translates to:
@@ -1549,6 +1567,48 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось удалить водителя.'**
   String get driverDeleteFailed;
+
+  /// No description provided for @driversFilterActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активные'**
+  String get driversFilterActive;
+
+  /// No description provided for @driverInactive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неактивен'**
+  String get driverInactive;
+
+  /// No description provided for @driverActivate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вернуть в работу'**
+  String get driverActivate;
+
+  /// No description provided for @driverActivated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель снова в работе'**
+  String get driverActivated;
+
+  /// No description provided for @driverActivateFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось вернуть водителя в работу.'**
+  String get driverActivateFailed;
+
+  /// No description provided for @driversInactiveEmptyTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неактивных водителей нет'**
+  String get driversInactiveEmptyTitle;
+
+  /// No description provided for @driversInactiveEmptyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сюда попадают удалённые водители — их можно вернуть в работу'**
+  String get driversInactiveEmptyHint;
 
   /// No description provided for @driverTitle.
   ///
@@ -4304,7 +4364,7 @@ abstract class AppLocalizations {
   /// No description provided for @routeCreateQtyTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Сколько капсул'**
+  /// **'Сколько капсул везти'**
   String get routeCreateQtyTitle;
 
   /// No description provided for @routeCreatePricePlaceholder.
@@ -4474,6 +4534,42 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Сверните точку, чтобы менять порядок'**
   String get routeCreateCollapseToDrag;
+
+  /// No description provided for @routeCreateQtyTitlePickup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько капсул забрать'**
+  String get routeCreateQtyTitlePickup;
+
+  /// No description provided for @stopBottleSellPickup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ожидаемое кол-во к вывозу: {count}'**
+  String stopBottleSellPickup(int count);
+
+  /// No description provided for @orderExpectedPickupCapsules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ожидается забрать'**
+  String get orderExpectedPickupCapsules;
+
+  /// No description provided for @completionPickupExpected.
+  ///
+  /// In ru, this message translates to:
+  /// **'НАЗНАЧЕНО К ВЫВОЗУ'**
+  String get completionPickupExpected;
+
+  /// No description provided for @completionPickupExpectedHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Столько ожидает админ. Ниже отметьте, сколько забрали на самом деле'**
+  String get completionPickupExpectedHint;
+
+  /// No description provided for @routeCreatePickupTake.
+  ///
+  /// In ru, this message translates to:
+  /// **'забрать {capsules}'**
+  String routeCreatePickupTake(String capsules);
 }
 
 class _AppLocalizationsDelegate

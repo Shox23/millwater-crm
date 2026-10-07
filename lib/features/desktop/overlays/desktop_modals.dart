@@ -204,11 +204,16 @@ class _DesktopSuccessModalState extends State<DesktopSuccessModal>
 /// [destructive] — красная кнопка подтверждения. Выключается для действий,
 /// которые просто хочется переспросить (смена прайса): старая цена остаётся
 /// в истории, и красить «Назначить» в опасный цвет было бы враньём.
+///
+/// [cancelLabel] — подпись кнопки «не делать», когда общее «Отменить» спорит
+/// с самим действием: в окне «Отменить маршрут?» кнопки «Отменить» и
+/// «Отменить маршрут» читались бы как одно и то же.
 Future<bool> showDesktopConfirm(
   BuildContext context, {
   required String title,
   required String message,
   required String confirmLabel,
+  String? cancelLabel,
   bool destructive = true,
 }) async {
   final confirmed = await showDesktopModal<bool>(
@@ -225,7 +230,7 @@ Future<bool> showDesktopConfirm(
         children: [
           const Spacer(),
           DesktopButton(
-            label: context.l10n.commonCancel,
+            label: cancelLabel ?? context.l10n.commonCancel,
             variant: DesktopButtonVariant.soft,
             onPressed: () => Navigator.of(context).pop(false),
           ),

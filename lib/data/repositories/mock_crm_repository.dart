@@ -136,9 +136,22 @@ class MockCrmRepository implements CrmRepository {
   }
 
   @override
-  Future<ResultPage<Driver>> getDriversPage({int page = 1, String? search}) async {
-    final all = await getDrivers(search: search);
-    return _slice(all, page);
+  Future<ResultPage<Driver>> getDriversPage({
+    int page = 1,
+    String? search,
+    bool active = true,
+  }) async {
+    if (active) return _slice(await getDrivers(search: search), page);
+    await _tick();
+    final inactive = store.inactiveDrivers;
+    return _slice(
+      search == null || search.trim().isEmpty
+          ? List.unmodifiable(inactive)
+          : inactive
+              .where((d) => _matches(search, [d.fullName, d.phone]))
+              .toList(),
+      page,
+    );
   }
 
   @override
@@ -179,7 +192,19 @@ class MockCrmRepository implements CrmRepository {
   @override
   Future<void> deleteDriver(String id) async {
     await _tick();
-    _drivers.removeWhere((d) => d.id == id);
+    final driver = _drivers.where((d) => d.id == id).firstOrNull;
+    if (driver == null) return;
+    _drivers.remove(driver);
+    store.inactiveDrivers.add(driver);
+  }
+
+  @override
+  Future<void> activateDriver(String id) async {
+    await _tick();
+    final driver = store.inactiveDrivers.where((d) => d.id == id).firstOrNull;
+    if (driver == null) return;
+    store.inactiveDrivers.remove(driver);
+    _drivers.add(driver);
   }
 
   // ---- Заказчики ----

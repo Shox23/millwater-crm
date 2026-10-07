@@ -290,9 +290,16 @@ class RouteStop extends Equatable {
   /// долга не означает.
   bool get isDebt => paymentMethod == PaymentMethod.debt;
 
-  /// Сколько капсул ещё ждут с точки: задание админа, пока точка открыта.
+  /// Сколько капсул ещё везти на точку: задание админа, пока точка открыта.
   /// У закрытой точки задание сменил факт — см. [deliveredCapsules].
-  int get expectedCapsules => status.isOpen ? (bottleSellCount ?? 0) : 0;
+  ///
+  /// Только у доставки. У вывоза то же поле (`bottle_sell_count`) значит
+  /// «сколько забрать»: в капсулы к погрузке оно не входит, иначе сводка
+  /// маршрута и дня показывала бы их сумму с доставкой.
+  int get expectedCapsules =>
+      status.isOpen && purpose == OrderPurpose.delivery19l
+          ? (bottleSellCount ?? 0)
+          : 0;
 
   /// Сколько денег ждут с точки, пока она открыта, — «сколько должен
   /// привезти маршрут», а не одни договорные суммы.
@@ -552,7 +559,7 @@ class RouteExpectations extends Equatable {
 
   static const none = RouteExpectations();
 
-  /// Сумма заданий по капсулам (`bottle_sell_count`).
+  /// Сумма заданий по капсулам к доставке — см. [RouteStop.expectedCapsules].
   final int capsules;
 
   /// Сумма денег по правилу [RouteStop.expectedAmount].

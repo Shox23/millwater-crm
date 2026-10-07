@@ -10,9 +10,12 @@ part 'drivers_event.dart';
 part 'drivers_state.dart';
 
 class DriversBloc extends Bloc<DriversEvent, DriversState> {
-  DriversBloc(this._repository) : super(const DriversState()) {
+  /// [active] — с какого списка начать: работающих или удалённых.
+  DriversBloc(this._repository, {bool active = true})
+      : super(DriversState(active: active)) {
     on<DriversRequested>(_onRequested);
     on<DriversSearchChanged>(_onSearchChanged);
+    on<DriversActivityChanged>(_onActivityChanged);
     on<DriversNextPageRequested>(_onNextPage);
   }
 
@@ -43,7 +46,10 @@ class DriversBloc extends Bloc<DriversEvent, DriversState> {
       // Фильтрует сервер, а не мы: локальный фильтр поверх серверного прятал
       // бы часть найденного. Берём первую страницу — остальные догрузит
       // прокрутка, см. [DriversNextPageRequested].
-      final page = await _repository.getDriversPage(search: state.query);
+      final page = await _repository.getDriversPage(
+        search: state.query,
+        active: state.active,
+      );
       if (id != _requestId) return;
       emit(state.copyWith(
         status: DriversStatus.ready,
@@ -76,6 +82,7 @@ class DriversBloc extends Bloc<DriversEvent, DriversState> {
       final page = await _repository.getDriversPage(
         page: state.page + 1,
         search: state.query,
+        active: state.active,
       );
       // Пока страница шла, поиск могли поменять — её содержимое уже не о том.
       if (id != _requestId) return;
@@ -104,4 +111,34 @@ class DriversBloc extends Bloc<DriversEvent, DriversState> {
       if (!isClosed) add(const DriversRequested());
     });
   }
+
+  void _onActivityChanged(
+    DriversActivityChanged event,
+    Emitter<DriversState> emit,
+  ) {
+    if (event.active == state.active) return;
+    // Список прошлого режима чистим сразу: иначе под чипом «Неактивные» на
+    // время запроса стояли бы работающие водители с кнопками удаления.
+    emit(state.copyWith(
+      active: event.active,
+      status: DriversStatus.loading,
+      drivers: const [],
+      page: 1,
+      hasMore: false,
+      total: 0,
+      loadingMore: false,
+    ));
+    add(const DriversRequested());
+  }
+}
+
+/// Удалённые водители — второй список рядом с основным.
+///
+/// Нужен десктопу: там [DriversBloc] общий для сайдбара («на линии»), кассы
+/// и раздела водителей, и переключать его на удалённых нельзя — уволенные
+/// попали бы в фильтр кассы, а «на линии» обнулилось бы. Отдельный тип —
+/// чтобы оба списка жили в одном дереве провайдеров. На телефоне у раздела
+/// свой блок, и там хватает [DriversActivityChanged].
+class InactiveDriversBloc extends DriversBloc {
+  InactiveDriversBloc(super.repository) : super(active: false);
 }

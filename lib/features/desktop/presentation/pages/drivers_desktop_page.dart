@@ -15,74 +15,124 @@ import '../../widgets/desktop_badge.dart';
 import '../../widgets/desktop_button.dart';
 import '../../widgets/desktop_cards.dart';
 import '../../widgets/desktop_empty.dart';
+import '../../widgets/desktop_segmented.dart';
 
 /// Раздел «Водители»: сетка карточек по три в ряд.
+///
+/// Над сеткой — переключатель «Активные / Неактивные». Списки разные блоки:
+/// активные — общий [DriversBloc] оболочки (его же читают сайдбар и касса),
+/// неактивные — отдельный [InactiveDriversBloc], см. его описание.
 class DriversDesktopPage extends StatelessWidget {
   const DriversDesktopPage({
     super.key,
+    required this.inactive,
+    required this.onInactiveChanged,
     required this.onOpen,
     required this.onEdit,
     required this.onDelete,
+    required this.onActivate,
   });
 
+  /// Показан список неактивных водителей.
+  final bool inactive;
+  final ValueChanged<bool> onInactiveChanged;
   final ValueChanged<Driver> onOpen;
   final ValueChanged<Driver> onEdit;
   final ValueChanged<Driver> onDelete;
 
+  /// Вернуть неактивного водителя в работу.
+  final ValueChanged<Driver> onActivate;
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DriversBloc, DriversState>(
-      builder: (context, state) {
-        if (state.status == DriversStatus.initial ||
-            (state.status == DriversStatus.loading && state.drivers.isEmpty)) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (state.status == DriversStatus.error) {
-          return DesktopEmpty(
-            icon: Icons.cloud_off_outlined,
-            title: context.l10n.driversLoadFailed,
-          );
-        }
+    final l10n = context.l10n;
+    final DriversBloc bloc = inactive
+        ? context.read<InactiveDriversBloc>()
+        : context.read<DriversBloc>();
 
-        final drivers = state.visible;
-        if (drivers.isEmpty) {
-          return DesktopEmpty(
-            icon: Icons.local_shipping_outlined,
-            title: state.isEmptySearch
-                ? context.l10n.emptySearchTitle(state.query)
-                : context.l10n.driversEmptyTitle,
-            hint: state.isEmptySearch
-                ? context.l10n.emptySearchHint
-                : context.l10n.driversEmptyHint,
-          );
-        }
-
-        return LoadMoreNotifier(
-          onLoadMore: () =>
-              context.read<DriversBloc>().add(const DriversNextPageRequested()),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(28, 22, 28, 32),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: AppSpacing.lg,
-                crossAxisSpacing: AppSpacing.lg,
-                // Высота под аватар, две плитки статистики и ряд кнопок.
-                mainAxisExtent: 246,
-              ),
-              itemCount: drivers.length,
-              itemBuilder: (context, i) => _DriverCard(
-                driver: drivers[i],
-                onOpen: () => onOpen(drivers[i]),
-                onEdit: () => onEdit(drivers[i]),
-                onDelete: () => onDelete(drivers[i]),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 22, 28, 0),
+          child: SizedBox(
+            width: 320,
+            child: DesktopSegmented<bool>(
+              options: [
+                (false, l10n.driversFilterActive),
+                (true, l10n.filterInactive),
+              ],
+              value: inactive,
+              onChanged: onInactiveChanged,
             ),
           ),
-        );
-      },
+        ),
+        Expanded(
+          child: BlocBuilder<DriversBloc, DriversState>(
+            bloc: bloc,
+            builder: (context, state) => _content(context, bloc, state),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _content(BuildContext context, DriversBloc bloc, DriversState state) {
+    if (state.status == DriversStatus.initial ||
+        (state.status == DriversStatus.loading && state.drivers.isEmpty)) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.status == DriversStatus.error) {
+      return DesktopEmpty(
+        icon: Icons.cloud_off_outlined,
+        title: context.l10n.driversLoadFailed,
+      );
+    }
+
+    final drivers = state.visible;
+    if (drivers.isEmpty) {
+      return DesktopEmpty(
+        icon: inactive
+            ? Icons.person_off_outlined
+            : Icons.local_shipping_outlined,
+        title: state.isEmptySearch
+            ? context.l10n.emptySearchTitle(state.query)
+            : inactive
+                ? context.l10n.driversInactiveEmptyTitle
+                : context.l10n.driversEmptyTitle,
+        hint: state.isEmptySearch
+            ? context.l10n.emptySearchHint
+            : inactive
+                ? context.l10n.driversInactiveEmptyHint
+                : context.l10n.driversEmptyHint,
+      );
+    }
+
+    return LoadMoreNotifier(
+      onLoadMore: () => bloc.add(const DriversNextPageRequested()),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 16, 28, 32),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: AppSpacing.lg,
+            crossAxisSpacing: AppSpacing.lg,
+            // Высота под аватар, две плитки статистики и ряд кнопок.
+            mainAxisExtent: 246,
+          ),
+          itemCount: drivers.length,
+          itemBuilder: (context, i) => _DriverCard(
+            driver: drivers[i],
+            inactive: inactive,
+            onOpen: () => onOpen(drivers[i]),
+            onEdit: () => onEdit(drivers[i]),
+            onDelete: () => onDelete(drivers[i]),
+            onActivate: () => onActivate(drivers[i]),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -90,21 +140,27 @@ class DriversDesktopPage extends StatelessWidget {
 class _DriverCard extends StatelessWidget {
   const _DriverCard({
     required this.driver,
+    required this.inactive,
     required this.onOpen,
     required this.onEdit,
     required this.onDelete,
+    required this.onActivate,
   });
 
   final Driver driver;
+
+  /// Карточка из списка неактивных: вместо правки и удаления — возврат.
+  final bool inactive;
   final VoidCallback onOpen;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onActivate;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final l10n = context.l10n;
-    final onLine = driver.todayTripCount > 0;
+    final onLine = !inactive && driver.todayTripCount > 0;
 
     return DesktopCard(
       onTap: onOpen,
@@ -139,8 +195,16 @@ class _DriverCard extends StatelessWidget {
                 ),
               ),
               DesktopBadge(
-                text: onLine ? l10n.desktopOnLine : l10n.desktopFree,
-                color: onLine ? t.success : t.text2,
+                text: inactive
+                    ? l10n.driverInactive
+                    : onLine
+                        ? l10n.desktopOnLine
+                        : l10n.desktopFree,
+                color: inactive
+                    ? t.danger
+                    : onLine
+                        ? t.success
+                        : t.text2,
                 showDot: true,
               ),
             ],
@@ -164,26 +228,35 @@ class _DriverCard extends StatelessWidget {
               ),
             ],
           ),
-          Row(
-            spacing: AppSpacing.md,
-            children: [
-              Expanded(
-                child: DesktopButton(
-                  label: l10n.commonEdit,
-                  variant: DesktopButtonVariant.soft,
-                  expand: true,
-                  onPressed: onEdit,
+          if (inactive)
+            DesktopButton(
+              label: l10n.driverActivate,
+              icon: Icons.restore_rounded,
+              variant: DesktopButtonVariant.soft,
+              expand: true,
+              onPressed: onActivate,
+            )
+          else
+            Row(
+              spacing: AppSpacing.md,
+              children: [
+                Expanded(
+                  child: DesktopButton(
+                    label: l10n.commonEdit,
+                    variant: DesktopButtonVariant.soft,
+                    expand: true,
+                    onPressed: onEdit,
+                  ),
                 ),
-              ),
-              DesktopIconButton(
-                icon: Icons.delete_outline_rounded,
-                tooltip: l10n.commonDelete,
-                size: 40,
-                color: t.danger,
-                onPressed: onDelete,
-              ),
-            ],
-          ),
+                DesktopIconButton(
+                  icon: Icons.delete_outline_rounded,
+                  tooltip: l10n.commonDelete,
+                  size: 40,
+                  color: t.danger,
+                  onPressed: onDelete,
+                ),
+              ],
+            ),
         ],
       ),
     );

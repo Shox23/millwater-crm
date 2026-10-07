@@ -372,10 +372,13 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        if (_stop.countsCapsules) _dot(t),
-        if (_stop.countsCapsules)
+        if (_stop.hasQty) _dot(t),
+        if (_stop.hasQty)
           Text(
-            l10n.capsulesCount(_stop.qty),
+            // У вывоза то же число значит обратное — «забрать», а не «везти».
+            _stop.purpose == OrderPurpose.pickup
+                ? l10n.routeCreatePickupTake(l10n.capsulesCount(_stop.qty))
+                : l10n.capsulesCount(_stop.qty),
             style: AppTypography.secondary
                 .copyWith(color: t.text2, fontWeight: FontWeight.w700),
           ),
@@ -430,10 +433,13 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
               ),
           ],
         ),
-        // Количество — только у доставки, см. [_metaLine].
-        if (_stop.countsCapsules) ...[
+        // Количество спрашиваем у доставки и у вывоза; опту его передать
+        // нечем — бутыли 5/10 л считает водитель на месте.
+        if (_stop.hasQty) ...[
           Text(
-            l10n.routeCreateQtyTitle,
+            _stop.purpose == OrderPurpose.pickup
+                ? l10n.routeCreateQtyTitlePickup
+                : l10n.routeCreateQtyTitle,
             style: AppTypography.secondary
                 .copyWith(color: t.text2, fontWeight: FontWeight.w600),
           ),

@@ -299,6 +299,9 @@
   "routeFormBottleSellHint": "Bu buyurtmachiga qancha olib boriladi",
   "routeFormBottleSellRequired": "Qancha kapsula olib borishni kiriting",
   "routeFormBottleSellLocked": "Nuqta qo‘shilganda belgilangan — server uni o‘zgartira olmaydi",
+  "routeFormPickupCount": "OLIB KETILADIGAN KAPSULALAR",
+  "routeFormPickupCountHint": "Bu buyurtmachidan qancha olib ketiladi",
+  "routeFormPickupCountRequired": "Qancha kapsula olib ketishni kiriting",
   "stopBottleSell": "Kutilayotgan kapsulalar soni: {count}",
   "@stopBottleSell": {
     "placeholders": {
@@ -403,6 +406,13 @@
     }
   },
   "driverDeleteFailed": "Haydovchini o‘chirib bo‘lmadi.",
+  "driversFilterActive": "Faol",
+  "driverInactive": "Nofaol",
+  "driverActivate": "Ishga qaytarish",
+  "driverActivated": "Haydovchi yana ishda",
+  "driverActivateFailed": "Haydovchini ishga qaytarib bo‘lmadi.",
+  "driversInactiveEmptyTitle": "Nofaol haydovchilar yo‘q",
+  "driversInactiveEmptyHint": "Bu yerga o‘chirilgan haydovchilar tushadi — ularni ishga qaytarish mumkin",
   "driverTitle": "Haydovchi",
   "driverOnRoute": "Bugun marshrutda",
   "driverNoTrips": "Bugun reyslar yo‘q",
@@ -1090,7 +1100,7 @@
   "routeCreateMoveUp": "Yuqoriga",
   "routeCreateMoveDown": "Pastga",
   "routeCreateRemoveStop": "Nuqtani olib tashlash",
-  "routeCreateQtyTitle": "Qancha kapsula",
+  "routeCreateQtyTitle": "Nechta kapsula olib boriladi",
   "routeCreatePricePlaceholder": "narxlar bo‘yicha · {amount}",
   "@routeCreatePricePlaceholder": {"placeholders": {"amount": {"type": "String"}}},
   "routeCreatePriceReset": "Narxlar bo‘yicha",
@@ -1127,5 +1137,13 @@
   "orderCommentHelper": "Majburiy emas — haydovchi uni nuqtada ko‘radi",
   "orderCommentTitle": "Izoh",
   "orderCommentHasOne": "izoh bor",
-  "routeCreateCollapseToDrag": "Tartibni o‘zgartirish uchun nuqtani yig‘ing"
+  "routeCreateCollapseToDrag": "Tartibni o‘zgartirish uchun nuqtani yig‘ing",
+  "routeCreateQtyTitlePickup": "Nechta kapsula olib ketiladi",
+  "stopBottleSellPickup": "Olib ketish rejasi: {count}",
+  "@stopBottleSellPickup": {"placeholders": {"count": {"type": "int"}}},
+  "orderExpectedPickupCapsules": "Olib ketish kutilmoqda",
+  "completionPickupExpected": "OLIB KETISH TOPSHIRIG‘I",
+  "completionPickupExpectedHint": "Admin shuncha kutmoqda. Quyida haqiqatda nechtasini olganingizni belgilang",
+  "routeCreatePickupTake": "{capsules} olib ketish",
+  "@routeCreatePickupTake": {"placeholders": {"capsules": {"type": "String"}}}
 }

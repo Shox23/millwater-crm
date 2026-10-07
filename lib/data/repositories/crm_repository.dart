@@ -43,7 +43,15 @@ abstract class CrmRepository {
   Future<List<Driver>> getDrivers({String? search});
 
   /// Одна страница списка водителей, считая с первой.
-  Future<ResultPage<Driver>> getDriversPage({int page = 1, String? search});
+  ///
+  /// [active] — `false` отдаёт удалённых: удаление на сервере мягкое
+  /// (снимает `is_active`), и таких водителей можно вернуть в работу —
+  /// см. [activateDriver].
+  Future<ResultPage<Driver>> getDriversPage({
+    int page = 1,
+    String? search,
+    bool active = true,
+  });
   Future<Driver?> getDriver(String id);
 
   /// [idempotencyKey] один и тот же при повторной отправке формы: связь
@@ -62,6 +70,11 @@ abstract class CrmRepository {
   });
   Future<Driver> updateDriver(Driver driver);
   Future<void> deleteDriver(String id);
+
+  /// Возвращает удалённого водителя в работу
+  /// (`POST /admin/drivers/{id}/activate`): учётка снова входит в
+  /// приложение, а водителя снова можно ставить на маршруты.
+  Future<void> activateDriver(String id);
 
   // ---- Заказчики ----
   /// Все заказчики сразу.

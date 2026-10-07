@@ -192,7 +192,7 @@ void main() {
               child: DeliveryDrawer(
                 row: DeliveryRow(route: route, stop: stop),
                 onEditRoute: () {},
-                onDeleteRoute: () {},
+                onCancelRoute: () {},
                 onCancelOrder: () {},
               ),
             ),
