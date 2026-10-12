@@ -1,4 +1,6 @@
 import '../mock/mock_store.dart';
+import '../mock/seed_data.dart';
+import '../models/driver_customer.dart';
 import '../models/enums.dart';
 import '../models/order.dart';
 import '../models/result_page.dart';
@@ -40,6 +42,16 @@ class MockDriverRepository implements DriverRepository {
 
   /// Причина последней отмены — для тестов.
   String? lastCancelReason;
+
+  /// Последний заказ, добавленный водителем в маршрут, — для тестов.
+  ({
+    String routeId,
+    String customerId,
+    OrderPurpose purpose,
+    int? qty,
+    int? price,
+    String? comment,
+  })? lastAddedOrder;
 
   Future<void> _tick() =>
       Future<void>.delayed(const Duration(milliseconds: 150));
@@ -214,6 +226,72 @@ class MockDriverRepository implements DriverRepository {
         paymentPhoto: photoPath,
         completedAt: DateTime.now(),
       ),
+    );
+  }
+
+  @override
+  Future<ResultPage<DriverCustomer>> getCustomersPage({
+    int page = 1,
+    String? search,
+  }) async {
+    await _tick();
+    final q = search?.trim().toLowerCase() ?? '';
+    // Как на сервере: только активные, поиск по имени, телефонам и адресу.
+    // Демо-база мала, поэтому вся выдача — одна страница.
+    final found = [
+      for (final c in _store.customers)
+        if (c.isActive &&
+            (q.isEmpty ||
+                [c.name, c.phone, c.phoneSecondary ?? '', c.address]
+                    .any((f) => f.toLowerCase().contains(q))))
+          DriverCustomer(
+            id: c.id,
+            name: c.name,
+            phone: c.phone,
+            address: c.address,
+            phoneSecondary: c.phoneSecondary,
+            comment: c.comment,
+          ),
+    ];
+    return ResultPage(
+      items: page == 1 ? found : const [],
+      page: page,
+      hasMore: false,
+      total: found.length,
+    );
+  }
+
+  @override
+  Future<void> addRouteOrder({
+    required String routeId,
+    required String customerId,
+    required OrderPurpose purpose,
+    int? bottleSellCount,
+    int? customPrice,
+    String? comment,
+  }) async {
+    await _tick();
+    lastAddedOrder = (
+      routeId: routeId,
+      customerId: customerId,
+      purpose: purpose,
+      qty: bottleSellCount,
+      price: customPrice,
+      comment: comment,
+    );
+    final customer = _store.customers
+        .where((c) => c.id == customerId && c.isActive)
+        .firstOrNull;
+    if (customer == null) return;
+
+    _store.addStop(
+      routeId,
+      customer: customer,
+      purpose: purpose,
+      capsulePrice: SeedData.capsulePrice,
+      bottleSellCount: bottleSellCount,
+      customPrice: customPrice,
+      comment: comment,
     );
   }
 

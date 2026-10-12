@@ -197,6 +197,41 @@ class MockStore {
     }
   }
 
+  /// Добавляет заказ в маршрут — как `POST …/customers/{id}` у админа и у
+  /// водителя: новая точка без номера встаёт в конец объезда.
+  ///
+  /// Тот же заказчик дважды в одном маршруте — это одна точка, а не две:
+  /// повтор ничего не меняет (сервер отвечает на него 409).
+  void addStop(
+    String routeId, {
+    required Customer customer,
+    required OrderPurpose purpose,
+    required int capsulePrice,
+    int? bottleSellCount,
+    int? customPrice,
+    String? comment,
+  }) {
+    replaceRoute(routeId, (r) {
+      if (r.stops.any((s) => s.customerId == customer.id)) return r;
+      return copyRoute(r, stops: [
+        ...r.stops,
+        RouteStop(
+          id: nextId('s'),
+          customerId: customer.id,
+          customerName: customer.name,
+          customerAddress: customer.address,
+          customerPhone: customer.phone,
+          status: DeliveryStatus.pending,
+          purpose: purpose,
+          bottleSellCount: bottleSellCount,
+          customPrice: customPrice,
+          comment: comment,
+          effectiveWaterPrice: customer.customWaterPrice ?? capsulePrice,
+        ),
+      ]);
+    });
+  }
+
   /// Причина, которую сервер ставит точкам, отменённым при закрытии
   /// маршрута, — его текст, как есть.
   static const routeCompletionCancelReason = cancel_reason.routeCompletionCancelReason;

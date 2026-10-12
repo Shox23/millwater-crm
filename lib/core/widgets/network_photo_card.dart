@@ -19,9 +19,8 @@ class NetworkPhotoCard extends StatelessWidget {
   final String label;
   final String url;
 
-  /// Сервер может отдать как полный URL, так и путь относительно API.
-  String get _absolute =>
-      url.startsWith('http') ? url : '${ApiConfig.baseUrl}/$url';
+  /// Сервер отдаёт путь от корня сайта, а не от API — см. [ApiConfig.fileUrl].
+  String get _absolute => ApiConfig.fileUrl(url);
 
   @override
   Widget build(BuildContext context) {

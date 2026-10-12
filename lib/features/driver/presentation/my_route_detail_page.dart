@@ -32,6 +32,8 @@ import '../../orders/presentation/cancel_order_page.dart';
 import '../../routes/presentation/widgets/build_route_section.dart';
 import '../../routes/presentation/widgets/route_card.dart';
 import '../../routes/presentation/widgets/stop_card.dart';
+import 'add_order_customer_page.dart';
+import 'add_order_form_page.dart';
 import 'delivery_completion_page.dart';
 import 'route_cash_page.dart';
 
@@ -148,6 +150,26 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
     await _load();
   }
 
+  /// Новый заказ в маршрут — когда заказчик позвонил водителю по дороге.
+  Future<void> _addOrder(RouteDetail route) async {
+    final result = await Navigator.of(context).push<AddOrderResult>(
+      OverlayPageRoute(builder: (_) => AddOrderCustomerPage(route: route)),
+    );
+    if (result == null || !mounted) return;
+    final l10n = context.l10n;
+    showAppSnackBar(
+      context,
+      switch (result) {
+        AddOrderResult.added => l10n.addOrderAdded,
+        AddOrderResult.alreadyInRoute => l10n.errorCustomerAlreadyInRoute,
+      },
+      isError: result == AddOrderResult.alreadyInRoute,
+    );
+    // Сервер о добавлении уведомляет админов, а не водителя: свою карточку
+    // перечитываем сами. Новая точка — в конце объезда.
+    await _load();
+  }
+
   /// Завершение дня. Сервер сам маршрут не закрывает — только по этой
   /// кнопке, и точки, до которых водитель не доехал, при этом отменяются.
   /// Диалог называет их число: закрыть маршрут с тремя незакрытыми адресами
@@ -252,6 +274,13 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
                       onComplete: _openCompletion,
                       onStatus: _setStatus,
                       onCancel: _cancelStop,
+                      // Заказ добавляют только в маршрут в работе: закрытый
+                      // водитель видит как историю, а `created` ему не
+                      // показывают вовсе. Сервер статус не проверяет —
+                      // держим правило здесь.
+                      onAddOrder: route.status == RouteStatus.inProgress
+                          ? () => _addOrder(route)
+                          : null,
                     ),
     );
   }
@@ -263,12 +292,16 @@ class _Body extends StatelessWidget {
     required this.onComplete,
     required this.onStatus,
     required this.onCancel,
+    this.onAddOrder,
   });
 
   final RouteDetail route;
   final ValueChanged<RouteStop> onComplete;
   final void Function(RouteStop, DeliveryStatus) onStatus;
   final ValueChanged<RouteStop> onCancel;
+
+  /// `null` — добавлять в этот маршрут нельзя.
+  final VoidCallback? onAddOrder;
 
   @override
   Widget build(BuildContext context) {
@@ -358,8 +391,23 @@ class _Body extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: AppSpacing.sm,
           children: [
-            Text(context.l10n.routeStops,
-                style: AppTypography.fieldLabel.copyWith(color: t.text2)),
+            Row(
+              spacing: AppSpacing.sm,
+              children: [
+                Expanded(
+                  child: Text(context.l10n.routeStops,
+                      style: AppTypography.fieldLabel.copyWith(color: t.text2)),
+                ),
+                if (onAddOrder != null)
+                  AppButton(
+                    label: context.l10n.myRouteAddOrder,
+                    icon: Icons.add_rounded,
+                    variant: AppButtonVariant.secondary,
+                    height: 40,
+                    onPressed: onAddOrder,
+                  ),
+              ],
+            ),
             for (final stop in route.stops)
               StopCard(
                 stop: stop,

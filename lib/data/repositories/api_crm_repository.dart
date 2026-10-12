@@ -478,20 +478,15 @@ class ApiCrmRepository implements CrmRepository {
     int? customPrice,
     String? comment,
   }) =>
-      // Заказчик остаётся и в пути — ради старых сборок, — но сервер читает
-      // его из тела вместе с целью заказа.
       _dio.post(
         '/admin/routes/$routeId/customers/$customerId',
-        data: {
-          'customer_id': customerId,
-          'order_purpose': purpose.toJson(),
-          // Ключа нет вовсе, когда задания не ставили: у вывоза и опта везти
-          // нечего, и ноль там значил бы «привезти ноль капсул».
-          'bottle_sell_count': ?bottleSellCount,
-          if (customPrice != null)
-            'order_custom_price': MoneyParser.toApi(customPrice),
-          'comment': ?comment,
-        },
+        data: addRouteOrderBody(
+          customerId: customerId,
+          purpose: purpose,
+          bottleSellCount: bottleSellCount,
+          customPrice: customPrice,
+          comment: comment,
+        ),
       );
 
   @override

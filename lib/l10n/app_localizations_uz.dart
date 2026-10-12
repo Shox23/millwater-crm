@@ -2587,4 +2587,66 @@ class AppLocalizationsUz extends AppLocalizations {
   String routeCreatePickupTake(String capsules) {
     return '$capsules olib ketish';
   }
+
+  @override
+  String get routeCreatePricePlaceholderCustomer => 'mijoz narxi bo‘yicha';
+
+  @override
+  String get routeCreatePriceHintCustomer =>
+      'Bo‘sh — kapsula uchun shu mijoz narxi bo‘yicha hisoblanadi';
+
+  @override
+  String get myRouteAddOrder => 'Buyurtma qo‘shish';
+
+  @override
+  String get addOrderTitle => 'Yangi buyurtma';
+
+  @override
+  String get addOrderSearchHint => 'Ism, telefon yoki manzil';
+
+  @override
+  String get addOrderInRoute => 'Marshrutda bor';
+
+  @override
+  String get addOrderEmptyTitle => 'Faol mijozlar yo‘q';
+
+  @override
+  String get addOrderEmptyHint => 'Yangi mijozlarni admin qo‘shadi';
+
+  @override
+  String get addOrderCustomer => 'MIJOZ';
+
+  @override
+  String get addOrderOrder => 'BUYURTMA';
+
+  @override
+  String get addOrderCommentHint =>
+      'Masalan: tushlikkacha olib kelishni so‘rashdi';
+
+  @override
+  String get addOrderCommentHelper =>
+      'Majburiy emas — izohni admin ham ko‘radi';
+
+  @override
+  String get addOrderPickupPriceHint => 'Bo‘sh — olib ketish to‘lovsiz';
+
+  @override
+  String get addOrderBulkPriceHint =>
+      'Bo‘sh — ulgurji narxini yakunlashda kiritasiz';
+
+  @override
+  String get addOrderSubmit => 'Marshrutga qo‘shish';
+
+  @override
+  String get addOrderAdded => 'Buyurtma marshrutga qo‘shildi';
+
+  @override
+  String get addOrderFailed => 'Buyurtmani qo‘shib bo‘lmadi';
+
+  @override
+  String get errorCustomerAlreadyInRoute =>
+      'Bu mijoz marshrutda allaqachon bor';
+
+  @override
+  String get errorCustomerNotFound => 'Mijoz topilmadi yoki o‘chirilgan';
 }

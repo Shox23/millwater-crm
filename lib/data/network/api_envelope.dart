@@ -71,8 +71,13 @@ String? _messageForCode(AppLocalizations l10n, String? code) =>
       'ROUTE_ALREADY_STARTED' => l10n.errorRouteStarted,
       'ROUTE_ALREADY_COMPLETED' => l10n.errorRouteCompleted,
       'FORBIDDEN' || 'ACCESS_DENIED' => l10n.errorAccessDenied,
+      'CUSTOMER_ALREADY_IN_ROUTE' => l10n.errorCustomerAlreadyInRoute,
+      // Сервер отвечает так и на отключённого заказчика, не только на
+      // несуществующего: добавлять в маршрут он берёт лишь активных.
+      'CUSTOMER_NOT_FOUND' => l10n.errorCustomerNotFound,
       'NOT_FOUND' ||
       'ORDER_NOT_FOUND' ||
+      'ROUTE_NOT_FOUND' ||
       'ROUTE_CUSTOMER_NOT_FOUND' ||
       'EXPENSE_NOT_FOUND' =>
         l10n.errorNotFound,

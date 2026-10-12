@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_tokens.dart';
@@ -8,6 +7,7 @@ import '../../../../core/utils/money_formatter.dart';
 import '../../../../data/models/enums.dart';
 import '../../../../l10n/l10n.dart';
 import '../../domain/route_draft.dart';
+import 'route_stop_editor.dart';
 
 /// Грип-хендл точки: за него и только за него точку перетаскивают.
 ///
@@ -72,7 +72,10 @@ class RouteCreateGrip extends StatelessWidget {
 /// капсулы · сумма». Тап по ней разворачивает редактирование цели, количества
 /// и цены. Точка приходит уже заполненной, поэтому свёрнутого вида хватает в
 /// большинстве случаев, а разворачивать приходится ради исключений.
-class RouteCreateStopCard extends StatefulWidget {
+///
+/// Редактор под раскрытой карточкой общий с формой водителя — см.
+/// [RouteStopEditor].
+class RouteCreateStopCard extends StatelessWidget {
   const RouteCreateStopCard({
     super.key,
     required this.number,
@@ -135,71 +138,8 @@ class RouteCreateStopCard extends StatefulWidget {
   final VoidCallback? onMoveUp;
   final VoidCallback? onMoveDown;
 
-  @override
-  State<RouteCreateStopCard> createState() => _RouteCreateStopCardState();
-}
-
-class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
-  late final TextEditingController _qty =
-      TextEditingController(text: '${widget.stop.qty}');
-  late final TextEditingController _price =
-      TextEditingController(text: _priceText(widget.stop.price));
-  late final TextEditingController _comment =
-      TextEditingController(text: widget.stop.comment ?? '');
-  final FocusNode _qtyFocus = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    // Пустое или нечитаемое количество при уходе из поля возвращаем к тому,
-    // что в состоянии: точка без количества не бывает, а «стёр и ушёл» —
-    // обычное дело.
-    _qtyFocus.addListener(() {
-      if (_qtyFocus.hasFocus) return;
-      if (int.tryParse(_qty.text) == widget.stop.qty) return;
-      _qty.text = '${widget.stop.qty}';
-    });
-  }
-
-  @override
-  void didUpdateWidget(RouteCreateStopCard old) {
-    super.didUpdateWidget(old);
-    // Состояние — источник правды: количество меняют ещё степпер и пресеты,
-    // цену — кнопка «По прайсу». Текст трогаем, только когда он разошёлся,
-    // иначе курсор прыгал бы на каждый набранный символ.
-    if (int.tryParse(_qty.text) != widget.stop.qty) {
-      _qty.text = '${widget.stop.qty}';
-    }
-    final priceText = _priceText(widget.stop.price);
-    if (_price.text != priceText && _parsePrice(_price.text) != widget.stop.price) {
-      _price.text = priceText;
-    }
-  }
-
-  @override
-  void dispose() {
-    _qty.dispose();
-    _price.dispose();
-    _comment.dispose();
-    _qtyFocus.dispose();
-    super.dispose();
-  }
-
-  static String _priceText(int? price) => price == null ? '' : '$price';
-
-  static int? _parsePrice(String text) {
-    final digits = text.trim();
-    return digits.isEmpty ? null : int.tryParse(digits);
-  }
-
-  RouteDraftStop get _stop => widget.stop;
-
   /// Сумма точки по текущему состоянию.
-  int get _money => _stop.money(widget.unitPrice);
-
-  /// Ноль — это не цена, а незаконченный ввод: сервер такую сумму не примет,
-  /// и форма с ней не отпускает маршрут.
-  bool get _priceInvalid => _stop.price == 0;
+  int get _money => stop.money(unitPrice);
 
   @override
   Widget build(BuildContext context) {
@@ -210,18 +150,27 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
         color: t.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
         // Толщина одна: рамка потолще сдвигала бы соседние точки на пиксель.
-        border: Border.all(color: widget.expanded ? t.primary : t.border),
+        border: Border.all(color: expanded ? t.primary : t.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _header(context),
-          if (widget.expanded) ...[
+          if (expanded) ...[
             Divider(height: 1, color: t.border),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: _editor(context),
+              child: RouteStopEditor(
+                stop: stop,
+                unitPrice: unitPrice,
+                usualQty: usualQty,
+                compact: compact,
+                onPurpose: onPurpose,
+                onQty: onQty,
+                onPrice: onPrice,
+                onComment: onComment,
+              ),
             ),
           ],
         ],
@@ -235,7 +184,7 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        widget.grip == null ? AppSpacing.md : AppSpacing.xs,
+        grip == null ? AppSpacing.md : AppSpacing.xs,
         AppSpacing.sm,
         AppSpacing.sm,
         AppSpacing.sm,
@@ -243,22 +192,22 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
       child: Row(
         spacing: AppSpacing.sm,
         children: [
-          ?widget.grip,
-          if (!widget.compact &&
-              !widget.dragging &&
-              (widget.onMoveUp != null || widget.onMoveDown != null))
+          ?grip,
+          if (!compact &&
+              !dragging &&
+              (onMoveUp != null || onMoveDown != null))
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _ArrowButton(
                   icon: Icons.keyboard_arrow_up_rounded,
                   tooltip: l10n.routeCreateMoveUp,
-                  onPressed: widget.onMoveUp,
+                  onPressed: onMoveUp,
                 ),
                 _ArrowButton(
                   icon: Icons.keyboard_arrow_down_rounded,
                   tooltip: l10n.routeCreateMoveDown,
-                  onPressed: widget.onMoveDown,
+                  onPressed: onMoveDown,
                 ),
               ],
             ),
@@ -271,13 +220,13 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
-              '${widget.number}',
+              '$number',
               style: AppTypography.badge.copyWith(color: t.text2),
             ),
           ),
           Expanded(
             child: InkWell(
-              onTap: widget.dragging ? null : widget.onExpand,
+              onTap: dragging ? null : onExpand,
               borderRadius: BorderRadius.circular(AppRadius.sm),
               mouseCursor: SystemMouseCursors.click,
               child: Padding(
@@ -290,7 +239,7 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
                   spacing: AppSpacing.xs,
                   children: [
                     Text(
-                      widget.name,
+                      name,
                       style: AppTypography.bodyStrong.copyWith(color: t.text),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -298,7 +247,7 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
                     _metaLine(context),
                     // Комментарий видно и в свёрнутой карточке: иначе о нём
                     // забывают, а исправить его после создания нечем.
-                    if (_stop.comment case final String comment)
+                    if (stop.comment case final String comment)
                       Row(
                         spacing: AppSpacing.xs,
                         children: [
@@ -320,16 +269,16 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
               ),
             ),
           ),
-          if (!widget.dragging)
+          if (!dragging)
             Tooltip(
               message: l10n.routeCreateRemoveStop,
               child: IconButton(
-                onPressed: widget.onRemove,
+                onPressed: onRemove,
                 icon: const Icon(Icons.close_rounded, size: 18),
                 color: t.text2,
                 constraints: BoxConstraints.tightFor(
-                  width: widget.compact ? 44 : 34,
-                  height: widget.compact ? 44 : 34,
+                  width: compact ? 44 : 34,
+                  height: compact ? 44 : 34,
                 ),
                 padding: EdgeInsets.zero,
                 style: IconButton.styleFrom(
@@ -347,15 +296,15 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
 
   /// «Доставка 19 л · 6 капсул · 132 000 сум · своя цена».
   ///
-  /// Количество — только у доставки: у вывоза и опта его некуда отправить
-  /// (`bottle_sell_count` — задание к доставке), и обещать его в маршруте
-  /// значило бы потерять цифру по дороге.
+  /// Количество — у доставки и вывоза (у вывоза это «забрать»). У опта его
+  /// некуда отправить: бутыли 5/10 л считает водитель на месте, и обещать их
+  /// в маршруте значило бы потерять цифру по дороге.
   Widget _metaLine(BuildContext context) {
     final t = context.tokens;
     final l10n = context.l10n;
-    final custom = _stop.hasCustomPrice;
+    final custom = stop.hasCustomPrice;
 
-    final money = switch (_stop.purpose) {
+    final money = switch (stop.purpose) {
       OrderPurpose.pickup when !custom => l10n.routeCreateNoPayment,
       OrderPurpose.bulkWater when !custom => l10n.routeCreatePriceOnSite,
       _ => MoneyFormatter.sum(l10n, _money),
@@ -366,19 +315,19 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          _stop.purpose.label(l10n),
+          stop.purpose.label(l10n),
           style: AppTypography.secondary.copyWith(
-            color: _purposeColor(t, _stop.purpose),
+            color: _purposeColor(t, stop.purpose),
             fontWeight: FontWeight.w700,
           ),
         ),
-        if (_stop.hasQty) _dot(t),
-        if (_stop.hasQty)
+        if (stop.hasQty) _dot(t),
+        if (stop.hasQty)
           Text(
             // У вывоза то же число значит обратное — «забрать», а не «везти».
-            _stop.purpose == OrderPurpose.pickup
-                ? l10n.routeCreatePickupTake(l10n.capsulesCount(_stop.qty))
-                : l10n.capsulesCount(_stop.qty),
+            stop.purpose == OrderPurpose.pickup
+                ? l10n.routeCreatePickupTake(l10n.capsulesCount(stop.qty))
+                : l10n.capsulesCount(stop.qty),
             style: AppTypography.secondary
                 .copyWith(color: t.text2, fontWeight: FontWeight.w700),
           ),
@@ -410,413 +359,6 @@ class _RouteCreateStopCardState extends State<RouteCreateStopCard> {
         OrderPurpose.pickup => t.primary,
         OrderPurpose.bulkWater => t.warn,
       };
-
-  Widget _editor(BuildContext context) {
-    final l10n = context.l10n;
-    final t = context.tokens;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.md,
-      children: [
-        Row(
-          spacing: AppSpacing.sm,
-          children: [
-            for (final purpose in OrderPurpose.values)
-              Expanded(
-                child: _PurposeButton(
-                  label: purpose.label(l10n),
-                  selected: purpose == _stop.purpose,
-                  compact: widget.compact,
-                  onTap: () => widget.onPurpose(purpose),
-                ),
-              ),
-          ],
-        ),
-        // Количество спрашиваем у доставки и у вывоза; опту его передать
-        // нечем — бутыли 5/10 л считает водитель на месте.
-        if (_stop.hasQty) ...[
-          Text(
-            _stop.purpose == OrderPurpose.pickup
-                ? l10n.routeCreateQtyTitlePickup
-                : l10n.routeCreateQtyTitle,
-            style: AppTypography.secondary
-                .copyWith(color: t.text2, fontWeight: FontWeight.w600),
-          ),
-          _qtyRow(context),
-        ],
-        Text(
-          l10n.routeFormCustomPrice,
-          style: AppTypography.secondary
-              .copyWith(color: t.text2, fontWeight: FontWeight.w600),
-        ),
-        _priceRow(context),
-        Text(
-          l10n.orderComment,
-          style: AppTypography.secondary
-              .copyWith(color: t.text2, fontWeight: FontWeight.w600),
-        ),
-        _commentField(context),
-      ],
-    );
-  }
-
-  /// Комментарий водителю: необязательная записка к точке.
-  ///
-  /// Длину режем на 255 символов — ровно столько держит колонка на сервере,
-  /// а сам он не обрезает и отвечает на длинный текст ошибкой.
-  Widget _commentField(BuildContext context) {
-    final t = context.tokens;
-    final l10n = context.l10n;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.xs,
-      children: [
-        TextField(
-          controller: _comment,
-          keyboardType: TextInputType.text,
-          textCapitalization: TextCapitalization.sentences,
-          maxLines: 2,
-          minLines: 1,
-          inputFormatters: [LengthLimitingTextInputFormatter(255)],
-          style: TextStyle(color: t.text),
-          decoration: InputDecoration(
-            hintText: l10n.orderCommentHint,
-            counterText: '',
-          ),
-          onChanged: (value) {
-            final text = value.trim();
-            widget.onComment(text.isEmpty ? null : text);
-          },
-        ),
-        Text(
-          l10n.orderCommentHelper,
-          style: AppTypography.secondary.copyWith(color: t.text3),
-        ),
-      ],
-    );
-  }
-
-  Widget _qtyRow(BuildContext context) {
-    final t = context.tokens;
-    final l10n = context.l10n;
-    final side = widget.compact ? 44.0 : 36.0;
-
-    // Пресеты: обычный объём заказчика и три круглых числа. Двадцать капсул
-    // кнопкой «+» — двадцать нажатий, поэтому рядом со степпером и прямой
-    // ввод, и готовые значения.
-    final presets = <int>{
-      if (widget.usualQty != null) widget.usualQty!,
-      5,
-      10,
-      20,
-    }.toList();
-
-    final stepper = Container(
-      decoration: BoxDecoration(
-        color: t.surface2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: t.border),
-      ),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _StepButton(
-            icon: Icons.remove,
-            side: side,
-            onTap: _stop.qty > 1 ? () => widget.onQty(_stop.qty - 1) : null,
-          ),
-          SizedBox(
-            width: widget.compact ? 52 : 46,
-            child: TextField(
-              controller: _qty,
-              focusNode: _qtyFocus,
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(3),
-              ],
-              style: AppTypography.money.copyWith(color: t.text),
-              decoration: const InputDecoration(
-                isDense: true,
-                filled: false,
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                counterText: '',
-              ),
-              onChanged: (value) {
-                // Пустое поле состояние не трогает: иначе стирание последней
-                // цифры подставляло бы единицу под курсор.
-                final parsed = int.tryParse(value);
-                if (parsed != null && parsed > 0) widget.onQty(parsed);
-              },
-            ),
-          ),
-          _StepButton(
-            icon: Icons.add,
-            side: side,
-            onTap: () => widget.onQty(_stop.qty + 1),
-          ),
-        ],
-      ),
-    );
-
-    final chips = [
-      for (final value in presets)
-        _PresetChip(
-          label: value == widget.usualQty
-              ? l10n.routeCreateUsual(value)
-              : '$value',
-          selected: value == _stop.qty,
-          compact: widget.compact,
-          onTap: () => widget.onQty(value),
-        ),
-    ];
-
-    return Row(
-      spacing: AppSpacing.sm,
-      children: [
-        stepper,
-        // Ряд пресетов прокручивается: на 390px он в строку не встаёт, а
-        // переносить его вниз значило бы оторвать от счётчика.
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(spacing: AppSpacing.sm, children: chips),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _priceRow(BuildContext context) {
-    final t = context.tokens;
-    final l10n = context.l10n;
-
-    final hint = switch (_stop.purpose) {
-      OrderPurpose.delivery19l =>
-        l10n.routeCreatePricePlaceholder(MoneyFormatter.amount(
-          _stop.listPrice(widget.unitPrice),
-        )),
-      OrderPurpose.pickup => l10n.routeFormPickupPriceHint,
-      OrderPurpose.bulkWater => l10n.routeCreatePriceOnSite,
-    };
-
-    final helper = switch (_stop.purpose) {
-      OrderPurpose.delivery19l => l10n.routeCreatePriceHint(
-          MoneyFormatter.sum(l10n, widget.unitPrice),
-        ),
-      OrderPurpose.pickup => l10n.routeCreatePickupPriceHint,
-      OrderPurpose.bulkWater => l10n.routeCreateBulkPriceHint,
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.xs,
-      children: [
-        Row(
-          spacing: AppSpacing.sm,
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _price,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                ],
-                style: TextStyle(color: t.text),
-                decoration: InputDecoration(hintText: hint, counterText: ''),
-                onChanged: (value) => widget.onPrice(_parsePrice(value)),
-              ),
-            ),
-            // Появляется только при заданной цене: сбрасывать нечего, пока
-            // считаем по прайсу.
-            if (_stop.hasCustomPrice)
-              _ResetPriceButton(
-                compact: widget.compact,
-                onTap: () => widget.onPrice(null),
-              ),
-          ],
-        ),
-        Text(
-          _priceInvalid ? l10n.routeFormCustomPriceInvalid : helper,
-          style: AppTypography.secondary
-              .copyWith(color: _priceInvalid ? t.danger : t.text3),
-        ),
-      ],
-    );
-  }
-}
-
-/// Кнопка цели точки.
-///
-/// Своя, а не `SegmentedToggle`: тот рассчитан на две широкие ячейки высотой
-/// 52px, а здесь их три в колонке 340px — «Доставка 19 л» в ячейку не
-/// влезает. Подпись поэтому мельче и с многоточием.
-class _PurposeButton extends StatelessWidget {
-  const _PurposeButton({
-    required this.label,
-    required this.selected,
-    required this.compact,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool compact;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    return Material(
-      color: selected ? t.softOf(t.primary) : t.surface2,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        mouseCursor: SystemMouseCursors.click,
-        child: Container(
-          height: compact ? 44 : 38,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: selected ? t.primary : t.border,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: AppTypography.secondary.copyWith(
-              color: selected ? t.primary : t.text2,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Готовое количество: «обычно 6», 5, 10, 20.
-class _PresetChip extends StatelessWidget {
-  const _PresetChip({
-    required this.label,
-    required this.selected,
-    required this.compact,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool compact;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    return Material(
-      color: selected ? t.softOf(t.primary) : t.surface2,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        mouseCursor: SystemMouseCursors.click,
-        child: Container(
-          height: compact ? 44 : 36,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: Border.all(color: selected ? t.primary : t.border),
-          ),
-          child: Text(
-            label,
-            style: AppTypography.secondary.copyWith(
-              color: selected ? t.primary : t.text2,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Кнопка «По прайсу» — сбрасывает договорную цену.
-class _ResetPriceButton extends StatelessWidget {
-  const _ResetPriceButton({required this.compact, required this.onTap});
-
-  final bool compact;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    return Material(
-      color: t.surface2,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        mouseCursor: SystemMouseCursors.click,
-        child: Container(
-          height: compact ? 48 : 44,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: t.border),
-          ),
-          child: Text(
-            context.l10n.routeCreatePriceReset,
-            style: AppTypography.secondary
-                .copyWith(color: t.text2, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Кнопка счётчика количества.
-class _StepButton extends StatelessWidget {
-  const _StepButton({required this.icon, required this.side, this.onTap});
-
-  final IconData icon;
-  final double side;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        mouseCursor:
-            onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
-        child: SizedBox(
-          width: side,
-          height: side,
-          child: Icon(icon, size: 20, color: onTap == null ? t.text3 : t.text),
-        ),
-      ),
-    );
-  }
 }
 
 /// Стрелка порядка объезда: мелкая кнопка на десктопе, доступная с

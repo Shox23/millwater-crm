@@ -4570,6 +4570,120 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'забрать {capsules}'**
   String routeCreatePickupTake(String capsules);
+
+  /// No description provided for @routeCreatePricePlaceholderCustomer.
+  ///
+  /// In ru, this message translates to:
+  /// **'по цене заказчика'**
+  String get routeCreatePricePlaceholderCustomer;
+
+  /// No description provided for @routeCreatePriceHintCustomer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пусто — считаем по цене этого заказчика за капсулу'**
+  String get routeCreatePriceHintCustomer;
+
+  /// No description provided for @myRouteAddOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить заказ'**
+  String get myRouteAddOrder;
+
+  /// No description provided for @addOrderTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый заказ'**
+  String get addOrderTitle;
+
+  /// No description provided for @addOrderSearchHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя, телефон или адрес'**
+  String get addOrderSearchHint;
+
+  /// No description provided for @addOrderInRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уже в маршруте'**
+  String get addOrderInRoute;
+
+  /// No description provided for @addOrderEmptyTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активных заказчиков нет'**
+  String get addOrderEmptyTitle;
+
+  /// No description provided for @addOrderEmptyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новых заказчиков заводит админ'**
+  String get addOrderEmptyHint;
+
+  /// No description provided for @addOrderCustomer.
+  ///
+  /// In ru, this message translates to:
+  /// **'ЗАКАЗЧИК'**
+  String get addOrderCustomer;
+
+  /// No description provided for @addOrderOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'ЗАКАЗ'**
+  String get addOrderOrder;
+
+  /// No description provided for @addOrderCommentHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Например: просили привезти до обеда'**
+  String get addOrderCommentHint;
+
+  /// No description provided for @addOrderCommentHelper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Необязательно — комментарий увидит и админ'**
+  String get addOrderCommentHelper;
+
+  /// No description provided for @addOrderPickupPriceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пусто — вывоз без оплаты'**
+  String get addOrderPickupPriceHint;
+
+  /// No description provided for @addOrderBulkPriceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пусто — цену опта укажете при закрытии'**
+  String get addOrderBulkPriceHint;
+
+  /// No description provided for @addOrderSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить в маршрут'**
+  String get addOrderSubmit;
+
+  /// No description provided for @addOrderAdded.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказ добавлен в маршрут'**
+  String get addOrderAdded;
+
+  /// No description provided for @addOrderFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось добавить заказ'**
+  String get addOrderFailed;
+
+  /// No description provided for @errorCustomerAlreadyInRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот заказчик уже есть в маршруте'**
+  String get errorCustomerAlreadyInRoute;
+
+  /// No description provided for @errorCustomerNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заказчик не найден или отключён'**
+  String get errorCustomerNotFound;
 }
 
 class _AppLocalizationsDelegate

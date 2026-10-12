@@ -1,4 +1,5 @@
 import '../../core/product_config.dart';
+import '../models/driver_customer.dart';
 import '../models/enums.dart';
 import '../models/order.dart';
 import '../models/result_page.dart';
@@ -105,6 +106,37 @@ abstract class DriverRepository {
     String? idempotencyKey,
     double? latitude,
     double? longitude,
+  });
+
+  // ---- Новый заказ в маршруте ----
+  /// Страница активных заказчиков (`GET /driver/customers`), новые первыми.
+  ///
+  /// Ищет сервер — по имени, обоим телефонам и адресу. Отдаёт только
+  /// контакты: долг, остаток и цену заказчика водителю не показывают.
+  Future<ResultPage<DriverCustomer>> getCustomersPage({
+    int page = 1,
+    String? search,
+  });
+
+  /// Добавляет заказ в свой маршрут
+  /// (`POST /driver/{routeId}/customers/{customerId}`, ответ 204).
+  ///
+  /// Поля те же, что у админа при добавлении точки: [bottleSellCount] у
+  /// доставки обязателен (иначе 422), у вывоза значит «сколько забрать»;
+  /// [customPrice] — договорная сумма за весь заказ; [comment] — записка к
+  /// точке. Точка встаёт в конец объезда.
+  ///
+  /// Заказчик, который уже есть в маршруте (в любом статусе), — 409
+  /// `CUSTOMER_ALREADY_IN_ROUTE`; неактивный — 404 `CUSTOMER_NOT_FOUND`.
+  /// Ключа идемпотентности ручка не принимает: повтор после обрыва связи
+  /// упирается в тот же 409.
+  Future<void> addRouteOrder({
+    required String routeId,
+    required String customerId,
+    required OrderPurpose purpose,
+    int? bottleSellCount,
+    int? customPrice,
+    String? comment,
   });
 
   // ---- Расходы маршрута ----

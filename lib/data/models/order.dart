@@ -46,6 +46,35 @@ Map<String, dynamic> cancelOrderBody(String? reason) {
   return {if (trimmed != null && trimmed.isNotEmpty) 'reason': trimmed};
 }
 
+/// Тело добавления заказа в существующий маршрут (`AddRouteCustomer`), общее у
+/// `/admin/routes/{id}/customers/{customerId}` и
+/// `/driver/{routeId}/customers/{customerId}`: схема на сервере одна, и
+/// правила полей не должны разойтись между ролями.
+///
+/// Пустые значения не отправляются: «не задано» для сервера — отсутствие
+/// поля. `sequence` нет намеренно: точка без номера встаёт в конец объезда
+/// (см. `inVisitOrder`), а номер «последний + 1» поставил бы её перед уже
+/// добавленными без номера.
+Map<String, dynamic> addRouteOrderBody({
+  required String customerId,
+  required OrderPurpose purpose,
+  int? bottleSellCount,
+  int? customPrice,
+  String? comment,
+}) =>
+    {
+      // Сервер берёт заказчика из пути, а это поле схемы игнорирует. Шлём
+      // его, как админ слал всегда: вреда нет, а тело читается без пути.
+      'customer_id': customerId,
+      'order_purpose': purpose.toJson(),
+      // Ключа нет вовсе, когда задания не ставили: у опта везти нечего, а
+      // ноль значил бы «привезти ноль капсул». У доставки сервер его требует.
+      'bottle_sell_count': ?bottleSellCount,
+      if (customPrice != null)
+        'order_custom_price': MoneyParser.toApi(customPrice),
+      'comment': ?comment,
+    };
+
 /// Дата в формате `YYYY-MM-DD`, как ожидают query-параметры API.
 String formatApiDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
     '${d.month.toString().padLeft(2, '0')}-'

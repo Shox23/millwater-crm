@@ -507,27 +507,15 @@ class MockCrmRepository implements CrmRepository {
     final customer = _customers.where((c) => c.id == customerId).firstOrNull;
     if (customer == null) return;
 
-    store.replaceRoute(routeId, (r) {
-      // Тот же заказчик дважды в одном маршруте — это одна точка, а не две.
-      if (r.stops.any((s) => s.customerId == customerId)) return r;
-      return store.copyRoute(r, stops: [
-        ...r.stops,
-        RouteStop(
-          id: store.nextId('s'),
-          customerId: customer.id,
-          customerName: customer.name,
-          customerAddress: customer.address,
-          customerPhone: customer.phone,
-          status: DeliveryStatus.pending,
-          purpose: purpose,
-          bottleSellCount: bottleSellCount,
-          customPrice: customPrice,
-          comment: comment,
-          effectiveWaterPrice:
-              customer.customWaterPrice ?? _prices.first.capsulePrice,
-        ),
-      ]);
-    });
+    store.addStop(
+      routeId,
+      customer: customer,
+      purpose: purpose,
+      capsulePrice: _prices.first.capsulePrice,
+      bottleSellCount: bottleSellCount,
+      customPrice: customPrice,
+      comment: comment,
+    );
   }
 
   @override

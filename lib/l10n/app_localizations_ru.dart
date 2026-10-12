@@ -2607,4 +2607,63 @@ class AppLocalizationsRu extends AppLocalizations {
   String routeCreatePickupTake(String capsules) {
     return 'забрать $capsules';
   }
+
+  @override
+  String get routeCreatePricePlaceholderCustomer => 'по цене заказчика';
+
+  @override
+  String get routeCreatePriceHintCustomer =>
+      'Пусто — считаем по цене этого заказчика за капсулу';
+
+  @override
+  String get myRouteAddOrder => 'Добавить заказ';
+
+  @override
+  String get addOrderTitle => 'Новый заказ';
+
+  @override
+  String get addOrderSearchHint => 'Имя, телефон или адрес';
+
+  @override
+  String get addOrderInRoute => 'Уже в маршруте';
+
+  @override
+  String get addOrderEmptyTitle => 'Активных заказчиков нет';
+
+  @override
+  String get addOrderEmptyHint => 'Новых заказчиков заводит админ';
+
+  @override
+  String get addOrderCustomer => 'ЗАКАЗЧИК';
+
+  @override
+  String get addOrderOrder => 'ЗАКАЗ';
+
+  @override
+  String get addOrderCommentHint => 'Например: просили привезти до обеда';
+
+  @override
+  String get addOrderCommentHelper =>
+      'Необязательно — комментарий увидит и админ';
+
+  @override
+  String get addOrderPickupPriceHint => 'Пусто — вывоз без оплаты';
+
+  @override
+  String get addOrderBulkPriceHint => 'Пусто — цену опта укажете при закрытии';
+
+  @override
+  String get addOrderSubmit => 'Добавить в маршрут';
+
+  @override
+  String get addOrderAdded => 'Заказ добавлен в маршрут';
+
+  @override
+  String get addOrderFailed => 'Не удалось добавить заказ';
+
+  @override
+  String get errorCustomerAlreadyInRoute => 'Этот заказчик уже есть в маршруте';
+
+  @override
+  String get errorCustomerNotFound => 'Заказчик не найден или отключён';
 }

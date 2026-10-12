@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../core/utils/money_parser.dart';
+import '../models/driver_customer.dart';
 import '../models/enums.dart';
 import '../models/json.dart';
 import '../models/order.dart';
@@ -21,8 +22,8 @@ class ApiDriverRepository implements DriverRepository {
 
   final Dio _dio;
 
-  /// Размер страницы у списка заказов — единственного пагинированного ответа
-  /// водительской части. Потолок сервера — сотня.
+  /// Размер страницы у пагинированных ответов водительской части — заказов и
+  /// заказчиков. Потолок сервера — сотня.
   static const int _pageSize = 100;
 
   @override
@@ -107,13 +108,19 @@ class ApiDriverRepository implements DriverRepository {
       'page': page,
       'page_size': _pageSize,
     });
+    return _pageOf(res.data, page, Order.fromJson);
+  }
 
-    final data = unwrapData(res.data);
+  /// Разбирает страницу `{items, total, page, page_size, pages}`; голый
+  /// массив тоже принимается — как одна-единственная страница.
+  ResultPage<T> _pageOf<T>(
+    Object? body,
+    int page,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    final data = unwrapData(body);
     final paginated = data is Map<String, dynamic>;
-    final items = parseList(
-      paginated ? data['items'] : data,
-      Order.fromJson,
-    );
+    final items = parseList(paginated ? data['items'] : data, fromJson);
     final pages = paginated ? intOr(data['pages'], 1) : 1;
 
     return ResultPage(
@@ -229,6 +236,41 @@ class ApiDriverRepository implements DriverRepository {
       ),
     );
   }
+
+  @override
+  Future<ResultPage<DriverCustomer>> getCustomersPage({
+    int page = 1,
+    String? search,
+  }) async {
+    final res = await _dio.get('/driver/customers', queryParameters: {
+      'page': page,
+      'page_size': _pageSize,
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+    });
+    return _pageOf(res.data, page, DriverCustomer.fromJson);
+  }
+
+  @override
+  Future<void> addRouteOrder({
+    required String routeId,
+    required String customerId,
+    required OrderPurpose purpose,
+    int? bottleSellCount,
+    int? customPrice,
+    String? comment,
+  }) =>
+      // Путь без `/routes`: так ручку объявил сервер, в отличие от соседних
+      // `/driver/routes/{id}/…`.
+      _dio.post(
+        '/driver/$routeId/customers/$customerId',
+        data: addRouteOrderBody(
+          customerId: customerId,
+          purpose: purpose,
+          bottleSellCount: bottleSellCount,
+          customPrice: customPrice,
+          comment: comment,
+        ),
+      );
 
   @override
   Future<List<RouteExpense>> getRouteExpenses(String routeId) async {
