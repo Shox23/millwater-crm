@@ -348,7 +348,7 @@
   "routeFormPurpose": "ЦЕЛЬ МАРШРУТА",
   "routeFormPurposeHint": "Цель по умолчанию для всех точек",
   "routeFormAssignLater": "Назначить позже",
-  "routeFormAssignLaterHint": "Маршрут останется новым, пока водителя нет",
+  "routeFormAssignLaterHint": "Водителя можно назначить или сменить, пока он не закрыл первую доставку",
   "routeFormStopPurpose": "Цель точки",
   "routeFormBottleSell": "КАПСУЛ К ДОСТАВКЕ",
   "routeFormBottleSellHint": "Сколько везти этому заказчику",
@@ -381,7 +381,7 @@
   "routeFormNoCustomers": "Сначала добавьте заказчиков",
   "routeEditTitle": "Изменить маршрут",
   "routeFormSaveFailed": "Не удалось сохранить изменения.",
-  "routeEditInProgressHint": "Маршрут уже в работе: дату и водителя менять поздно, можно только добавить заказчиков.",
+  "routeEditInProgressHint": "Водитель уже начал маршрут: дату и водителя менять поздно, можно только добавить заказчиков.",
   "routeFormSelected": "выбрано: {count}",
   "@routeFormSelected": {
     "placeholders": {
@@ -1007,7 +1007,7 @@
   "errorCustomerPhoneExists": "Этот телефон уже записан за другим заказчиком",
   "errorPhoneExists": "Этот телефон уже занят",
   "errorDriverBusy": "У водителя уже есть маршрут на эту дату",
-  "errorRouteStarted": "Маршрут уже начат",
+  "errorRouteStarted": "Водитель уже начал маршрут — сменить водителя нельзя",
   "errorRouteCompleted": "Маршрут уже завершён",
   "errorAccessDenied": "Нет доступа",
   "errorNotFound": "Запись не найдена",

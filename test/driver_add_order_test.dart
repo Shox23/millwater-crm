@@ -290,14 +290,27 @@ void main() {
       await settle(tester);
     }
 
-    testWidgets('кнопка есть только у маршрута в работе', (tester) async {
+    testWidgets('кнопка есть у нового и начатого маршрута, у закрытого нет',
+        (tester) async {
       final store = MockStore();
       await pumpRoute(tester, MockDriverRepository(store: store));
       expect(addButton, findsOneWidget);
 
+      // С 2026-10-18 маршрут стартует на первой закрытой доставке: утром он
+      // ещё «Создан», и заказ по дороге должен добавляться и в него. Пустой
+      // кадр между — чтобы экран собрался заново и перечитал маршрут, а не
+      // сохранил прежнее состояние.
+      await tester.pumpWidget(const SizedBox());
+      await pumpRoute(
+        tester,
+        MockDriverRepository(store: store, driverId: 'd4'),
+        routeId: 'r4',
+      );
+      expect(find.text('Создан'), findsOneWidget);
+      expect(addButton, findsOneWidget);
+
       // Закрытый маршрут водитель видит как историю — добавлять в него нечего,
-      // хотя сервер статус и не проверяет. Пустой кадр между — чтобы экран
-      // собрался заново и перечитал маршрут, а не сохранил прежнее состояние.
+      // хотя сервер статус и не проверяет.
       store.completeRoute('r1');
       await tester.pumpWidget(const SizedBox());
       await pumpRoute(tester, MockDriverRepository(store: store));

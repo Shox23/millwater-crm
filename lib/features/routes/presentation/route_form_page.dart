@@ -158,13 +158,18 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
   bool get _bottleCountsFilled => _customerIds.every((id) =>
       !_isNewStop(id) || !_needsBottleCount(id) || _bottleCountOf(id) > 0);
 
-  RouteStatus get _status => widget.route?.status ?? RouteStatus.created;
+  /// Статус, перечитанный после отказа «маршрут уже начат»; `null` — тот, с
+  /// которым форму открыли.
+  RouteStatus? _freshStatus;
+
+  RouteStatus get _status =>
+      _freshStatus ?? widget.route?.status ?? RouteStatus.created;
 
   /// В создании ограничений нет, в правке их задаёт статус.
   bool get _canReschedule => !widget.isEdit || _status.canReschedule;
 
-  /// Водителя сервер разрешает менять и в начатом маршруте — правило живёт
-  /// в `RouteEditRules`, здесь только поправка на создание.
+  /// Водителя меняют, пока маршрут не начат, — правило живёт в
+  /// `RouteEditRules`, здесь только поправка на создание.
   bool get _canAssignDriver => !widget.isEdit || _status.canAssignDriver;
   bool get _canRemoveCustomers =>
       !widget.isEdit || _status.canRemoveCustomers;
@@ -302,15 +307,41 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
     final l10n = context.l10n;
     final fallback =
         widget.isEdit ? l10n.routeFormSaveFailed : l10n.routeFormCreateFailed;
+    var started = false;
 
     final saved = await submit(
       () => widget.isEdit ? _applyChanges(repo) : _create(repo),
-      message: (e) => e is DioException
-          ? apiErrorMessage(l10n, e, fallback: fallback)
-          : fallback,
+      message: (e) {
+        if (e is! DioException) return fallback;
+        started = errorCode(e.response?.data) == 'ROUTE_ALREADY_STARTED';
+        return apiErrorMessage(l10n, e, fallback: fallback);
+      },
     );
 
-    if (saved && mounted) Navigator.of(context).pop(true);
+    if (saved && mounted) {
+      Navigator.of(context).pop(true);
+    } else if (started && mounted) {
+      await _refreshStatus(repo);
+    }
+  }
+
+  /// Перечитывает статус после отказа «маршрут уже начат».
+  ///
+  /// Форму открыли со статусом, каким он был при загрузке, а водитель тем
+  /// временем закрыл первую доставку. Без перечитывания форма так и
+  /// предлагала бы выбор водителя, которого сервер уже не примет.
+  Future<void> _refreshStatus(CrmRepository repo) async {
+    try {
+      final fresh = await repo.getRoute(widget.route!.id);
+      if (fresh == null || !mounted) return;
+      setState(() {
+        _freshStatus = fresh.status;
+        // Сменить уже нельзя — на экране тот, кто на маршруте на самом деле.
+        if (!_canAssignDriver) _driverId = fresh.driverId;
+      });
+    } catch (_) {
+      // Перечитать не вышло — причину на экране уже объясняет текст ошибки.
+    }
   }
 
   Future<void> _create(CrmRepository repo) => repo.createRoute(
@@ -473,6 +504,14 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                     context.l10n.routeFormAssignLaterHint,
                                 onTap: () => setState(() => _driverId = null),
                               ),
+                            // Начатый маршрут без водителя — наследие времени,
+                            // когда сервер запускал сегодняшний маршрут сразу
+                            // при создании. Назначить его уже нельзя, но
+                            // пустота вместо строки читалась бы поломкой.
+                            if (!_canAssignDriver && _driverId == null)
+                              Text(context.l10n.routeNoDriver,
+                                  style: AppTypography.secondary
+                                      .copyWith(color: t.text2)),
                             for (final d in _drivers)
                               // В начатом маршруте показываем только его
                               // водителя: остальные строки были бы мёртвыми.

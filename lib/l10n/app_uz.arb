@@ -293,7 +293,7 @@
   "routeFormPurpose": "MARSHRUT MAQSADI",
   "routeFormPurposeHint": "Barcha nuqtalar uchun standart maqsad",
   "routeFormAssignLater": "Keyinroq tayinlash",
-  "routeFormAssignLaterHint": "Haydovchi yo‘q ekan, marshrut yangi bo‘lib qoladi",
+  "routeFormAssignLaterHint": "Haydovchi birinchi yetkazib berishni yopmaguncha uni tayinlash yoki almashtirish mumkin",
   "routeFormStopPurpose": "Nuqta maqsadi",
   "routeFormBottleSell": "YETKAZILADIGAN KAPSULALAR",
   "routeFormBottleSellHint": "Bu buyurtmachiga qancha olib boriladi",
@@ -326,7 +326,7 @@
   "routeFormNoCustomers": "Avval mijoz qo‘shing",
   "routeEditTitle": "Marshrutni o‘zgartirish",
   "routeFormSaveFailed": "O‘zgarishlarni saqlab bo‘lmadi.",
-  "routeEditInProgressHint": "Marshrut allaqachon ishda: sana va haydovchini o‘zgartirish kech, faqat mijoz qo‘shish mumkin.",
+  "routeEditInProgressHint": "Haydovchi marshrutni boshlab bo‘ldi: sana va haydovchini o‘zgartirish kech, faqat mijoz qo‘shish mumkin.",
   "routeFormSelected": "tanlandi: {count}",
   "@routeFormSelected": {
     "placeholders": {
@@ -870,7 +870,7 @@
   "errorCustomerPhoneExists": "Bu raqam boshqa mijozga biriktirilgan",
   "errorPhoneExists": "Bu raqam allaqachon band",
   "errorDriverBusy": "Haydovchida bu sanaga marshrut bor",
-  "errorRouteStarted": "Marshrut allaqachon boshlangan",
+  "errorRouteStarted": "Haydovchi marshrutni boshlab bo‘ldi — haydovchini almashtirib bo‘lmaydi",
   "errorRouteCompleted": "Marshrut allaqachon yakunlangan",
   "errorAccessDenied": "Ruxsat yo‘q",
   "errorNotFound": "Yozuv topilmadi",

@@ -654,7 +654,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get routeFormAssignLaterHint =>
-      'Haydovchi yo‘q ekan, marshrut yangi bo‘lib qoladi';
+      'Haydovchi birinchi yetkazib berishni yopmaguncha uni tayinlash yoki almashtirish mumkin';
 
   @override
   String get routeFormStopPurpose => 'Nuqta maqsadi';
@@ -727,7 +727,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get routeEditInProgressHint =>
-      'Marshrut allaqachon ishda: sana va haydovchini o‘zgartirish kech, faqat mijoz qo‘shish mumkin.';
+      'Haydovchi marshrutni boshlab bo‘ldi: sana va haydovchini o‘zgartirish kech, faqat mijoz qo‘shish mumkin.';
 
   @override
   String routeFormSelected(int count) {
@@ -1936,7 +1936,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get errorDriverBusy => 'Haydovchida bu sanaga marshrut bor';
 
   @override
-  String get errorRouteStarted => 'Marshrut allaqachon boshlangan';
+  String get errorRouteStarted =>
+      'Haydovchi marshrutni boshlab bo‘ldi — haydovchini almashtirib bo‘lmaydi';
 
   @override
   String get errorRouteCompleted => 'Marshrut allaqachon yakunlangan';

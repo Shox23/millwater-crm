@@ -1229,7 +1229,7 @@ abstract class AppLocalizations {
   /// No description provided for @routeFormAssignLaterHint.
   ///
   /// In ru, this message translates to:
-  /// **'Маршрут останется новым, пока водителя нет'**
+  /// **'Водителя можно назначить или сменить, пока он не закрыл первую доставку'**
   String get routeFormAssignLaterHint;
 
   /// No description provided for @routeFormStopPurpose.
@@ -1343,7 +1343,7 @@ abstract class AppLocalizations {
   /// No description provided for @routeEditInProgressHint.
   ///
   /// In ru, this message translates to:
-  /// **'Маршрут уже в работе: дату и водителя менять поздно, можно только добавить заказчиков.'**
+  /// **'Водитель уже начал маршрут: дату и водителя менять поздно, можно только добавить заказчиков.'**
   String get routeEditInProgressHint;
 
   /// No description provided for @routeFormSelected.
@@ -3448,7 +3448,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorRouteStarted.
   ///
   /// In ru, this message translates to:
-  /// **'Маршрут уже начат'**
+  /// **'Водитель уже начал маршрут — сменить водителя нельзя'**
   String get errorRouteStarted;
 
   /// No description provided for @errorRouteCompleted.

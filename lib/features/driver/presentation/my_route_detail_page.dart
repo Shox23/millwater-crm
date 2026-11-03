@@ -228,7 +228,8 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
     return DetailScaffold(
       title: context.l10n.myRouteTitle,
       // Кнопка есть только у начатого маршрута: закрытый и отменённый
-      // завершать нечего, а `created` водителю и не показывают.
+      // завершать нечего, а `created` сервер завершить не даст (409) — с
+      // 2026-10-18 маршрут стартует, когда водитель закрывает первую доставку.
       bottomBar: _loadFailed || route == null || !route.status.canComplete
           ? null
           : BottomActionBar(
@@ -274,11 +275,11 @@ class _MyRouteDetailPageState extends State<MyRouteDetailPage> {
                       onComplete: _openCompletion,
                       onStatus: _setStatus,
                       onCancel: _cancelStop,
-                      // Заказ добавляют только в маршрут в работе: закрытый
-                      // водитель видит как историю, а `created` ему не
-                      // показывают вовсе. Сервер статус не проверяет —
-                      // держим правило здесь.
-                      onAddOrder: route.status == RouteStatus.inProgress
+                      // Заказ добавляют в новый и начатый маршрут: утром,
+                      // до первой закрытой доставки, маршрут ещё `created`.
+                      // Закрытый водитель видит как историю. Сервер статус
+                      // не проверяет — держим правило здесь, общее с админом.
+                      onAddOrder: route.status.canAddCustomers
                           ? () => _addOrder(route)
                           : null,
                     ),

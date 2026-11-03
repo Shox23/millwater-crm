@@ -665,7 +665,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get routeFormAssignLaterHint =>
-      'Маршрут останется новым, пока водителя нет';
+      'Водителя можно назначить или сменить, пока он не закрыл первую доставку';
 
   @override
   String get routeFormStopPurpose => 'Цель точки';
@@ -736,7 +736,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get routeEditInProgressHint =>
-      'Маршрут уже в работе: дату и водителя менять поздно, можно только добавить заказчиков.';
+      'Водитель уже начал маршрут: дату и водителя менять поздно, можно только добавить заказчиков.';
 
   @override
   String routeFormSelected(int count) {
@@ -1953,7 +1953,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorDriverBusy => 'У водителя уже есть маршрут на эту дату';
 
   @override
-  String get errorRouteStarted => 'Маршрут уже начат';
+  String get errorRouteStarted =>
+      'Водитель уже начал маршрут — сменить водителя нельзя';
 
   @override
   String get errorRouteCompleted => 'Маршрут уже завершён';

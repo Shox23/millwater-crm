@@ -33,9 +33,12 @@ class ApiDriverRepository implements DriverRepository {
     // должен увидеть. См. `parseList`.
     final live = parseList(unwrapData(res.data), RouteListItem.fromJson);
 
-    // `/driver/routes` отдаёт только `in_progress`: закрыв последнюю точку,
-    // водитель терял весь день вместе с кассой. Историю достраиваем из его
-    // заказов — они видны за всё время. См. `route_from_orders.dart`.
+    // Когда-то `/driver/routes` отдавал только `in_progress`, и закрыв
+    // последнюю точку, водитель терял весь день вместе с кассой — историю
+    // стали достраивать из его заказов (`route_from_orders.dart`). С
+    // 2026-09-07 сервер отдаёт маршруты во всех статусах, так что достройка
+    // почти всегда ничего не добавляет; оставлена страховкой, совпадения по
+    // id отсекает `known`.
     final known = live.map((r) => r.id).toSet();
     final history = <RouteListItem>[];
     try {
@@ -57,9 +60,11 @@ class ApiDriverRepository implements DriverRepository {
       final res = await _dio.get('/driver/routes/$id');
       return RouteDetail.fromJson(asMap(res.data));
     } on DioException catch (e) {
-      // 404 у своего же маршрута означает не «нет такого», а «уже не
-      // `in_progress`». Собираем карточку из заказов и расходов: расходы
-      // сервер по завершённому маршруту отдаёт, в отличие от него самого.
+      // Раньше 404 приходил и на свой завершённый маршрут: сервер отдавал
+      // только `in_progress`. С 2026-09-07 он отдаёт свой маршрут в любом
+      // статусе, и 404 почти наверняка значит «такого нет». Сборка карточки
+      // из заказов и расходов осталась страховкой: если заказов нет, вернётся
+      // `null`, как и должно.
       if (e.response?.statusCode != 404) rethrow;
 
       final orders = await _allMyOrders(routeId: id);

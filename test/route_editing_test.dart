@@ -7,6 +7,7 @@ import 'package:crm_millwater/data/repositories/crm_repository.dart';
 import 'package:crm_millwater/data/repositories/mock_crm_repository.dart';
 import 'package:crm_millwater/features/routes/presentation/route_form_page.dart';
 import 'package:crm_millwater/l10n/l10n.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,11 +67,40 @@ class _RecordingRepository extends MockCrmRepository {
   }
 }
 
+/// Водитель закрыл первую доставку, пока админ держал форму открытой:
+/// маршрут на сервере уже начат, и смену водителя сервер отвергает.
+class _StartedMeanwhileRepository extends _RecordingRepository {
+  @override
+  Future<void> assignDriver({
+    required String routeId,
+    required String driverId,
+  }) async {
+    calls.add('driver:$driverId');
+    store.replaceRoute(
+      routeId,
+      (r) => store.copyRoute(r, status: RouteStatus.inProgress),
+    );
+    final options =
+        RequestOptions(path: '/admin/routes/$routeId/driver/$driverId');
+    throw DioException(
+      requestOptions: options,
+      response: Response(
+        requestOptions: options,
+        statusCode: 409,
+        data: {
+          'error': {'code': 'ROUTE_ALREADY_STARTED', 'message': 'x'}
+        },
+      ),
+    );
+  }
+}
+
 void main() {
   group('Правила правки по статусу', () {
     test('созданный маршрут открыт целиком', () {
       const status = RouteStatus.created;
       expect(status.canReschedule, isTrue);
+      expect(status.canAssignDriver, isTrue);
       expect(status.canAddCustomers, isTrue);
       expect(status.canRemoveCustomers, isTrue);
       expect(status.isEditable, isTrue);
@@ -80,8 +110,11 @@ void main() {
     test('в начатый можно только досыпать заказчиков', () {
       const status = RouteStatus.inProgress;
       // Водитель уже везёт: дату и водителя менять поздно, а удаление
-      // точки стёрло бы выполненную доставку вместе с оплатой.
+      // точки стёрло бы выполненную доставку вместе с оплатой. Смену
+      // водителя у начатого маршрута сервер отвергает 409
+      // `ROUTE_ALREADY_STARTED`.
       expect(status.canReschedule, isFalse);
+      expect(status.canAssignDriver, isFalse);
       expect(status.canRemoveCustomers, isFalse);
       expect(status.canAddCustomers, isTrue);
       expect(status.isEditable, isTrue);
@@ -92,6 +125,7 @@ void main() {
     test('завершённый и отменённый не редактируются', () {
       for (final status in [RouteStatus.completed, RouteStatus.cancelled]) {
         expect(status.isEditable, isFalse, reason: '$status');
+        expect(status.canAssignDriver, isFalse, reason: '$status');
         expect(status.canAddCustomers, isFalse, reason: '$status');
         // Завершённому отменять нечего: доставки выполнены, оплаты приняты.
         expect(status.canCancel, isFalse, reason: '$status');
@@ -331,6 +365,47 @@ void main() {
 
       final updated = current(repo, route.id);
       expect(updated.stops.any((s) => s.customerId == existing.id), isTrue);
+    });
+
+    testWidgets('в начатом маршруте водителя сменить нельзя', (tester) async {
+      final repo = _RecordingRepository();
+      final route = routeWith(repo, RouteStatus.inProgress);
+      final own = repo.store.drivers.firstWhere((d) => d.id == route.driverId);
+      final other =
+          repo.store.drivers.firstWhere((d) => d.id != route.driverId);
+
+      await pumpForm(tester, repo, route);
+
+      expect(
+        find.text('Водитель уже начал маршрут: дату и водителя менять поздно, '
+            'можно только добавить заказчиков.'),
+        findsOneWidget,
+      );
+      expect(find.text(own.fullName), findsOneWidget);
+      expect(find.text(other.fullName), findsNothing);
+      expect(find.text('Назначить позже'), findsNothing);
+    });
+
+    testWidgets('409 «уже начат»: понятный текст, выбор водителя закрывается',
+        (tester) async {
+      final repo = _StartedMeanwhileRepository();
+      final route = routeWith(repo, RouteStatus.created);
+      final own = repo.store.drivers.firstWhere((d) => d.id == route.driverId);
+      final other =
+          repo.store.drivers.firstWhere((d) => d.id != route.driverId);
+
+      await pumpForm(tester, repo, route);
+      await tapRow(tester, other.fullName);
+      await save(tester);
+
+      expect(repo.calls, ['driver:${other.id}']);
+      expect(find.text('Водитель уже начал маршрут — сменить водителя нельзя'),
+          findsOneWidget);
+      // Форма перечитала статус: выбора больше нет, на экране тот водитель,
+      // что на маршруте на самом деле.
+      expect(find.text('Назначить позже'), findsNothing);
+      expect(find.text(own.fullName), findsOneWidget);
+      expect(find.text(other.fullName), findsNothing);
     });
   });
 
