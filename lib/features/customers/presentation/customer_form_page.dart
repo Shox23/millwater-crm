@@ -528,9 +528,10 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                       style: AppTypography.bodyStrong
                           .copyWith(color: context.tokens.text),
                     ),
+                    // Потолок — общий для счётчиков (999), а не 99: у
+                    // офисов и дилеров тары на руках бывает больше сотни.
                     QuantityStepper(
                       value: _capsuleBalance,
-                      max: 99,
                       caption: context.l10n.customerFormCapsulesHint,
                       onChanged: submitting
                           ? (_) {}

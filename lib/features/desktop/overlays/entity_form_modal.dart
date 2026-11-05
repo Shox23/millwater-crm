@@ -480,9 +480,10 @@ class _CustomerFormModalState extends State<CustomerFormModal>
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                // Потолок — общий для счётчиков (999), а не 99: у офисов и
+                // дилеров тары на руках бывает больше сотни.
                 QuantityStepper(
                   value: _capsuleBalance,
-                  max: 99,
                   caption: l10n.customerFormCapsulesHint,
                   onChanged: (value) =>
                       setState(() => _capsuleBalance = value),
