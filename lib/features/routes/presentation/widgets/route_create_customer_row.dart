@@ -5,6 +5,7 @@ import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/day.dart';
 import '../../../../core/utils/money_formatter.dart';
+import '../../../../core/widgets/contact_name_line.dart';
 import '../../../../data/models/customer.dart';
 import '../../../../l10n/l10n.dart';
 
@@ -125,6 +126,8 @@ class RouteCreateCustomerRow extends StatelessWidget {
                           ),
                       ],
                     ),
+                    if (customer.contactName case final contact?)
+                      ContactNameLine(contact),
                     Row(
                       spacing: AppSpacing.xs,
                       children: [

@@ -25,6 +25,7 @@ class Customer extends Equatable {
   const Customer({
     required this.id,
     required this.name,
+    this.contactName,
     required this.phone,
     this.phoneSecondary,
     required this.address,
@@ -41,8 +42,14 @@ class Customer extends Equatable {
 
   final String id;
 
-  /// Серверное поле `full_name` (название организации или ФИО).
+  /// Серверное поле `full_name` — название: организация, кафе, адрес.
   final String name;
+
+  /// Имя заказчика (`customer_name`) — контактное лицо, с кем говорить на
+  /// месте и по телефону. Появилось 07.11.26: у заказчиков, заведённых
+  /// раньше, его нет (`null`). При создании обязательно, а у старых
+  /// заполняется по мере правки — стереть уже указанное сервер не даёт.
+  final String? contactName;
   final String phone;
 
   /// Дополнительный телефон (`phone_secondary`) — второй контакт, по
@@ -122,6 +129,7 @@ class Customer extends Equatable {
 
   Customer copyWith({
     String? name,
+    String? contactName,
     String? phone,
     Object? phoneSecondary = _unchanged,
     String? address,
@@ -137,6 +145,8 @@ class Customer extends Equatable {
     return Customer(
       id: id,
       name: name ?? this.name,
+      // Обычный `??`: стереть имя нельзя, `null` значит только «не меняли».
+      contactName: contactName ?? this.contactName,
       phone: phone ?? this.phone,
       phoneSecondary: identical(phoneSecondary, _unchanged)
           ? this.phoneSecondary
@@ -166,6 +176,7 @@ class Customer extends Equatable {
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
         id: requireString(json['id'], 'id'),
         name: stringOr(json['full_name']),
+        contactName: optionalText(json['customer_name']),
         phone: stringOr(json['phone']),
         phoneSecondary: optionalString(json['phone_secondary']),
         address: stringOr(json['address']),
@@ -212,6 +223,9 @@ class Customer extends Equatable {
     bool includeLastOrderDate = false,
   }) => {
         'full_name': name,
+        // Только заполненное: пустую строку сервер не примет (min_length 1),
+        // а `null` у старого заказчика значит «так и не узнали», не «стереть».
+        'customer_name': ?contactName,
         'phone': phone,
         // Ключ уходит всегда: `null` — «стереть второй телефон», а сервер
         // непереданное поле оставляет как было.
@@ -243,6 +257,7 @@ class Customer extends Equatable {
   List<Object?> get props => [
         id,
         name,
+        contactName,
         phone,
         phoneSecondary,
         address,

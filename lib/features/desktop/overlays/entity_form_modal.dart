@@ -200,11 +200,18 @@ class _CustomerFormModalState extends State<CustomerFormModal>
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
+  late final TextEditingController _contactName;
   late final TextEditingController _phone;
   late final TextEditingController _phoneSecondary;
   late final TextEditingController _address;
   late final TextEditingController _comment;
   late int _coolerCount;
+
+  /// Имя заказчика обязательно у нового и у того, кому его уже указали;
+  /// старого, заведённого без имени, можно сохранить и так — см. мобильную
+  /// форму.
+  bool get _contactNameRequired =>
+      !widget.isEdit || widget.customer?.contactName != null;
 
   /// Остаток капсул у заказчика — тара, которую он держит на руках.
   late int _capsuleBalance;
@@ -288,6 +295,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     super.initState();
     final customer = widget.customer;
     _name = TextEditingController(text: customer?.name ?? '');
+    _contactName = TextEditingController(text: customer?.contactName ?? '');
     _phone = TextEditingController(
       text: customer == null ? UzPhone.prefix : UzPhone.format(customer.phone),
     );
@@ -323,6 +331,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
   void dispose() {
     _name.removeListener(_onChanged);
     _name.dispose();
+    _contactName.dispose();
     _phone.dispose();
     _phoneSecondary.dispose();
     _address.dispose();
@@ -347,6 +356,8 @@ class _CustomerFormModalState extends State<CustomerFormModal>
     final secondary = UzPhone.normalize(_phoneSecondary.text);
     final phoneSecondary = secondary.isEmpty ? null : secondary;
     final comment = _comment.text.trim();
+    // Пустое имя — только у старого заказчика: `null` в PATCH не уходит.
+    final contactName = _contactName.text.trim();
 
     final ok = await submit(
       () async {
@@ -354,6 +365,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
           await repo.updateCustomer(
             widget.customer!.copyWith(
               name: _name.text.trim(),
+              contactName: contactName.isEmpty ? null : contactName,
               phone: phone,
               phoneSecondary: phoneSecondary,
               address: _address.text.trim(),
@@ -372,6 +384,7 @@ class _CustomerFormModalState extends State<CustomerFormModal>
         } else {
           await repo.addCustomer(
             name: _name.text.trim(),
+            contactName: contactName,
             phone: phone,
             phoneSecondary: phoneSecondary,
             address: _address.text.trim(),
@@ -424,6 +437,19 @@ class _CustomerFormModalState extends State<CustomerFormModal>
               validator: Validators.all([
                 _v.notEmpty(l10n.customerFormNameEmpty),
                 _v.maxLen(160),
+              ]),
+            ),
+            LabeledTextField(
+              label: l10n.customerFormContactName,
+              hint: l10n.customerFormContactNameHint,
+              helper: _contactNameRequired
+                  ? null
+                  : l10n.customerFormContactNameMissing,
+              controller: _contactName,
+              validator: Validators.all([
+                if (_contactNameRequired)
+                  _v.notEmpty(l10n.customerFormContactNameEmpty),
+                _v.maxLen(120),
               ]),
             ),
             LabeledTextField(

@@ -72,6 +72,9 @@ abstract class SeedData {
         Customer(
           id: 'c1',
           name: 'Кафе «Nasiba»',
+          // Имя заказчика есть у части записей: остальные — «старые», до
+          // 07.11.26, и экраны должны переживать оба случая.
+          contactName: 'Насиба Каримова',
           phone: '+998 71 200 11 22',
           address: 'ул. Амир Темур, 12',
           comment: 'Мирабад',
@@ -83,6 +86,7 @@ abstract class SeedData {
         Customer(
           id: 'c2',
           name: 'Офис «Baraka»',
+          contactName: 'Рустам Алиев',
           phone: '+998 71 244 55 66',
           // Офис: основной — ресепшен, второй — бухгалтер, который платит.
           phoneSecondary: '+998901002030',
@@ -151,6 +155,7 @@ abstract class SeedData {
         id: id,
         customerId: c.id,
         customerName: c.name,
+        customerContactName: c.contactName,
         customerAddress: c.address,
         customerPhone: c.phone,
         status: status,

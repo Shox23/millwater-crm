@@ -171,6 +171,7 @@ class Order extends Equatable {
     required this.createdAt,
     required this.customerId,
     required this.customerName,
+    this.customerContactName,
     this.customerPhone = '',
     this.customerAddress = '',
     this.customerCoolerCount = 0,
@@ -273,6 +274,9 @@ class Order extends Equatable {
 
   final String customerId;
   final String customerName;
+
+  /// Имя заказчика — контактное лицо; у заведённых до 07.11.26 `null`.
+  final String? customerContactName;
   final String customerPhone;
   final String customerAddress;
 
@@ -392,6 +396,8 @@ class Order extends Equatable {
         customer['full_name'],
         json['customer_full_name'],
       ])),
+      // Только из вложенного `customer` — см. `RouteStop.fromJson`.
+      customerContactName: optionalText(customer['customer_name']),
       customerPhone: stringOr(firstNonNull([
         customer['customer_phone'],
         customer['phone'],
@@ -485,6 +491,7 @@ class Order extends Equatable {
         createdAt,
         customerId,
         customerName,
+        customerContactName,
         customerPhone,
         customerAddress,
         customerCoolerCount,

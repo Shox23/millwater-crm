@@ -60,6 +60,7 @@ class _RecordingRepository extends MockCrmRepository {
   @override
   Future<Customer> addCustomer({
     required String name,
+    required String contactName,
     required String phone,
     String? phoneSecondary,
     required String address,
@@ -75,6 +76,7 @@ class _RecordingRepository extends MockCrmRepository {
     addedCoolerCount = coolerCount;
     return super.addCustomer(
       name: name,
+      contactName: contactName,
       phone: phone,
       phoneSecondary: phoneSecondary,
       address: address,
@@ -604,7 +606,8 @@ void main() {
 
       await tester.enterText(customerField(0), 'Мирабад, 5');
       await tester.enterText(customerField(1), 'Кафе «Тест»');
-      await tester.enterText(customerField(2), '+998 90 111 22 33');
+      await tester.enterText(customerField(2), 'Алишер');
+      await tester.enterText(customerField(3), '+998 90 111 22 33');
       await tester.pump();
 
       // По умолчанию кулеров нет — добавляем один степпером. Переключатель
@@ -622,6 +625,10 @@ void main() {
 
       // Заодно задаём тару, с которой заказчик приходит от прежнего
       // поставщика: без неё первая доставка разошлась бы со складом.
+      // С полем «Имя заказчика» форма стала выше, и степпер капсул уходит
+      // под край модалки — к нему надо прокрутить, как и человеку.
+      await tester.ensureVisible(plus.at(1));
+      await tester.pump();
       await tester.tap(plus.at(1));
       await tester.pump();
       await tester.tap(plus.at(1));

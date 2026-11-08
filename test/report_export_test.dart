@@ -498,6 +498,7 @@ void main() {
 
       final created = await repo.addCustomer(
         name: 'Влад',
+        contactName: 'Владислав',
         phone: '+998901234567',
         address: 'Чиланзар, 5',
         coolerCount: 2,
@@ -520,6 +521,7 @@ void main() {
 
       final created = await repo.addCustomer(
         name: 'Влад',
+        contactName: 'Владислав',
         phone: '+998901234567',
         address: 'Чиланзар, 5',
         coolerCount: 2,
@@ -547,6 +549,7 @@ void main() {
 
       final created = await repo.addCustomer(
         name: 'Влад',
+        contactName: 'Владислав',
         phone: '+998901234567',
         address: 'Чиланзар, 5',
       );

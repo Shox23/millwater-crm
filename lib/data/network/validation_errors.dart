@@ -92,10 +92,11 @@ String? _fieldName(AppLocalizations l10n, Object? loc) {
 
 /// Поля запросов Water CRM. Имена нейтральные, не привязанные к экрану:
 /// одно и то же `full_name` на форме водителя подписано «Имя водителя», а на
-/// форме заказчика — «Название / имя», и подставлять сюда любую из этих
+/// форме заказчика — «Название», и подставлять сюда любую из этих
 /// подписей значило бы врать на другом экране.
 Map<String, String> _labels(AppLocalizations l10n) => {
       'full_name': l10n.apiFieldFullName,
+      'customer_name': l10n.apiFieldCustomerName,
       'phone': l10n.apiFieldPhone,
       'address': l10n.apiFieldAddress,
       'comment': l10n.apiFieldComment,

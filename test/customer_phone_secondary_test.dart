@@ -120,12 +120,14 @@ void main() {
     test('при создании уходит, только когда задан', () async {
       await repo.addCustomer(
         name: 'Кафе',
+        contactName: 'Алишер',
         phone: '+998901112233',
         phoneSecondary: '+998901002030',
         address: 'ул. Тестовая, 1',
       );
       await repo.addCustomer(
         name: 'Кафе',
+        contactName: 'Алишер',
         phone: '+998901112233',
         address: 'ул. Тестовая, 1',
       );
@@ -193,7 +195,8 @@ void main() {
         );
 
     Future<void> fillRequired(WidgetTester tester) async {
-      await tester.enterText(inputFor('Название / имя'), 'Кафе «Nasiba»');
+      await tester.enterText(inputFor('Название'), 'Кафе «Nasiba»');
+      await tester.enterText(inputFor('Имя заказчика'), 'Насиба Каримова');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 12');
       await settle(tester);

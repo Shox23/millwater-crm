@@ -200,6 +200,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get apiFieldFullName => 'Имя или название';
 
   @override
+  String get apiFieldCustomerName => 'Имя заказчика';
+
+  @override
   String get apiFieldPhone => 'Телефон';
 
   @override
@@ -447,6 +450,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get loginErrorFailed => 'Не удалось войти. Попробуйте ещё раз.';
+
+  @override
+  String get loginErrorOutdated =>
+      'Эта версия приложения устарела, сервер её не принимает. Установите новую.';
+
+  @override
+  String appVersion(String version) {
+    return 'Версия $version';
+  }
 
   @override
   String get sessionExpired => 'Сессия истекла. Войдите снова.';
@@ -1027,13 +1039,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get customerFormNewTitle => 'Новый заказчик';
 
   @override
-  String get customerFormName => 'Название / имя';
+  String get customerFormName => 'Название';
 
   @override
   String get customerFormNameHint => 'Например, Кафе «Nasiba»';
 
   @override
-  String get customerFormNameEmpty => 'Введите название или имя';
+  String get customerFormNameEmpty => 'Введите название';
+
+  @override
+  String get customerFormContactName => 'Имя заказчика';
+
+  @override
+  String get customerFormContactNameHint => 'Например, Насиба Каримова';
+
+  @override
+  String get customerFormContactNameEmpty => 'Введите имя заказчика';
+
+  @override
+  String get customerFormContactNameMissing =>
+      'Раньше не указывали — заполните, когда узнаете';
+
+  @override
+  String get customerContactNameUnknown => 'Не указано';
 
   @override
   String get customerFormAddress => 'Адрес доставки';

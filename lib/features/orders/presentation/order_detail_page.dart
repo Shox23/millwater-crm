@@ -13,6 +13,7 @@ import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
+import '../../../core/widgets/contact_name_line.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/network_photo_card.dart';
 import '../../../core/widgets/phone_contact_row.dart';
@@ -168,6 +169,8 @@ class OrderDetailPage extends StatelessWidget {
                   order.customerName,
                   style: AppTypography.cardTitle.copyWith(color: t.text),
                 ),
+                if (order.customerContactName case final contact?)
+                  ContactNameLine(contact),
                 if (order.customerAddress.isNotEmpty)
                   Row(
                     spacing: 4,

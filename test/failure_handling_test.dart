@@ -46,6 +46,7 @@ class _FailingRepository extends MockCrmRepository {
   @override
   Future<Customer> addCustomer({
     required String name,
+    required String contactName,
     required String phone,
     String? phoneSecondary,
     required String address,
@@ -61,6 +62,7 @@ class _FailingRepository extends MockCrmRepository {
     if (onWrite != null) _throwWrite();
     return super.addCustomer(
       name: name,
+      contactName: contactName,
       phone: phone,
       phoneSecondary: phoneSecondary,
       address: address,
@@ -164,7 +166,8 @@ void main() {
       );
       await pump(tester, repo, const CustomerFormPage());
 
-      await tester.enterText(inputFor('Название / имя'), 'Чайхана «Тест»');
+      await tester.enterText(inputFor('Название'), 'Чайхана «Тест»');
+      await tester.enterText(inputFor('Имя заказчика'), 'Алишер');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 5');
       // Кадр после ввода: кнопка разблокируется, только когда форма валидна.

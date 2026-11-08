@@ -54,12 +54,14 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _name;
+  late final TextEditingController _contactName;
   late final TextEditingController _phone;
   late final TextEditingController _phoneSecondary;
   late final TextEditingController _address;
   late final TextEditingController _comment;
 
   final _nameFocus = FocusNode();
+  final _contactNameFocus = FocusNode();
   final _phoneFocus = FocusNode();
   final _phoneSecondaryFocus = FocusNode();
   final _addressFocus = FocusNode();
@@ -116,6 +118,18 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _v.notEmpty(context.l10n.customerFormNameEmpty),
     _v.maxLen(120),
   ]);
+  /// Имя заказчика обязательно у нового и у того, кому его уже указали
+  /// (стереть сервер не даст). Старого, заведённого до 07.11.26 без имени,
+  /// можно сохранить и так: админ, правящий долг или адрес, контактное
+  /// лицо может и не знать — и застрять на форме из-за этого не должен.
+  bool get _contactNameRequired =>
+      !widget.isEdit || widget.customer?.contactName != null;
+
+  FormFieldValidator<String> get _contactNameRule => Validators.all([
+    if (_contactNameRequired)
+      _v.notEmpty(context.l10n.customerFormContactNameEmpty),
+    _v.maxLen(120),
+  ]);
   FormFieldValidator<String> get _addressRule => Validators.all([
     _v.notEmpty(context.l10n.customerFormAddressEmpty),
     _v.maxLen(200),
@@ -127,6 +141,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     super.initState();
     final customer = widget.customer;
     _name = TextEditingController(text: customer?.name ?? '');
+    _contactName = TextEditingController(text: customer?.contactName ?? '');
     // У нового заказчика в поле уже стоит код страны — его не надо набирать.
     _phone = TextEditingController(
       text: customer == null ? UzPhone.prefix : UzPhone.format(customer.phone),
@@ -178,6 +193,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   @override
   void dispose() {
     _name.dispose();
+    _contactName.dispose();
     _phone.dispose();
     _phoneSecondary.dispose();
     _address.dispose();
@@ -185,6 +201,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
     _balance.dispose();
     _price.dispose();
     _nameFocus.dispose();
+    _contactNameFocus.dispose();
     _phoneFocus.dispose();
     _phoneSecondaryFocus.dispose();
     _addressFocus.dispose();
@@ -211,6 +228,11 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   String? get _commentOrNull =>
       _comment.text.trim().isEmpty ? null : _comment.text.trim();
 
+  /// Имя заказчика; `null` — поле пустое (у старого заказчика без имени):
+  /// пустую строку сервер не примет, а `null` в PATCH не уходит вовсе.
+  String? get _contactNameOrNull =>
+      _contactName.text.trim().isEmpty ? null : _contactName.text.trim();
+
   /// Второй телефон в E.164; `null` — поле пустое. Пустую строку слать
   /// нельзя: сервер требует от значения минимум пять символов.
   String? get _phoneSecondaryOrNull {
@@ -222,6 +244,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   bool get _dirty {
     final customer = widget.customer;
     return _name.text.trim() != (customer?.name ?? '') ||
+        _contactName.text.trim() != (customer?.contactName ?? '') ||
         UzPhone.normalize(_phone.text) !=
             UzPhone.normalize(customer?.phone ?? '') ||
         UzPhone.normalize(_phoneSecondary.text) !=
@@ -304,6 +327,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
   List<(FocusNode, String?)> get _checks => [
         (_addressFocus, _addressRule(_address.text)),
         (_nameFocus, _nameRule(_name.text)),
+        (_contactNameFocus, _contactNameRule(_contactName.text)),
         (_phoneFocus, _v.phone(_phone.text)),
         (_phoneSecondaryFocus, _v.phoneOptional(_phoneSecondary.text)),
         (_commentFocus, _commentRule(_comment.text)),
@@ -351,6 +375,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
           ? repo.updateCustomer(
               widget.customer!.copyWith(
                 name: _name.text.trim(),
+                contactName: _contactNameOrNull,
                 phone: phone,
                 phoneSecondary: _phoneSecondaryOrNull,
                 address: _address.text.trim(),
@@ -369,6 +394,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
             )
           : repo.addCustomer(
               name: _name.text.trim(),
+              contactName: _contactName.text.trim(),
               phone: phone,
               phoneSecondary: _phoneSecondaryOrNull,
               address: _address.text.trim(),
@@ -450,6 +476,24 @@ class _CustomerFormPageState extends State<CustomerFormPage> with SubmitState {
                 focusNode: _nameFocus,
                 validator: _nameRule,
                 maxLength: 120,
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) => _contactNameFocus.requestFocus(),
+              ),
+              // Контактное лицо — к кому обращаться на месте и по телефону.
+              // У старого заказчика без имени поле необязательное, и
+              // подсказка объясняет, почему оно пустое.
+              LabeledTextField(
+                label: context.l10n.customerFormContactName,
+                hint: context.l10n.customerFormContactNameHint,
+                helper: _contactNameRequired
+                    ? null
+                    : context.l10n.customerFormContactNameMissing,
+                helperMaxLines: 2,
+                controller: _contactName,
+                focusNode: _contactNameFocus,
+                validator: _contactNameRule,
+                maxLength: 120,
+                autofillHints: const [AutofillHints.name],
                 textInputAction: TextInputAction.next,
                 onSubmitted: (_) => _phoneFocus.requestFocus(),
               ),

@@ -97,6 +97,7 @@ void main() {
 
       await repositoryWith(adapter).addCustomer(
         name: 'Чайхана',
+        contactName: 'Алишер',
         phone: '+998901234567',
         address: 'Чиланзар, 5',
         idempotencyKey: 'customer-1',
@@ -178,6 +179,7 @@ void main() {
 
       await repositoryWith(adapter).addCustomer(
         name: 'Кафе',
+        contactName: 'Алишер',
         phone: '+998901234567',
         address: 'Юнусабад, 1',
       );
@@ -214,12 +216,14 @@ void main() {
 
       await repo.addCustomer(
         name: 'Первый',
+        contactName: 'Алишер',
         phone: '+998900000001',
         address: 'Адрес 1',
         idempotencyKey: 'customer-1',
       );
       await repo.addCustomer(
         name: 'Второй',
+        contactName: 'Бахтиёр',
         phone: '+998900000002',
         address: 'Адрес 2',
         idempotencyKey: 'customer-2',

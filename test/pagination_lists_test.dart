@@ -15,6 +15,7 @@ void main() {
     for (var i = 0; i < count; i++) {
       await repo.addCustomer(
         name: 'Заказчик $i',
+        contactName: 'Контакт $i',
         phone: '+99890000${i.toString().padLeft(4, '0')}',
         address: 'Улица $i',
       );

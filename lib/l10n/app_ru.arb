@@ -132,6 +132,7 @@
     }
   },
   "apiFieldFullName": "Имя или название",
+  "apiFieldCustomerName": "Имя заказчика",
   "apiFieldPhone": "Телефон",
   "apiFieldAddress": "Адрес",
   "apiFieldComment": "Комментарий",
@@ -243,6 +244,15 @@
   "loginErrorCredentials": "Неверный телефон или пароль.",
   "loginErrorGeneric": "Ошибка входа. Попробуйте ещё раз.",
   "loginErrorFailed": "Не удалось войти. Попробуйте ещё раз.",
+  "loginErrorOutdated": "Эта версия приложения устарела, сервер её не принимает. Установите новую.",
+  "appVersion": "Версия {version}",
+  "@appVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "sessionExpired": "Сессия истекла. Войдите снова.",
   "navRoute": "Маршрут",
   "navRoutes": "Маршруты",
@@ -546,9 +556,14 @@
   "financeDebt": "Долг",
   "customerFormEditTitle": "Редактирование заказчика",
   "customerFormNewTitle": "Новый заказчик",
-  "customerFormName": "Название / имя",
+  "customerFormName": "Название",
   "customerFormNameHint": "Например, Кафе «Nasiba»",
-  "customerFormNameEmpty": "Введите название или имя",
+  "customerFormNameEmpty": "Введите название",
+  "customerFormContactName": "Имя заказчика",
+  "customerFormContactNameHint": "Например, Насиба Каримова",
+  "customerFormContactNameEmpty": "Введите имя заказчика",
+  "customerFormContactNameMissing": "Раньше не указывали — заполните, когда узнаете",
+  "customerContactNameUnknown": "Не указано",
   "customerFormAddress": "Адрес доставки",
   "customerFormAddressHint": "Район, улица, дом",
   "customerFormAddressEmpty": "Введите адрес доставки",

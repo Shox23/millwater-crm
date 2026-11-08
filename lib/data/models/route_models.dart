@@ -135,6 +135,7 @@ class RouteStop extends Equatable {
     required this.id,
     required this.customerId,
     required this.customerName,
+    this.customerContactName,
     required this.customerAddress,
     required this.customerPhone,
     required this.status,
@@ -172,6 +173,10 @@ class RouteStop extends Equatable {
   final String id;
   final String customerId;
   final String customerName;
+
+  /// Имя заказчика — к кому обращаться на месте. У заведённых до 07.11.26
+  /// не указано (`null`).
+  final String? customerContactName;
   final String customerAddress;
   final String customerPhone;
   final DeliveryStatus status;
@@ -353,6 +358,7 @@ class RouteStop extends Equatable {
       id: id,
       customerId: customerId,
       customerName: customerName,
+      customerContactName: customerContactName,
       customerAddress: customerAddress,
       customerPhone: customerPhone,
       status: status ?? this.status,
@@ -412,6 +418,9 @@ class RouteStop extends Equatable {
           customer['full_name'],
           json['customer_full_name'],
         ])),
+        // Только из вложенного `customer`: в корне записи ключ
+        // `customer_name` сервер местами отдаёт со смыслом «название».
+        customerContactName: optionalText(customer['customer_name']),
         customerAddress: stringOr(firstNonNull([
           customer['customer_address'],
           customer['address'],
@@ -518,6 +527,7 @@ class RouteStop extends Equatable {
         id,
         customerId,
         customerName,
+        customerContactName,
         status,
         customerLatitude,
         customerLongitude,

@@ -219,6 +219,7 @@ class MockStore {
           id: nextId('s'),
           customerId: customer.id,
           customerName: customer.name,
+          customerContactName: customer.contactName,
           customerAddress: customer.address,
           customerPhone: customer.phone,
           status: DeliveryStatus.pending,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../core/app_version.dart';
 import '../../core/observability/session_log.dart';
 import '../models/user_role.dart';
 import 'api_config.dart';
@@ -239,6 +240,9 @@ Dio buildDio(AuthTokenStore store, {HttpClientAdapter? adapter}) {
         receiveTimeout: ApiConfig.receiveTimeout,
         contentType: Headers.jsonContentType,
         responseType: ResponseType.json,
+        // Вместо безликого `Dart/3.12 (dart:io)` журнал nginx увидит версию
+        // сборки. В вебе заголовка нет — см. [AppVersion.userAgent].
+        headers: {'User-Agent': ?AppVersion.userAgent},
       );
 
   final bareDio = Dio(options());

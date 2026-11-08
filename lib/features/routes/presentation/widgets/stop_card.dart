@@ -8,6 +8,7 @@ import '../../../../app/theme/app_tokens.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/contact_name_line.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../data/models/enums.dart';
 import '../../../../data/models/route_models.dart';
@@ -101,6 +102,10 @@ class StopCard extends StatelessWidget {
               ?trailing,
             ],
           ),
+          // К кому обращаться на точке — до адреса: водитель читает
+          // карточку, уже подъезжая.
+          if (stop.customerContactName case final contact?)
+            ContactNameLine(contact),
           Row(
             spacing: 4,
             children: [

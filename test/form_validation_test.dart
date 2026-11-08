@@ -149,7 +149,8 @@ void main() {
     testWidgets('неполный телефон не даёт нажать «Добавить»', (tester) async {
       await pumpForm(tester, const CustomerFormPage());
 
-      await tester.enterText(inputFor('Название / имя'), 'Чайхана «Тест»');
+      await tester.enterText(inputFor('Название'), 'Чайхана «Тест»');
+      await tester.enterText(inputFor('Имя заказчика'), 'Алишер');
       await tester.enterText(inputFor('Номер телефона'), '+998 90 12');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 5');
       await settle(tester);
@@ -186,7 +187,8 @@ void main() {
         (tester) async {
       await pumpForm(tester, const CustomerFormPage());
 
-      await tester.enterText(inputFor('Название / имя'), 'Чайхана «Тест»');
+      await tester.enterText(inputFor('Название'), 'Чайхана «Тест»');
+      await tester.enterText(inputFor('Имя заказчика'), 'Алишер');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 5');
       await settle(tester);
@@ -299,7 +301,7 @@ void main() {
     testWidgets('заполненная форма спрашивает подтверждение', (tester) async {
       await pumpForm(tester, const CustomerFormPage());
 
-      await tester.enterText(inputFor('Название / имя'), 'Чайхана «Тест»');
+      await tester.enterText(inputFor('Название'), 'Чайхана «Тест»');
       await tester.tap(find.text('Отменить'));
       await settle(tester);
 

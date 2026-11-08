@@ -115,6 +115,7 @@ RouteStop stopFromOrder(Order order) => RouteStop(
       id: order.id,
       customerId: order.customerId,
       customerName: order.customerName,
+      customerContactName: order.customerContactName,
       customerAddress: order.customerAddress,
       customerPhone: order.customerPhone,
       status: order.status,

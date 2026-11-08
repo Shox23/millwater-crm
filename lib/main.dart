@@ -1,5 +1,6 @@
 import 'app/app.dart';
 import 'app/settings/settings_storage.dart';
+import 'core/app_version.dart';
 import 'core/observability/observability.dart';
 
 Future<void> main() {
@@ -11,6 +12,8 @@ Future<void> main() {
     // с системных значений и на глазах у пользователя перекрашивалось.
     const storage = PrefsSettingsStorage();
     final settings = await storage.load();
+    // До сборки Dio: версия уходит в User-Agent каждого запроса.
+    await AppVersion.load();
 
     return CrmApp(settings: settings, settingsStorage: storage);
   });

@@ -311,6 +311,7 @@ class ApiCrmRepository implements CrmRepository {
   @override
   Future<Customer> addCustomer({
     required String name,
+    required String contactName,
     required String phone,
     String? phoneSecondary,
     required String address,
@@ -327,6 +328,7 @@ class ApiCrmRepository implements CrmRepository {
       '/admin/customers',
       data: {
         'full_name': name,
+        'customer_name': contactName,
         'phone': phone,
         'phone_secondary': ?phoneSecondary,
         'address': address,

@@ -122,6 +122,8 @@ class DeliveryDrawer extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
+          if (stop.customerContactName case final contact?)
+            DrawerField(label: l10n.customerFormContactName, value: contact),
           DrawerField(
             label: l10n.desktopFieldAddress,
             value: stop.customerAddress,
@@ -395,6 +397,13 @@ class CustomerDrawer extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
+          // Имя стоит и у старых заказчиков без него: серое «Не указано»
+          // напоминает его узнать — как на мобильной карточке.
+          DrawerField(
+            label: l10n.customerFormContactName,
+            value: customer.contactName ?? l10n.customerContactNameUnknown,
+            valueColor: customer.contactName == null ? t.text3 : null,
+          ),
           DrawerField(
             label: l10n.desktopFieldAddress,
             value: customer.address,

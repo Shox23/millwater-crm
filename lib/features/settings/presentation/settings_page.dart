@@ -10,6 +10,7 @@ import '../../../core/navigation/overlay_route.dart';
 import '../../../core/widgets/action_feedback.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_version_text.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/section_block.dart';
@@ -107,6 +108,7 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
           ),
+          const Center(child: AppVersionText()),
         ],
       ),
       bottomBar: Padding(

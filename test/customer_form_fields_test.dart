@@ -61,7 +61,8 @@ void main() {
       );
 
   Future<void> fillRequired(WidgetTester tester) async {
-    await tester.enterText(inputFor('Название / имя'), 'Кафе «Nasiba»');
+    await tester.enterText(inputFor('Название'), 'Кафе «Nasiba»');
+    await tester.enterText(inputFor('Имя заказчика'), 'Насиба Каримова');
     await tester.enterText(inputFor('Номер телефона'), '901234567');
     await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 12');
     await settle(tester);

@@ -193,6 +193,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get apiFieldFullName => 'Ism yoki nomi';
 
   @override
+  String get apiFieldCustomerName => 'Mijoz ismi';
+
+  @override
   String get apiFieldPhone => 'Telefon';
 
   @override
@@ -440,6 +443,15 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get loginErrorFailed => 'Kirib bo‘lmadi. Yana urinib ko‘ring.';
+
+  @override
+  String get loginErrorOutdated =>
+      'Ilovaning bu versiyasi eskirgan, server uni qabul qilmaydi. Yangisini o‘rnating.';
+
+  @override
+  String appVersion(String version) {
+    return 'Versiya $version';
+  }
 
   @override
   String get sessionExpired => 'Sessiya tugadi. Qaytadan kiring.';
@@ -1017,13 +1029,29 @@ class AppLocalizationsUz extends AppLocalizations {
   String get customerFormNewTitle => 'Yangi mijoz';
 
   @override
-  String get customerFormName => 'Nomi / ismi';
+  String get customerFormName => 'Nomi';
 
   @override
   String get customerFormNameHint => 'Masalan, «Nasiba» kafesi';
 
   @override
-  String get customerFormNameEmpty => 'Nomi yoki ismini kiriting';
+  String get customerFormNameEmpty => 'Nomini kiriting';
+
+  @override
+  String get customerFormContactName => 'Mijoz ismi';
+
+  @override
+  String get customerFormContactNameHint => 'Masalan, Nasiba Karimova';
+
+  @override
+  String get customerFormContactNameEmpty => 'Mijoz ismini kiriting';
+
+  @override
+  String get customerFormContactNameMissing =>
+      'Ilgari ko‘rsatilmagan — bilganingizda to‘ldiring';
+
+  @override
+  String get customerContactNameUnknown => 'Ko‘rsatilmagan';
 
   @override
   String get customerFormAddress => 'Yetkazib berish manzili';

@@ -11,6 +11,7 @@ import '../../../core/forms/submit_state.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
+import '../../../core/widgets/contact_name_line.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/section_block.dart';
 import '../../../data/models/driver_customer.dart';
@@ -180,6 +181,8 @@ class _CustomerCard extends StatelessWidget {
         children: [
           Text(customer.name,
               style: AppTypography.bodyStrong.copyWith(color: t.text)),
+          if (customer.contactName case final contact?)
+            ContactNameLine(contact),
           if (customer.address.isNotEmpty)
             Text(customer.address, style: secondary),
           Text(

@@ -14,6 +14,7 @@ import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/confirm_dialog.dart';
+import '../../../core/widgets/contact_row.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/phone_contact_row.dart';
 import '../../../core/widgets/money_text.dart';
@@ -169,6 +170,18 @@ class CustomerDetailPage extends StatelessWidget {
               amount: customer.prepayment,
               isDebt: false,
             ),
+          // Контактное лицо — перед телефоном: сначала «кого спросить»,
+          // потом «куда звонить». Строка стоит и у старых заказчиков,
+          // заведённых без имени: серое «Не указано» напоминает его узнать.
+          AppCard(
+            child: ContactRow(
+              icon: Icons.person_outline,
+              label: context.l10n.customerFormContactName,
+              value: customer.contactName ??
+                  context.l10n.customerContactNameUnknown,
+              iconColor: customer.contactName == null ? t.text3 : null,
+            ),
+          ),
           AppCard(child: PhoneContactRow(phone: customer.phone)),
           // Второй номер — отдельной строкой со звонком и копированием: по
           // нему звонят, когда основной молчит, и набирать его руками незачем.

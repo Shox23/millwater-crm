@@ -10,6 +10,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/navigation/overlay_route.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/contact_name_line.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_retry_view.dart';
@@ -279,6 +280,8 @@ class _CustomerRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (customer.contactName case final contact?)
+                  ContactNameLine(contact),
                 if (customer.address.isNotEmpty)
                   Text(
                     customer.address,

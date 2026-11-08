@@ -247,6 +247,7 @@ class MockDriverRepository implements DriverRepository {
           DriverCustomer(
             id: c.id,
             name: c.name,
+            contactName: c.contactName,
             phone: c.phone,
             address: c.address,
             phoneSecondary: c.phoneSecondary,

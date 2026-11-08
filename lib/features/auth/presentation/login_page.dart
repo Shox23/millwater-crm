@@ -10,8 +10,10 @@ import '../../../core/utils/uz_phone.dart';
 import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_version_text.dart';
 import '../../../core/widgets/labeled_text_field.dart';
 import '../bloc/auth_bloc.dart';
+import 'widgets/login_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -82,6 +84,7 @@ class _LoginPageState extends State<LoginPage> {
   /// Текст ошибки входа: блок отдаёт причину кодом, язык знает экран.
   String _errorText(BuildContext context, AuthError error) => switch (error) {
         AuthError.credentials => context.l10n.loginErrorCredentials,
+        AuthError.outdated => context.l10n.loginErrorOutdated,
         AuthError.generic => context.l10n.loginErrorGeneric,
         AuthError.failed => context.l10n.loginErrorFailed,
         AuthError.sessionExpired => context.l10n.sessionExpired,
@@ -93,106 +96,125 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.page),
-            child: BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, state) {
-                final loading = state.status == AuthStatus.authenticating;
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: AppSpacing.lg,
-                  children: [
-                    // Логотип целиком, без плитки-подложки: у знака свой
-                    // фирменный контур, и квадрат под ним читался бы как
-                    // чужая рамка. Прозрачный PNG ложится и на тёмный фон,
-                    // и на светлый.
-                    Center(
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 220,
-                        // Логотип — не иллюстрация, а название продукта:
-                        // без подписи экран входа перестал бы называть себя.
-                        semanticLabel: context.l10n.appTitle,
-                      ),
-                    ),
-                    Column(
-                      spacing: 4,
-                      children: [
-                        Text(context.l10n.appTitle,
-                            style: AppTypography.screenTitle
-                                .copyWith(color: t.text),
-                            textAlign: TextAlign.center),
-                        // Роль определяется по ответу сервера — на этом
-                        // экране входят и администратор, и водитель.
-                        Text(context.l10n.loginTitle,
-                            style: AppTypography.secondary
-                                .copyWith(color: t.text2),
-                            textAlign: TextAlign.center),
-                      ],
-                    ),
-                    AppCard(
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      child: Form(
-                        key: _formKey,
-                        // Ошибка появляется, когда поле закончили заполнять
-                        // и ушли из него.
-                        autovalidateMode: AutovalidateMode.onUnfocus,
-                        // Любое изменение — пересчёт состояния кнопки.
-                        onChanged: () => setState(() {}),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          spacing: AppSpacing.lg,
-                          children: [
-                            LabeledTextField(
-                              label: context.l10n.loginPhone,
-                              hint: '+998 90 123 45 67',
-                              controller: _phone,
-                              focusNode: _phoneFocus,
-                              validator: _v.phone,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: const [UzPhoneInputFormatter()],
-                              autofillHints: const [
-                                AutofillHints.telephoneNumber
-                              ],
-                              textInputAction: TextInputAction.next,
-                              onSubmitted: (_) => _passwordFocus.requestFocus(),
-                            ),
-                            LabeledTextField(
-                              label: context.l10n.loginPassword,
-                              hint: '••••••••',
-                              controller: _password,
-                              focusNode: _passwordFocus,
-                              validator: _passwordRule,
-                              obscureText: true,
-                              autofillHints: const [AutofillHints.password],
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _submit(),
-                            ),
-                            if (state.status == AuthStatus.failure &&
-                                state.error != null)
-                              Text(
-                                _errorText(context, state.error!),
-                                style: AppTypography.secondary
-                                    .copyWith(color: t.danger),
-                              ),
-                            AppButton(
-                              label: loading ? context.l10n.loginSubmitting : context.l10n.loginSubmit,
-                              // Пока телефон или пароль не заполнены,
-                              // отправлять нечего.
-                              enabled: _valid && !loading,
-                              onPressed: (_valid && !loading) ? _submit : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
+        child: Column(
+          children: [
+            // Язык и тема — над формой, прижаты к краю экрана: водитель
+            // должен найти их до того, как прочтёт что-то ещё.
+            const Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(
+                  AppSpacing.page, AppSpacing.md, AppSpacing.page, 0),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: LoginPreferences(),
+              ),
             ),
-          ),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.page),
+                  child: BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      final loading = state.status == AuthStatus.authenticating;
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        spacing: AppSpacing.lg,
+                        children: [
+                          // Логотип целиком, без плитки-подложки: у знака свой
+                          // фирменный контур, и квадрат под ним читался бы как
+                          // чужая рамка. Прозрачный PNG ложится и на тёмный фон,
+                          // и на светлый.
+                          Center(
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 220,
+                              // Логотип — не иллюстрация, а название продукта:
+                              // без подписи экран входа перестал бы называть себя.
+                              semanticLabel: context.l10n.appTitle,
+                            ),
+                          ),
+                          Column(
+                            spacing: 4,
+                            children: [
+                              Text(context.l10n.appTitle,
+                                  style: AppTypography.screenTitle
+                                      .copyWith(color: t.text),
+                                  textAlign: TextAlign.center),
+                              // Роль определяется по ответу сервера — на этом
+                              // экране входят и администратор, и водитель.
+                              Text(context.l10n.loginTitle,
+                                  style: AppTypography.secondary
+                                      .copyWith(color: t.text2),
+                                  textAlign: TextAlign.center),
+                            ],
+                          ),
+                          AppCard(
+                            padding: const EdgeInsets.all(AppSpacing.xl),
+                            child: Form(
+                              key: _formKey,
+                              // Ошибка появляется, когда поле закончили заполнять
+                              // и ушли из него.
+                              autovalidateMode: AutovalidateMode.onUnfocus,
+                              // Любое изменение — пересчёт состояния кнопки.
+                              onChanged: () => setState(() {}),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                spacing: AppSpacing.lg,
+                                children: [
+                                  LabeledTextField(
+                                    label: context.l10n.loginPhone,
+                                    hint: '+998 90 123 45 67',
+                                    controller: _phone,
+                                    focusNode: _phoneFocus,
+                                    validator: _v.phone,
+                                    keyboardType: TextInputType.phone,
+                                    inputFormatters: const [UzPhoneInputFormatter()],
+                                    autofillHints: const [
+                                      AutofillHints.telephoneNumber
+                                    ],
+                                    textInputAction: TextInputAction.next,
+                                    onSubmitted: (_) => _passwordFocus.requestFocus(),
+                                  ),
+                                  LabeledTextField(
+                                    label: context.l10n.loginPassword,
+                                    hint: '••••••••',
+                                    controller: _password,
+                                    focusNode: _passwordFocus,
+                                    validator: _passwordRule,
+                                    obscureText: true,
+                                    autofillHints: const [AutofillHints.password],
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => _submit(),
+                                  ),
+                                  if (state.status == AuthStatus.failure &&
+                                      state.error != null)
+                                    Text(
+                                      _errorText(context, state.error!),
+                                      style: AppTypography.secondary
+                                          .copyWith(color: t.danger),
+                                    ),
+                                  AppButton(
+                                    label: loading ? context.l10n.loginSubmitting : context.l10n.loginSubmit,
+                                    // Пока телефон или пароль не заполнены,
+                                    // отправлять нечего.
+                                    enabled: _valid && !loading,
+                                    onPressed: (_valid && !loading) ? _submit : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Человек, который не может войти, должен суметь назвать
+                          // свою сборку — до 07.11 это было не узнать.
+                          const AppVersionText(),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

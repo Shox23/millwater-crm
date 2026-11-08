@@ -112,9 +112,12 @@ abstract class CrmRepository {
   /// замолчавшим. `null` — не известно, поле не отправляется.
   /// [phoneSecondary] — дополнительный телефон в E.164; `null` — нет, поле
   /// не отправляется.
+  /// [contactName] — имя заказчика (контактное лицо, `customer_name`). С
+  /// 07.11.26 сервер без него не заводит заказчика (422).
   /// [idempotencyKey] — см. [addDriver].
   Future<Customer> addCustomer({
     required String name,
+    required String contactName,
     required String phone,
     String? phoneSecondary,
     required String address,

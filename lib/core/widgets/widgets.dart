@@ -4,6 +4,7 @@ export 'app_button.dart';
 export 'app_card.dart';
 export 'bottom_action_bar.dart';
 export 'confirm_dialog.dart';
+export 'contact_name_line.dart';
 export 'contact_row.dart';
 export 'date_tabs.dart';
 export 'detail_scaffold.dart';

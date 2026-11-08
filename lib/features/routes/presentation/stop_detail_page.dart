@@ -9,6 +9,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/contact_name_line.dart';
 import '../../../core/widgets/labeled_card.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/network_photo_card.dart';
@@ -58,6 +59,8 @@ class StopDetailPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (stop.customerContactName case final contact?)
+                  ContactNameLine(contact),
                 Row(
                   spacing: 4,
                   children: [

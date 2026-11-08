@@ -155,6 +155,7 @@ void main() {
     test('при создании заказчика', () async {
       await repo.addCustomer(
         name: 'Кафе Тест',
+        contactName: 'Алишер',
         phone: '998900000002',
         address: 'ул. Тестовая, 1',
         capsuleBalance: 4,

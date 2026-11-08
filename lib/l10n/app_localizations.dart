@@ -386,6 +386,12 @@ abstract class AppLocalizations {
   /// **'Имя или название'**
   String get apiFieldFullName;
 
+  /// No description provided for @apiFieldCustomerName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя заказчика'**
+  String get apiFieldCustomerName;
+
   /// No description provided for @apiFieldPhone.
   ///
   /// In ru, this message translates to:
@@ -865,6 +871,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось войти. Попробуйте ещё раз.'**
   String get loginErrorFailed;
+
+  /// No description provided for @loginErrorOutdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эта версия приложения устарела, сервер её не принимает. Установите новую.'**
+  String get loginErrorOutdated;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In ru, this message translates to:
+  /// **'Версия {version}'**
+  String appVersion(String version);
 
   /// No description provided for @sessionExpired.
   ///
@@ -1853,7 +1871,7 @@ abstract class AppLocalizations {
   /// No description provided for @customerFormName.
   ///
   /// In ru, this message translates to:
-  /// **'Название / имя'**
+  /// **'Название'**
   String get customerFormName;
 
   /// No description provided for @customerFormNameHint.
@@ -1865,8 +1883,38 @@ abstract class AppLocalizations {
   /// No description provided for @customerFormNameEmpty.
   ///
   /// In ru, this message translates to:
-  /// **'Введите название или имя'**
+  /// **'Введите название'**
   String get customerFormNameEmpty;
+
+  /// No description provided for @customerFormContactName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя заказчика'**
+  String get customerFormContactName;
+
+  /// No description provided for @customerFormContactNameHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Например, Насиба Каримова'**
+  String get customerFormContactNameHint;
+
+  /// No description provided for @customerFormContactNameEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите имя заказчика'**
+  String get customerFormContactNameEmpty;
+
+  /// No description provided for @customerFormContactNameMissing.
+  ///
+  /// In ru, this message translates to:
+  /// **'Раньше не указывали — заполните, когда узнаете'**
+  String get customerFormContactNameMissing;
+
+  /// No description provided for @customerContactNameUnknown.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не указано'**
+  String get customerContactNameUnknown;
 
   /// No description provided for @customerFormAddress.
   ///

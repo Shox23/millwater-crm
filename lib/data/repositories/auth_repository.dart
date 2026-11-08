@@ -20,7 +20,8 @@ class AuthRepository {
   ///
   /// [phone] ожидается в E.164 (`+998901234567`). Сервер телефоны не
   /// нормализует и сверяет строкой, а часть учёток заведена без «+» —
-  /// поэтому при USER_NOT_FOUND пробуем второй раз без него.
+  /// поэтому при USER_NOT_FOUND пробуем второй раз без него. На 404 от
+  /// nginx ([isProxyNotFound]) не пробуем: повтор упрётся в тот же путь.
   Future<UserRole> login({
     required String phone,
     required String password,
@@ -30,7 +31,9 @@ class AuthRepository {
       res = await _postLogin(phone, password);
     } on DioException catch (e) {
       final bare = UzPhone.normalizeBare(phone);
-      if (e.response?.statusCode != 404 || bare == phone) rethrow;
+      if (e.response?.statusCode != 404 || isProxyNotFound(e) || bare == phone) {
+        rethrow;
+      }
       res = await _postLogin(bare, password);
     }
     final data = asMap(res.data);

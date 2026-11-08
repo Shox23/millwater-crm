@@ -124,7 +124,8 @@ void main() {
         );
 
     Future<void> fillRequired(WidgetTester tester) async {
-      await tester.enterText(inputFor('Название / имя'), 'Кафе «Nasiba»');
+      await tester.enterText(inputFor('Название'), 'Кафе «Nasiba»');
+      await tester.enterText(inputFor('Имя заказчика'), 'Насиба Каримова');
       await tester.enterText(inputFor('Номер телефона'), '901234567');
       await tester.enterText(inputFor('Адрес доставки'), 'Чиланзар, 12');
       await settle(tester);
@@ -188,7 +189,7 @@ void main() {
       final byDriver = DateTime(2026, 9, 14, 11);
       replaceCustomer(repo.store, opened.copyWith(lastOrderDate: byDriver));
 
-      await tester.enterText(inputFor('Название / имя'), 'Другое имя');
+      await tester.enterText(inputFor('Название'), 'Другое имя');
       await settle(tester);
       await submit(tester, 'Сохранить');
 

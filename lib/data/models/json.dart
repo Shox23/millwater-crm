@@ -24,6 +24,15 @@ String? optionalString(Object? value) {
   return null;
 }
 
+/// Текст без краевых пробелов; `null` — поля нет или в нём одни пробелы.
+///
+/// Для полей, где «не указано» приходит по-разному: у старых записей —
+/// `null`, а пустая строка или пробелы от ручной правки в базе значат то же.
+String? optionalText(Object? value) {
+  final text = optionalString(value)?.trim();
+  return (text == null || text.isEmpty) ? null : text;
+}
+
 /// Строка или [fallback].
 String stringOr(Object? value, [String fallback = '']) =>
     optionalString(value) ?? fallback;

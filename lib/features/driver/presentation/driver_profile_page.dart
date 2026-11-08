@@ -9,6 +9,7 @@ import '../../../app/theme/app_typography.dart';
 import '../../../core/utils/uz_phone.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_version_text.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/section_block.dart';
@@ -144,6 +145,8 @@ class _DriverProfilePageState extends State<DriverProfilePage> {
               variant: AppButtonVariant.secondary,
               onPressed: _logout,
             ),
+            const SizedBox(height: AppSpacing.lg),
+            const AppVersionText(),
           ],
         ),
       ),

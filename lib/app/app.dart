@@ -126,7 +126,13 @@ class _CrmAppState extends State<CrmApp> {
     return BlocBuilder<ThemeCubit, ThemeMode>(
       builder: (context, themeMode) {
         return BlocBuilder<LocaleCubit, Locale?>(
-          builder: (context, locale) {
+          builder: (context, selected) {
+            // Без явного выбора язык задаёт роль (водителю — узбекский).
+            // Передаётся он здесь, а не в localeResolutionCallback: при
+            // `locale: null` MaterialApp вычисляет язык один раз и на вход
+            // под другой ролью не реагирует.
+            final locale = selected ??
+                LocaleCubit.defaultFor(auth.isAuthenticated ? auth.role : null);
             return MaterialApp(
               // onGenerateTitle, а не title: контекст самого MaterialApp
               // лежит выше Localizations, и строк там ещё нет.

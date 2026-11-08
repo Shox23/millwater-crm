@@ -189,9 +189,15 @@ class _NameCell extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              // Имя заказчика — первым в подстрочнике, а не отдельной
+              // строкой: высота строк таблицы не меняется. У старых
+              // заказчиков без имени подстрочник прежний.
               Text(
-                '${cooler ? l10n.desktopWithCooler : l10n.desktopWithoutCooler}'
-                ' · ${UzPhone.format(customer.phone)}',
+                [
+                  ?customer.contactName,
+                  cooler ? l10n.desktopWithCooler : l10n.desktopWithoutCooler,
+                  UzPhone.format(customer.phone),
+                ].join(' · '),
                 style: DesktopTypography.tableCellSub.copyWith(color: t.text3),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

@@ -11,6 +11,7 @@ class DriverCustomer extends Equatable {
   const DriverCustomer({
     required this.id,
     required this.name,
+    this.contactName,
     required this.phone,
     required this.address,
     this.phoneSecondary,
@@ -19,6 +20,9 @@ class DriverCustomer extends Equatable {
 
   final String id;
   final String name;
+
+  /// Имя заказчика — контактное лицо; у заведённых до 07.11.26 его нет.
+  final String? contactName;
   final String phone;
   final String address;
   final String? phoneSecondary;
@@ -31,6 +35,7 @@ class DriverCustomer extends Equatable {
   factory DriverCustomer.fromJson(Map<String, dynamic> json) => DriverCustomer(
         id: requireString(json['id'], 'id'),
         name: stringOr(json['full_name']),
+        contactName: optionalText(json['customer_name']),
         phone: stringOr(json['phone']),
         address: stringOr(json['address']),
         phoneSecondary: optionalString(json['phone_secondary']),
@@ -39,5 +44,5 @@ class DriverCustomer extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, name, phone, address, phoneSecondary, comment];
+      [id, name, contactName, phone, address, phoneSecondary, comment];
 }

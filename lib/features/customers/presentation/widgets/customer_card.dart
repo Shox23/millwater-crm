@@ -9,6 +9,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/contact_name_line.dart';
 import '../../../../data/models/customer.dart';
 import 'activity_background.dart';
 import 'finance_tag.dart';
@@ -57,6 +58,8 @@ class CustomerCard extends StatelessWidget {
                         style: AppTypography.cardTitle.copyWith(color: t.text),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
+                    if (customer.contactName case final contact?)
+                      ContactNameLine(contact),
                     Row(
                       spacing: 4,
                       children: [

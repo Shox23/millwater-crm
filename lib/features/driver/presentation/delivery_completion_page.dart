@@ -18,6 +18,7 @@ import '../../../core/utils/money_formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
+import '../../../core/widgets/contact_name_line.dart';
 import '../../../core/widgets/detail_scaffold.dart';
 import '../../../core/widgets/labeled_card.dart';
 import '../../../core/widgets/photo_attach_tile.dart';
@@ -591,6 +592,8 @@ class _DeliveryCompletionPageState extends State<DeliveryCompletionPage> with Su
               children: [
                 Text(stop.customerName,
                     style: AppTypography.bodyStrong.copyWith(color: t.text)),
+                if (stop.customerContactName case final contact?)
+                  ContactNameLine(contact),
                 Row(
                   spacing: 4,
                   children: [

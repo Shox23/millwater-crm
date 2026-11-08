@@ -257,6 +257,7 @@ class MockCrmRepository implements CrmRepository {
   @override
   Future<Customer> addCustomer({
     required String name,
+    required String contactName,
     required String phone,
     String? phoneSecondary,
     required String address,
@@ -280,9 +281,15 @@ class MockCrmRepository implements CrmRepository {
       throw StateError('BOTH_BALANCES_SET');
     }
 
+    // Как сервер (min_length 1): заказчика без имени он не заведёт.
+    if (contactName.trim().isEmpty) {
+      throw StateError('customer_name: Field required');
+    }
+
     final customer = Customer(
       id: store.nextId('c'),
       name: name,
+      contactName: contactName.trim(),
       phone: phone,
       phoneSecondary: phoneSecondary,
       address: address,
@@ -330,6 +337,11 @@ class MockCrmRepository implements CrmRepository {
     // из PATCH выбрасывает — стереть дату нельзя, только заменить.
     if (!lastOrderDateChanged || customer.lastOrderDate == null) {
       saved = saved.copyWith(lastOrderDate: stored.lastOrderDate);
+    }
+    // Имя заказчика тоже: без него ключ не уходит (`toUpdateJson`), и
+    // сервер оставляет прежнее — стереть указанное имя нельзя.
+    if (customer.contactName == null) {
+      saved = saved.copyWith(contactName: stored.contactName);
     }
     _customers[i] = saved;
     return saved;
@@ -415,6 +427,7 @@ class MockCrmRepository implements CrmRepository {
         id: store.nextId('s'),
         customerId: c.id,
         customerName: c.name,
+        customerContactName: c.contactName,
         customerAddress: c.address,
         customerPhone: c.phone,
         status: DeliveryStatus.pending,

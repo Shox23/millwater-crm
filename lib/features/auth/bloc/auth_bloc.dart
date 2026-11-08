@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 
 import '../../../data/models/user_role.dart';
+import '../../../data/network/api_envelope.dart';
 import '../../../data/repositories/auth_repository.dart';
 
 part 'auth_event.dart';
@@ -68,6 +69,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   /// Текст подбирает экран входа: блок про язык интерфейса не знает.
   AuthError _errorFor(DioException e) {
+    // Страница nginx вместо API — сборка ходит по пути, которого на сервере
+    // нет. Раньше это выглядело как «неверный пароль» (жалоба 07.11).
+    if (isProxyNotFound(e)) return AuthError.outdated;
     final code = e.response?.statusCode;
     // Неверные учётные данные: сервер отдаёт 404 USER_NOT_FOUND либо 401/400.
     if (code == 404 || code == 401 || code == 400) {

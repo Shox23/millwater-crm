@@ -557,7 +557,10 @@ class _RouteFormPageState extends State<RouteFormPage> with SubmitState {
                                 selected: _customerIds.contains(c.id),
                                 multi: true,
                                 title: c.name,
-                                subtitle: c.address,
+                                // Имя заказчика — впереди адреса, одной
+                                // строкой: у старых без имени — только адрес.
+                                subtitle:
+                                    [?c.contactName, c.address].join(' · '),
                                 onTap: _canToggle(c.id)
                                     ? () => setState(() {
                                           if (!_customerIds.remove(c.id)) {
